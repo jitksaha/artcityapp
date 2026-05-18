@@ -160,6 +160,8 @@ export const listPublicTalents = createServerFn({ method: "GET" })
         q: z.string().max(80).optional(),
         gender: z.string().max(20).optional(),
         category: z.string().max(40).optional(),
+        language: z.string().max(40).optional(),
+        location: z.string().max(150).optional(),
       })
       .optional()
       .parse(i),
