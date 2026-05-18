@@ -104,7 +104,15 @@ function CastingRequestPage() {
   );
 }
 
-function Field({ label, value, onChange, required, type = "text", placeholder }: any) {
+type FieldProps = {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  type?: string;
+  placeholder?: string;
+};
+function Field({ label, value, onChange, required, type = "text", placeholder }: FieldProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
