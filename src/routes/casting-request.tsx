@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,7 +23,6 @@ export const Route = createFileRoute("/casting-request")({
 
 function CastingRequestPage() {
   const { talent } = Route.useSearch();
-  const fn = useServerFn(submitCastingRequest);
   const [form, setForm] = useState({
     production_title: "",
     production_type: "",
@@ -42,7 +40,7 @@ function CastingRequestPage() {
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const mut = useMutation({
-    mutationFn: () => fn({ data: {
+    mutationFn: () => submitCastingRequest({ data: {
       talent_id: talent ?? null,
       ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v || undefined])) as any,
       production_title: form.production_title,
