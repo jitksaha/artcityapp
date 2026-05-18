@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, RotateCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -14,6 +14,7 @@ import { Step1, Step2, Step3, Step4, Step5, Step6, Step7 } from "@/components/re
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/register")({
@@ -37,12 +38,28 @@ const STEPS = [
   { label: "Media", render: <Step7 /> },
 ];
 
+type UploadItem = {
+  key: string;
+  kind: UploadKind;
+  bucket: "talent-media" | "talent-docs";
+  file: File;
+  position?: number;
+  fileName: string;
+  progress: number;
+  status: "pending" | "uploading" | "success" | "error";
+  error?: string;
+};
+
 function RegisterPage() {
   const [step, setStep] = useState(0);
   const saveDraftFn = useServerFn(saveDraft);
   const submitFn = useServerFn(submitApplication);
   const recordMediaFn = useServerFn(recordMediaUpload);
   const [busy, setBusy] = useState(false);
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
+
+  const patchUpload = (key: string, patch: Partial<UploadItem>) =>
+    setUploads((prev) => prev.map((u) => (u.key === key ? { ...u, ...patch } : u)));
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema) as any,
@@ -119,38 +136,100 @@ function RegisterPage() {
     },
   });
 
-  const uploadMedia = async (talentId: string, userId: string, values: RegisterFormValues) => {
-    const uploads: Array<{ file: File; kind: string; bucket: "talent-media" | "talent-docs"; position?: number }> = [];
-    if (values.headshot instanceof File) uploads.push({ file: values.headshot, kind: "headshot", bucket: "talent-media", position: 0 });
-    if (values.fullBodyPhoto instanceof File) uploads.push({ file: values.fullBodyPhoto, kind: "fullbody", bucket: "talent-media", position: 1 });
+  const buildUploadQueue = (values: RegisterFormValues): UploadItem[] => {
+    const list: UploadItem[] = [];
+    const push = (
+      kind: UploadKind,
+      bucket: "talent-media" | "talent-docs",
+      file: File,
+      position?: number,
+    ) =>
+      list.push({
+        key: `${kind}-${position ?? 0}-${file.name}`,
+        kind, bucket, file, position,
+        fileName: file.name,
+        progress: 0,
+        status: "pending",
+      });
+    if (values.headshot instanceof File) push("headshot", "talent-media", values.headshot, 0);
+    if (values.fullBodyPhoto instanceof File) push("fullbody", "talent-media", values.fullBodyPhoto, 1);
     (values.mediumShots ?? []).forEach((f, i) => {
-      if (f instanceof File) uploads.push({ file: f, kind: "medium", bucket: "talent-media", position: 10 + i });
+      if (f instanceof File) push("medium", "talent-media", f, 10 + i);
     });
-    if (values.voiceReel instanceof File) uploads.push({ file: values.voiceReel, kind: "voice_reel", bucket: "talent-media" });
-    if (values.cv instanceof File) uploads.push({ file: values.cv, kind: "cv", bucket: "talent-docs" });
-    if (values.drivingLicenseFile instanceof File) uploads.push({ file: values.drivingLicenseFile, kind: "driving_license", bucket: "talent-docs" });
+    if (values.voiceReel instanceof File) push("voice_reel", "talent-media", values.voiceReel);
+    if (values.cv instanceof File) push("cv", "talent-docs", values.cv);
+    if (values.drivingLicenseFile instanceof File)
+      push("driving_license", "talent-docs", values.drivingLicenseFile);
+    return list;
+  };
 
-    // Client preflight — fail fast with one clear error before any upload starts
-    for (const u of uploads) {
-      const err = validateUpload(u.kind as UploadKind, u.file);
-      if (err) throw new Error(err);
+  const runUpload = async (userId: string, item: UploadItem): Promise<string | null> => {
+    const preflight = validateUpload(item.kind, item.file);
+    if (preflight) {
+      patchUpload(item.key, { status: "error", error: preflight, progress: 0 });
+      throw new Error(preflight);
     }
+    patchUpload(item.key, { status: "uploading", progress: 0, error: undefined });
+    const ext = item.file.name.split(".").pop();
+    const path = `${userId}/${item.kind}-${Date.now()}.${ext}`;
+    try {
+      await uploadWithProgress({
+        bucket: item.bucket,
+        path,
+        file: item.file,
+        upsert: true,
+        onProgress: (pct) => patchUpload(item.key, { progress: pct }),
+      });
+      await recordMediaFn({
+        data: {
+          kind: item.kind, bucket: item.bucket, path,
+          mime_type: item.file.type, size_bytes: item.file.size, position: item.position,
+        },
+      });
+      patchUpload(item.key, { status: "success", progress: 100 });
+      return path;
+    } catch (e: any) {
+      const msg = e?.message ?? "Upload failed";
+      patchUpload(item.key, { status: "error", error: msg });
+      throw new Error(`${item.kind}: ${msg}`);
+    }
+  };
 
+  const uploadMedia = async (
+    userId: string,
+    items: UploadItem[],
+  ): Promise<{ headshotUrl: string | null }> => {
     let headshotUrl: string | null = null;
-    for (const u of uploads) {
-      const ext = u.file.name.split(".").pop();
-      const path = `${userId}/${u.kind}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from(u.bucket).upload(path, u.file, { upsert: true });
-      if (error) throw new Error(`${u.kind} upload failed: ${error.message}`);
-      await recordMediaFn({ data: {
-        kind: u.kind, bucket: u.bucket, path,
-        mime_type: u.file.type, size_bytes: u.file.size, position: u.position,
-      } });
-      if (u.kind === "headshot") {
+    for (const item of items) {
+      if (item.status === "success") continue;
+      const path = await runUpload(userId, item);
+      if (path && item.kind === "headshot") {
         headshotUrl = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
       }
     }
     return { headshotUrl };
+  };
+
+  const retryUpload = async (key: string) => {
+    const item = uploads.find((u) => u.key === key);
+    if (!item) return;
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user.id;
+    if (!userId) {
+      toast.error("Not signed in");
+      return;
+    }
+    try {
+      const path = await runUpload(userId, item);
+      if (path && item.kind === "headshot") {
+        const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
+        const payload: any = buildDraftPayload(form.getValues());
+        await saveDraftFn({ data: { ...payload, headshot_url: url } });
+      }
+      toast.success(`${item.fileName} uploaded`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Retry failed");
+    }
   };
 
   const persistDraft = async (values: RegisterFormValues, doSubmit: boolean) => {
@@ -159,9 +238,16 @@ function RegisterPage() {
       const { data: sess } = await supabase.auth.getSession();
       const userId = sess.session?.user.id;
       if (!userId) throw new Error("Not signed in");
+      const queue = buildUploadQueue(values);
+      // Preflight everything client-side before saving anything
+      for (const item of queue) {
+        const err = validateUpload(item.kind, item.file);
+        if (err) throw new Error(err);
+      }
+      setUploads(queue);
       const payload: any = buildDraftPayload(values);
       const saved: any = await saveDraftFn({ data: payload });
-      const { headshotUrl } = await uploadMedia(saved.id, userId, values);
+      const { headshotUrl } = await uploadMedia(userId, queue);
       if (headshotUrl) {
         await saveDraftFn({ data: { ...payload, headshot_url: headshotUrl } });
       }
@@ -172,7 +258,9 @@ function RegisterPage() {
         toast.success("Draft saved");
       }
     } catch (e: any) {
-      toast.error(e.message ?? "Save failed");
+      toast.error(e.message ?? "Save failed", {
+        description: "Use Retry on any failed upload below, then Save Draft or Submit again.",
+      });
     } finally {
       setBusy(false);
     }
@@ -235,6 +323,50 @@ function RegisterPage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                   {STEPS[step].render}
+
+                  {uploads.length > 0 && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">Upload progress</p>
+                        <p className="text-xs text-muted-foreground">
+                          {uploads.filter((u) => u.status === "success").length}/{uploads.length} complete
+                        </p>
+                      </div>
+                      <ul className="space-y-3">
+                        {uploads.map((u) => (
+                          <li key={u.key} className="space-y-1">
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="flex items-center gap-2 truncate">
+                                {u.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                                {u.status === "success" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                                {u.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                                <span className="capitalize">{u.kind.replace(/_/g, " ")}</span>
+                                <span className="text-muted-foreground truncate">— {u.fileName}</span>
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className={u.status === "error" ? "text-destructive" : "text-muted-foreground"}>
+                                  {u.status === "error" ? "Failed" : `${u.progress}%`}
+                                </span>
+                                {u.status === "error" && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => retryUpload(u.key)}
+                                    className="h-7 px-2"
+                                  >
+                                    <RotateCw className="mr-1 h-3 w-3" /> Retry
+                                  </Button>
+                                )}
+                              </span>
+                            </div>
+                            <Progress value={u.status === "error" ? 0 : u.progress} className="h-1.5" />
+                            {u.error && <p className="text-xs text-destructive">{u.error}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
                     <Button
