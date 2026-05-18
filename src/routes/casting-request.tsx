@@ -40,13 +40,24 @@ function CastingRequestPage() {
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const mut = useMutation({
-    mutationFn: () => submitCastingRequest({ data: {
-      talent_id: talent ?? null,
-      ...Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v || undefined])) as any,
-      production_title: form.production_title,
-      contact_person: form.contact_person,
-      email: form.email,
-    } }),
+    mutationFn: () =>
+      submitCastingRequest({
+        data: {
+          talent_id: talent ?? null,
+          production_title: form.production_title,
+          production_type: form.production_type || undefined,
+          role_description: form.role_description || undefined,
+          shooting_dates: form.shooting_dates || undefined,
+          shooting_location: form.shooting_location || undefined,
+          budget_range: form.budget_range || undefined,
+          company_name: form.company_name || undefined,
+          contact_person: form.contact_person,
+          phone: form.phone || undefined,
+          email: form.email,
+          message: form.message || undefined,
+          requested_talent_name: form.requested_talent_name || undefined,
+        },
+      }),
     onSuccess: () => {
       toast.success("Request submitted. We'll be in touch.");
       setForm({
