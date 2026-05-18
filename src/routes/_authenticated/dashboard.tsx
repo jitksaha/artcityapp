@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { getMyTalent, submitApplication, deleteMedia } from "@/lib/talents.functions";
+import { getMyTalent, submitApplication, deleteMedia, recordMediaUpload, saveDraft } from "@/lib/talents.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2 } from "lucide-react";
+import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
+import { uploadWithProgress } from "@/lib/upload-with-progress";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -41,8 +45,12 @@ function Dashboard() {
   const fn = useServerFn(getMyTalent);
   const submitFn = useServerFn(submitApplication);
   const deleteFn = useServerFn(deleteMedia);
+  const recordMediaFn = useServerFn(recordMediaUpload);
+  const saveDraftFn = useServerFn(saveDraft);
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["my-talent"], queryFn: () => fn() });
+  const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
+  const [uploadPct, setUploadPct] = useState(0);
 
   const mediaUrl = (bucket: string, path: string) =>
     bucket === "talent-media"
@@ -78,6 +86,54 @@ function Dashboard() {
   const HintIcon = hint?.icon;
   const canEdit = !data?.talent || status === "draft" || status === "needs_revision";
   const canResubmit = status === "needs_revision";
+
+  const userId = data?.talent?.user_id as string | undefined;
+
+  const handleRevisionUpload = async (kind: UploadKind, file: File) => {
+    const rule = UPLOAD_RULES[kind];
+    const err = validateUpload(kind, file);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    if (!userId) {
+      toast.error("Profile not ready yet.");
+      return;
+    }
+    try {
+      setUploadingKind(kind);
+      setUploadPct(0);
+      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
+      const path = `${userId}/${kind}-${Date.now()}.${ext}`;
+      await uploadWithProgress({
+        bucket: rule.bucket,
+        path,
+        file,
+        upsert: true,
+        onProgress: setUploadPct,
+      });
+      await recordMediaFn({
+        data: {
+          kind,
+          bucket: rule.bucket,
+          path,
+          mime_type: file.type,
+          size_bytes: file.size,
+        },
+      });
+      if (kind === "headshot") {
+        const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
+        await saveDraftFn({ data: { headshot_url: url } });
+      }
+      toast.success(`${rule.label} updated`);
+      qc.invalidateQueries({ queryKey: ["my-talent"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setUploadingKind(null);
+      setUploadPct(0);
+    }
+  };
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-6">
@@ -154,6 +210,13 @@ function Dashboard() {
           <Card>
             <CardHeader><CardTitle>Media</CardTitle></CardHeader>
             <CardContent className="space-y-3">
+              {canResubmit && (
+                <RevisionUploadsPanel
+                  uploadingKind={uploadingKind}
+                  uploadPct={uploadPct}
+                  onUpload={handleRevisionUpload}
+                />
+              )}
               {data.media.length === 0 && (
                 <p className="text-muted-foreground text-sm">No media uploaded yet.</p>
               )}
