@@ -20,6 +20,7 @@ import { Route as CastingRequestRouteImport } from './routes/casting-request'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
+import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
@@ -77,6 +78,11 @@ const TalentsSlugRoute = TalentsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => TalentsRoute,
 } as any)
+const AuthenticatedPreviewRoute = AuthenticatedPreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
 }
 export interface FileRoutesByTo {
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
 }
 export interface FileRoutesById {
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
 }
 export interface FileRouteTypes {
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/admin'
     | '/dashboard'
+    | '/preview'
     | '/talents/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/admin'
     | '/dashboard'
+    | '/preview'
     | '/talents/$slug'
   id:
     | '__root__'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/preview'
     | '/talents/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalentsSlugRouteImport
       parentRoute: typeof TalentsRoute
     }
+    '/_authenticated/preview': {
+      id: '/_authenticated/preview'
+      path: '/preview'
+      fullPath: '/preview'
+      preLoaderRoute: typeof AuthenticatedPreviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -290,11 +309,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPreviewRoute: typeof AuthenticatedPreviewRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPreviewRoute: AuthenticatedPreviewRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

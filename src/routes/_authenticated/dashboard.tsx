@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2 } from "lucide-react";
+import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
 import {
@@ -157,6 +157,11 @@ function Dashboard() {
           {canResubmit && (
             <Button onClick={handleResubmit}>
               <Send className="mr-2 h-4 w-4" /> Resubmit for review
+            </Button>
+          )}
+          {data?.talent && (
+            <Button asChild variant="outline">
+              <Link to="/preview"><Eye className="mr-2 h-4 w-4" /> Preview public profile</Link>
             </Button>
           )}
           <Button asChild variant={canEdit ? "default" : "outline"}>
