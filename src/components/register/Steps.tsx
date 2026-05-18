@@ -361,7 +361,15 @@ function UploadStatusBar({
   );
 }
 
-function FileField({ name, en, ku, accept, required, hint }: any) {
+function FileField({
+  name, en, ku, accept, required, hint,
+  uploadKind, uploadBucket, uploadPosition,
+}: {
+  name: any; en: string; ku?: string; accept?: string; required?: boolean; hint?: string;
+  uploadKind?: UploadKind;
+  uploadBucket?: "talent-media" | "talent-docs";
+  uploadPosition?: number;
+}) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -381,12 +389,12 @@ function FileField({ name, en, ku, accept, required, hint }: any) {
           {value instanceof File && (
             <>
               <FilePreview file={value} />
-              {(rest as any)._uploadKind && (
+              {uploadKind && uploadBucket && (
                 <UploadStatusBar
-                  kind={(rest as any)._uploadKind}
-                  bucket={(rest as any)._uploadBucket}
+                  kind={uploadKind}
+                  bucket={uploadBucket}
                   file={value}
-                  position={(rest as any)._uploadPosition}
+                  position={uploadPosition}
                 />
               )}
             </>
@@ -403,7 +411,13 @@ function FileField({ name, en, ku, accept, required, hint }: any) {
 
 function MultiFileField({
   name, en, ku, accept, max = 4, required, hint,
-}: { name: any; en: string; ku?: string; accept?: string; max?: number; required?: boolean; hint?: string }) {
+  uploadKind, uploadBucket, uploadPositionStart = 0,
+}: {
+  name: any; en: string; ku?: string; accept?: string; max?: number; required?: boolean; hint?: string;
+  uploadKind?: UploadKind;
+  uploadBucket?: "talent-media" | "talent-docs";
+  uploadPositionStart?: number;
+}) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -459,6 +473,14 @@ function MultiFileField({
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
+                      {uploadKind && uploadBucket && (
+                        <UploadStatusBar
+                          kind={uploadKind}
+                          bucket={uploadBucket}
+                          file={f}
+                          position={uploadPositionStart + i}
+                        />
+                      )}
                     </li>
                   );
                 })}
