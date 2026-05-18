@@ -324,6 +324,50 @@ function RegisterPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                   {STEPS[step].render}
 
+                  {uploads.length > 0 && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">Upload progress</p>
+                        <p className="text-xs text-muted-foreground">
+                          {uploads.filter((u) => u.status === "success").length}/{uploads.length} complete
+                        </p>
+                      </div>
+                      <ul className="space-y-3">
+                        {uploads.map((u) => (
+                          <li key={u.key} className="space-y-1">
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="flex items-center gap-2 truncate">
+                                {u.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                                {u.status === "success" && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                                {u.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                                <span className="capitalize">{u.kind.replace(/_/g, " ")}</span>
+                                <span className="text-muted-foreground truncate">— {u.fileName}</span>
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <span className={u.status === "error" ? "text-destructive" : "text-muted-foreground"}>
+                                  {u.status === "error" ? "Failed" : `${u.progress}%`}
+                                </span>
+                                {u.status === "error" && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => retryUpload(u.key)}
+                                    className="h-7 px-2"
+                                  >
+                                    <RotateCw className="mr-1 h-3 w-3" /> Retry
+                                  </Button>
+                                )}
+                              </span>
+                            </div>
+                            <Progress value={u.status === "error" ? 0 : u.progress} className="h-1.5" />
+                            {u.error && <p className="text-xs text-destructive">{u.error}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
                     <Button
                       type="button"
