@@ -5,6 +5,8 @@ import { Eye, ArrowLeft } from "lucide-react";
 import { getMyTalent } from "@/lib/talents.functions";
 import { TalentPublicView } from "@/components/TalentPublicView";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/preview")({
   component: PreviewPage,
@@ -47,7 +49,42 @@ function PreviewPage() {
           ? data.talent
           : { ...data.talent, vip: false, featured: false };
         return (
-          <TalentPublicView talent={safeTalent} media={data.media as any} showContactCta={false} />
+          <>
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Directory card preview</h2>
+                <p className="text-xs text-muted-foreground">How your tile will appear in search results on the public Talent Directory.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Card className="overflow-hidden">
+                  {safeTalent.headshot_url && (
+                    <div className="aspect-[3/4] bg-muted overflow-hidden">
+                      <img
+                        src={safeTalent.headshot_url}
+                        alt={safeTalent.stage_name ?? "Talent"}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  <CardContent className="py-4 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">{safeTalent.stage_name ?? safeTalent.full_name ?? "Untitled"}</p>
+                      {safeTalent.vip && <Badge>VIP</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {[safeTalent.gender, safeTalent.playing_age, safeTalent.location].filter(Boolean).join(" · ")}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+
+            <div className="border-t border-border pt-6">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">Full profile preview</h2>
+              <TalentPublicView talent={safeTalent} media={data.media as any} showContactCta={false} />
+            </div>
+          </>
         );
       })()}
     </main>
