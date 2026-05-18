@@ -262,6 +262,67 @@ function FileField({ name, en, ku, accept }: any) {
   );
 }
 
+function MultiFileField({
+  name, en, ku, accept, max = 4,
+}: { name: any; en: string; ku?: string; accept?: string; max?: number }) {
+  const { control } = useFormContext<RegisterFormValues>();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { onChange, value } }) => {
+        const files: File[] = Array.isArray(value) ? value : [];
+        return (
+          <FormItem>
+            <FieldLabel en={en} ku={ku} />
+            <FormControl>
+              <Input
+                type="file"
+                accept={accept}
+                multiple
+                onChange={(e) => {
+                  const incoming = Array.from(e.target.files ?? []);
+                  const merged = [...files, ...incoming].slice(0, max);
+                  onChange(merged);
+                  e.target.value = "";
+                }}
+              />
+            </FormControl>
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {files.map((f, i) => (
+                  <li
+                    key={`${f.name}-${i}`}
+                    className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-1 text-xs"
+                  >
+                    <span className="truncate">{f.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const next = files.slice();
+                        next.splice(i, 1);
+                        onChange(next);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {files.length}/{max} selected
+            </p>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+}
+
 // -------------------- Steps --------------------
 
 export function Step1() {
