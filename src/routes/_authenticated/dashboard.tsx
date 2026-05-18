@@ -12,6 +12,17 @@ import { Progress } from "@/components/ui/progress";
 import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2 } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -237,14 +248,34 @@ function Dashboard() {
                         <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs">
                           <span className="truncate capitalize">{m.kind.replace(/_/g, " ")}</span>
                           {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMedia(m.id)}
-                              className="text-muted-foreground hover:text-destructive"
-                              aria-label="Delete media"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="text-muted-foreground hover:text-destructive"
+                                  aria-label="Delete media"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove this {m.kind.replace(/_/g, " ")}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This permanently deletes the file from your profile. You can re-upload it later.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteMedia(m.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
                         </div>
                       </div>
