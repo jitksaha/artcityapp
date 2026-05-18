@@ -25,8 +25,20 @@ function TalentsPage() {
   const [category, setCategory] = useState<string | undefined>();
   const [language, setLanguage] = useState("");
   const [location, setLocation] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [playingAge, setPlayingAge] = useState("");
+  const [ageMin, setAgeMin] = useState("");
+  const [ageMax, setAgeMax] = useState("");
+  const [vipOnly, setVipOnly] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
   const { data, isLoading } = useQuery({
-    queryKey: ["public-talents", q, gender, category, language, location],
+    queryKey: [
+      "public-talents",
+      q, gender, category, language, location,
+      nationality, playingAge, ageMin, ageMax,
+      vipOnly, featuredOnly, sort,
+    ],
     queryFn: () =>
       fn({
         data: {
@@ -35,9 +47,20 @@ function TalentsPage() {
           category: category || undefined,
           language: language || undefined,
           location: location || undefined,
+          nationality: nationality || undefined,
+          playing_age: playingAge || undefined,
+          age_min: ageMin ? Number(ageMin) : undefined,
+          age_max: ageMax ? Number(ageMax) : undefined,
+          vip_only: vipOnly || undefined,
+          featured_only: featuredOnly || undefined,
+          sort,
         },
       }),
   });
+
+  const hasAnyFilter =
+    q || gender || category || language || location || nationality ||
+    playingAge || ageMin || ageMax || vipOnly || featuredOnly || sort !== "featured";
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,12 +105,68 @@ function TalentsPage() {
             onChange={(e) => setLocation(e.target.value)}
             className="max-w-[180px]"
           />
-          {(q || gender || category || language || location) && (
+          <Input
+            placeholder="Nationality"
+            value={nationality}
+            onChange={(e) => setNationality(e.target.value)}
+            className="max-w-[160px]"
+          />
+          <Input
+            placeholder="Playing age (e.g. 25-35)"
+            value={playingAge}
+            onChange={(e) => setPlayingAge(e.target.value)}
+            className="max-w-[180px]"
+          />
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={120}
+            placeholder="Min age"
+            value={ageMin}
+            onChange={(e) => setAgeMin(e.target.value)}
+            className="max-w-[110px]"
+          />
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={120}
+            placeholder="Max age"
+            value={ageMax}
+            onChange={(e) => setAgeMax(e.target.value)}
+            className="max-w-[110px]"
+          />
+          <select
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+          >
+            <option value="featured">Sort: Featured</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="name_asc">Name A–Z</option>
+            <option value="name_desc">Name Z–A</option>
+          </select>
+          <label className="inline-flex items-center gap-2 text-sm px-2">
+            <input type="checkbox" checked={vipOnly} onChange={(e) => setVipOnly(e.target.checked)} />
+            VIP only
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm px-2">
+            <input type="checkbox" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />
+            Featured only
+          </label>
+          {hasAnyFilter && (
             <button
               type="button"
               className="text-sm text-muted-foreground underline"
               onClick={() => {
-                setQ(""); setGender(undefined); setCategory(undefined); setLanguage(""); setLocation("");
+                setQ(""); setGender(undefined); setCategory(undefined);
+                setLanguage(""); setLocation("");
+                setNationality(""); setPlayingAge("");
+                setAgeMin(""); setAgeMax("");
+                setVipOnly(false); setFeaturedOnly(false);
+                setSort("featured");
               }}
             >
               Clear
