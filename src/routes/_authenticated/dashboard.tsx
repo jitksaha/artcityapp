@@ -285,3 +285,65 @@ function Dashboard() {
     </main>
   );
 }
+
+const REVISION_KINDS: UploadKind[] = [
+  "headshot",
+  "fullbody",
+  "medium",
+  "voice_reel",
+  "cv",
+  "driving_license",
+];
+
+function RevisionUploadsPanel({
+  uploadingKind,
+  uploadPct,
+  onUpload,
+}: {
+  uploadingKind: UploadKind | null;
+  uploadPct: number;
+  onUpload: (kind: UploadKind, file: File) => void;
+}) {
+  const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+  return (
+    <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-primary">
+        Replace assets for resubmission
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {REVISION_KINDS.map((kind) => {
+          const rule = UPLOAD_RULES[kind];
+          const busy = uploadingKind === kind;
+          return (
+            <div key={kind} className="flex items-center justify-between gap-2 rounded border border-border bg-background p-2 text-xs">
+              <div className="min-w-0">
+                <p className="font-medium">{rule.label}</p>
+                <p className="truncate text-muted-foreground">{rule.accept}</p>
+                {busy && <Progress value={uploadPct} className="mt-1 h-1" />}
+              </div>
+              <input
+                ref={(el) => { inputs.current[kind] = el; }}
+                type="file"
+                hidden
+                accept={rule.bucket === "talent-docs" ? ".pdf,.doc,.docx,image/*" : rule.mimes.source.includes("audio") ? "audio/*" : "image/*"}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) onUpload(kind, f);
+                }}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!!uploadingKind}
+                onClick={() => inputs.current[kind]?.click()}
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
