@@ -22,9 +22,21 @@ function TalentsPage() {
   const fn = useServerFn(listPublicTalents);
   const [q, setQ] = useState("");
   const [gender, setGender] = useState<string | undefined>();
+  const [category, setCategory] = useState<string | undefined>();
+  const [language, setLanguage] = useState("");
+  const [location, setLocation] = useState("");
   const { data, isLoading } = useQuery({
-    queryKey: ["public-talents", q, gender],
-    queryFn: () => fn({ data: { q: q || undefined, gender: gender || undefined } }),
+    queryKey: ["public-talents", q, gender, category, language, location],
+    queryFn: () =>
+      fn({
+        data: {
+          q: q || undefined,
+          gender: gender || undefined,
+          category: category || undefined,
+          language: language || undefined,
+          location: location || undefined,
+        },
+      }),
   });
 
   return (
@@ -46,6 +58,41 @@ function TalentsPage() {
             <option value="non_binary">Non-binary</option>
             <option value="other">Other</option>
           </select>
+          <select
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={category ?? ""}
+            onChange={(e) => setCategory(e.target.value || undefined)}
+          >
+            <option value="">All categories</option>
+            <option value="actor">Actor</option>
+            <option value="actress">Actress</option>
+            <option value="model">Model</option>
+            <option value="performer">Performer</option>
+            <option value="voice_talent">Voice talent</option>
+          </select>
+          <Input
+            placeholder="Language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="max-w-[160px]"
+          />
+          <Input
+            placeholder="Location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="max-w-[180px]"
+          />
+          {(q || gender || category || language || location) && (
+            <button
+              type="button"
+              className="text-sm text-muted-foreground underline"
+              onClick={() => {
+                setQ(""); setGender(undefined); setCategory(undefined); setLanguage(""); setLocation("");
+              }}
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         {isLoading && <p className="text-muted-foreground">Loading…</p>}
