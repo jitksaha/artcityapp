@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 
 const profilePayload = z.object({
   stage_name: z.string().max(120).nullable().optional(),
@@ -132,6 +133,38 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    // Server-side enforcement of upload rules (defence in depth)
+    const rule = UPLOAD_RULES[data.kind as UploadKind];
+    if (!rule) {
+      throw new Error(`Unsupported upload kind: ${data.kind}`);
+    }
+    if (rule.bucket !== data.bucket) {
+      throw new Error(`${rule.label} must be stored in the "${rule.bucket}" bucket.`);
+    }
+    const err = validateUpload(data.kind as UploadKind, {
+      type: data.mime_type ?? "",
+      size: data.size_bytes ?? 0,
+    });
+    if (err) throw new Error(err);
+
+    // Confirm the object actually exists in storage and matches the reported size,
+    // so a client can't bypass validation by lying about size/mime.
+    const folder = data.path.split("/").slice(0, -1).join("/");
+    const filename = data.path.split("/").pop()!;
+    const { data: listed } = await supabase.storage
+      .from(data.bucket)
+      .list(folder, { search: filename, limit: 1 });
+    const obj = listed?.find((o) => o.name === filename);
+    if (!obj) {
+      throw new Error("Uploaded file not found in storage. Please retry the upload.");
+    }
+    const actualSize = (obj.metadata as { size?: number } | null)?.size ?? 0;
+    if (actualSize > rule.maxBytes) {
+      // Clean up the oversize object
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error(`${rule.label}: file exceeds the ${Math.round(rule.maxBytes / 1024 / 1024)}MB limit.`);
+    }
+
     const { data: talent } = await supabase
       .from("talent_profiles")
       .select("id")
@@ -142,6 +175,7 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
       talent_id: talent.id,
       user_id: userId,
       ...data,
+      size_bytes: actualSize || data.size_bytes,
     });
     if (error) throw new Error(error.message);
     return { ok: true };

@@ -12,6 +12,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
 import { Step1, Step2, Step3, Step4, Step5, Step6, Step7 } from "@/components/register/Steps";
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
+import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -129,12 +130,18 @@ function RegisterPage() {
     if (values.cv instanceof File) uploads.push({ file: values.cv, kind: "cv", bucket: "talent-docs" });
     if (values.drivingLicenseFile instanceof File) uploads.push({ file: values.drivingLicenseFile, kind: "driving_license", bucket: "talent-docs" });
 
+    // Client preflight — fail fast with one clear error before any upload starts
+    for (const u of uploads) {
+      const err = validateUpload(u.kind as UploadKind, u.file);
+      if (err) throw new Error(err);
+    }
+
     let headshotUrl: string | null = null;
     for (const u of uploads) {
       const ext = u.file.name.split(".").pop();
       const path = `${userId}/${u.kind}-${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from(u.bucket).upload(path, u.file, { upsert: true });
-      if (error) throw new Error(`Upload ${u.kind} failed: ${error.message}`);
+      if (error) throw new Error(`${u.kind} upload failed: ${error.message}`);
       await recordMediaFn({ data: {
         kind: u.kind, bucket: u.bucket, path,
         mime_type: u.file.type, size_bytes: u.file.size, position: u.position,
