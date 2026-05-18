@@ -62,16 +62,31 @@ export const submitApplication = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: existing } = await supabase
       .from("talent_profiles")
-      .select("id, status")
+      .select("id, status, revision_count")
       .eq("user_id", userId)
       .maybeSingle();
     if (!existing) throw new Error("No draft to submit");
+    const isRevision = existing.status === "needs_revision";
+    const nextRevisionCount = (existing.revision_count ?? 0) + (isRevision ? 1 : 0);
     const { error } = await supabase
       .from("talent_profiles")
-      .update({ status: "submitted" })
+      .update({
+        status: "submitted",
+        revision_count: nextRevisionCount,
+      })
       .eq("id", existing.id);
     if (error) throw new Error(error.message);
-    return { ok: true };
+    if (isRevision) {
+      // Append an applicant-authored status log entry alongside the trigger-generated one
+      await supabase.from("status_logs").insert({
+        talent_id: existing.id,
+        actor_id: userId,
+        from_status: "needs_revision",
+        to_status: "submitted",
+        reason: `Applicant resubmitted (revision #${nextRevisionCount}).`,
+      });
+    }
+    return { ok: true, revision_count: nextRevisionCount, is_revision: isRevision };
   });
 
 export const getMyTalent = createServerFn({ method: "GET" })
