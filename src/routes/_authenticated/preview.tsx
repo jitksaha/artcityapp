@@ -41,9 +41,15 @@ function PreviewPage() {
         </div>
       )}
 
-      {data?.talent && (
-        <TalentPublicView talent={data.talent} media={data.media as any} showContactCta={false} />
-      )}
+      {data?.talent && (() => {
+        const isLive = data.talent.status === "approved" || data.talent.status === "published";
+        const safeTalent = isLive
+          ? data.talent
+          : { ...data.talent, vip: false, featured: false };
+        return (
+          <TalentPublicView talent={safeTalent} media={data.media as any} showContactCta={false} />
+        );
+      })()}
     </main>
   );
 }
