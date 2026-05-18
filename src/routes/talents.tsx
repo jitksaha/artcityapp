@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listPublicTalents } from "@/lib/public-talents.functions";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,30 +34,47 @@ function TalentsPage() {
   const [vipOnly, setVipOnly] = useState(false);
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
-  const { data, isLoading } = useQuery({
+
+  // Debounce free-text inputs so each keystroke doesn't fire a request,
+  // while selects/checkboxes still apply instantly for that "realtime" feel.
+  const dq = useDebouncedValue(q, 300);
+  const dLanguage = useDebouncedValue(language, 300);
+  const dLocation = useDebouncedValue(location, 300);
+  const dNationality = useDebouncedValue(nationality, 300);
+  const dPlayingAge = useDebouncedValue(playingAge, 300);
+  const dAgeMin = useDebouncedValue(ageMin, 400);
+  const dAgeMax = useDebouncedValue(ageMax, 400);
+
+  const isTyping =
+    dq !== q || dLanguage !== language || dLocation !== location ||
+    dNationality !== nationality || dPlayingAge !== playingAge ||
+    dAgeMin !== ageMin || dAgeMax !== ageMax;
+
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: [
       "public-talents",
-      q, gender, category, language, location,
-      nationality, playingAge, ageMin, ageMax,
+      dq, gender, category, dLanguage, dLocation,
+      dNationality, dPlayingAge, dAgeMin, dAgeMax,
       vipOnly, featuredOnly, sort,
     ],
     queryFn: () =>
       fn({
         data: {
-          q: q || undefined,
+          q: dq || undefined,
           gender: gender || undefined,
           category: category || undefined,
-          language: language || undefined,
-          location: location || undefined,
-          nationality: nationality || undefined,
-          playing_age: playingAge || undefined,
-          age_min: ageMin ? Number(ageMin) : undefined,
-          age_max: ageMax ? Number(ageMax) : undefined,
+          language: dLanguage || undefined,
+          location: dLocation || undefined,
+          nationality: dNationality || undefined,
+          playing_age: dPlayingAge || undefined,
+          age_min: dAgeMin ? Number(dAgeMin) : undefined,
+          age_max: dAgeMax ? Number(dAgeMax) : undefined,
           vip_only: vipOnly || undefined,
           featured_only: featuredOnly || undefined,
           sort,
         },
       }),
+    placeholderData: (prev) => prev, // keep showing previous results while refetching
   });
 
   const hasAnyFilter =
@@ -174,12 +193,24 @@ function TalentsPage() {
           )}
         </div>
 
+        <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" aria-live="polite">
+          {(isFetching || isTyping) ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Filtering…
+            </span>
+          ) : (
+            <span>
+              {(data ?? []).length} {((data ?? []).length === 1) ? "result" : "results"}
+              {hasAnyFilter ? " match your filters" : ""}
+            </span>
+          )}
+        </div>
         {isLoading && <p className="text-muted-foreground">Loading…</p>}
         {!isLoading && (data ?? []).length === 0 && (
           <p className="text-muted-foreground">No talents published yet.</p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
           {(data ?? []).map((t: any) => (
             <Link key={t.id} to="/talents/$slug" params={{ slug: t.slug ?? t.id }}>
               <Card className="overflow-hidden hover:border-primary transition-colors">
