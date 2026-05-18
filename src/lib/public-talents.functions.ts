@@ -14,6 +14,13 @@ export const listPublicTalents = createServerFn({ method: "GET" })
         category: z.string().max(40).optional(),
         language: z.string().max(40).optional(),
         location: z.string().max(150).optional(),
+        nationality: z.string().max(80).optional(),
+        playing_age: z.string().max(40).optional(),
+        age_min: z.number().int().min(0).max(120).optional(),
+        age_max: z.number().int().min(0).max(120).optional(),
+        vip_only: z.boolean().optional(),
+        featured_only: z.boolean().optional(),
+        sort: z.enum(["featured", "newest", "oldest", "name_asc", "name_desc"]).optional(),
       })
       .optional()
       .parse(i),
@@ -25,10 +32,6 @@ export const listPublicTalents = createServerFn({ method: "GET" })
       .eq("approved", true)
       .eq("published", true)
       .eq("visible_publicly", true)
-      .order("featured", { ascending: false })
-      .order("vip", { ascending: false })
-      .order("featured_order", { ascending: true, nullsFirst: false })
-      .order("published_at", { ascending: false })
       .limit(200);
 
     if (data?.q) q = q.ilike("stage_name", `%${data.q}%`);
@@ -36,6 +39,35 @@ export const listPublicTalents = createServerFn({ method: "GET" })
     if (data?.category) q = q.contains("categories", [data.category]);
     if (data?.language) q = q.ilike("native_language", `%${data.language}%`);
     if (data?.location) q = q.ilike("location", `%${data.location}%`);
+    if (data?.nationality) q = q.ilike("nationality", `%${data.nationality}%`);
+    if (data?.playing_age) q = q.ilike("playing_age", `%${data.playing_age}%`);
+    if (typeof data?.age_min === "number") q = q.gte("age", data.age_min);
+    if (typeof data?.age_max === "number") q = q.lte("age", data.age_max);
+    if (data?.vip_only) q = q.eq("vip", true);
+    if (data?.featured_only) q = q.eq("featured", true);
+
+    switch (data?.sort) {
+      case "newest":
+        q = q.order("published_at", { ascending: false });
+        break;
+      case "oldest":
+        q = q.order("published_at", { ascending: true });
+        break;
+      case "name_asc":
+        q = q.order("stage_name", { ascending: true, nullsFirst: false });
+        break;
+      case "name_desc":
+        q = q.order("stage_name", { ascending: false, nullsFirst: false });
+        break;
+      case "featured":
+      default:
+        q = q
+          .order("featured", { ascending: false })
+          .order("vip", { ascending: false })
+          .order("featured_order", { ascending: true, nullsFirst: false })
+          .order("published_at", { ascending: false });
+        break;
+    }
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
