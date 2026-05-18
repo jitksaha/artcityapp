@@ -140,6 +140,8 @@ function TalentPage() {
                 </a>
               </section>
             )}
+
+            <ProfileSections talent={t} />
           </article>
         )}
         <Dialog open={!!lightbox} onOpenChange={(open) => !open && setLightbox(null)}>
