@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Eye, ArrowLeft, FileClock, FileEdit } from "lucide-react";
+import { Eye, ArrowLeft, FileClock, FileEdit, Sparkles, Star, BadgeCheck } from "lucide-react";
 import { getMyTalent } from "@/lib/talents.functions";
 import { TalentPublicView } from "@/components/TalentPublicView";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ function PreviewPage() {
   const fn = useServerFn(getMyTalent);
   const { data, isLoading } = useQuery({ queryKey: ["my-talent"], queryFn: () => fn() });
   const [view, setView] = useState<"draft" | "submitted">("draft");
+  // "Approved preview" simulates the post-approval state, including admin-controlled flags.
+  const [approvedPreview, setApprovedPreview] = useState(false);
 
   const submissions = (data as any)?.submissions ?? [];
   const latestSubmission = submissions[0];
@@ -61,11 +63,23 @@ function PreviewPage() {
   const isLive =
     activeTalent &&
     (activeTalent.status === "approved" || activeTalent.status === "published");
-  const safeTalent = activeTalent
-    ? isLive
-      ? activeTalent
-      : { ...activeTalent, vip: false, featured: false }
-    : null;
+  let safeTalent: any = null;
+  if (activeTalent) {
+    if (approvedPreview) {
+      // Simulate the admin-approved/published state. Real flags untouched in the DB.
+      safeTalent = {
+        ...activeTalent,
+        status: "published",
+        approved: true,
+        published: true,
+        visible_publicly: true,
+        vip: activeTalent.vip ?? false,
+        featured: activeTalent.featured ?? false,
+      };
+    } else {
+      safeTalent = isLive ? activeTalent : { ...activeTalent, vip: false, featured: false };
+    }
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-6">
@@ -95,6 +109,49 @@ function PreviewPage() {
 
       {safeTalent && (
         <>
+          {/* Approved preview toggle */}
+          <div className="rounded-lg border border-border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-2 text-sm">
+              <Sparkles className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+              <div>
+                <p className="font-medium">Approved preview mode</p>
+                <p className="text-muted-foreground text-xs">
+                  Simulate how your profile will appear after admin approval, including admin-controlled flags (VIP, Featured, Published).
+                  This does not change anything in the database.
+                </p>
+              </div>
+            </div>
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              <span className="text-xs text-muted-foreground">{approvedPreview ? "On" : "Off"}</span>
+              <span
+                role="switch"
+                aria-checked={approvedPreview}
+                tabIndex={0}
+                onClick={() => setApprovedPreview((v) => !v)}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    setApprovedPreview((v) => !v);
+                  }
+                }}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${approvedPreview ? "bg-primary" : "bg-muted"}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-background shadow transition-transform ${approvedPreview ? "translate-x-4" : "translate-x-0.5"}`}
+                />
+              </span>
+            </label>
+          </div>
+
+          {approvedPreview && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <Badge className="gap-1"><BadgeCheck className="h-3 w-3" /> Published</Badge>
+              {safeTalent.vip && <Badge className="gap-1"><Star className="h-3 w-3" /> VIP</Badge>}
+              {safeTalent.featured && <Badge variant="secondary">Featured</Badge>}
+              <span className="text-muted-foreground">Admin-controlled flags shown as they would appear once approved.</span>
+            </div>
+          )}
+
           {/* Snapshot label + switcher */}
           <div className="rounded-lg border border-border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
