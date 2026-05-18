@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, Control } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, FileText, Music, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, CheckCircle2, AlertCircle, FileText, Loader2, Music, Plus, RotateCw, Trash2, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   FormControl,
@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FieldLabel, SectionTitle } from "./FieldLabel";
 import type { RegisterFormValues } from "./schema";
+import { useUploads } from "./upload-context";
+import type { UploadKind } from "@/lib/upload-constraints";
 
 type FC = Control<RegisterFormValues>;
 
@@ -306,7 +309,67 @@ function FilePreview({ file }: { file: File }) {
   );
 }
 
-function FileField({ name, en, ku, accept, required, hint }: any) {
+function UploadStatusBar({
+  kind, bucket, file, position,
+}: {
+  kind: UploadKind;
+  bucket: "talent-media" | "talent-docs";
+  file: File;
+  position?: number;
+}) {
+  const ctx = useUploads();
+  if (!ctx) return null;
+  const key = ctx.uploadKey(kind, file, position);
+  const st = ctx.getStatus(key);
+  const status = st?.status ?? "pending";
+  const busy = status === "uploading";
+  const success = status === "success";
+  const failed = status === "error";
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="flex items-center gap-1.5">
+          {busy && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+          {success && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />}
+          {failed && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+          <span className={failed ? "text-destructive" : "text-muted-foreground"}>
+            {success ? "Uploaded" : failed ? "Failed" : busy ? `${st?.progress ?? 0}%` : "Not uploaded"}
+          </span>
+        </span>
+        {!success && (
+          <Button
+            type="button"
+            size="sm"
+            variant={failed ? "outline" : "ghost"}
+            className="h-7 px-2 text-xs"
+            disabled={busy}
+            onClick={() => ctx.uploadOne({ kind, bucket, file, position })}
+          >
+            {failed ? (
+              <><RotateCw className="mr-1 h-3 w-3" /> Retry</>
+            ) : (
+              <><UploadCloud className="mr-1 h-3 w-3" /> {busy ? "Uploading…" : "Upload now"}</>
+            )}
+          </Button>
+        )}
+      </div>
+      {(busy || failed) && (
+        <Progress value={failed ? 0 : st?.progress ?? 0} className="h-1.5" />
+      )}
+      {failed && st?.error && <p className="text-xs text-destructive">{st.error}</p>}
+    </div>
+  );
+}
+
+function FileField({
+  name, en, ku, accept, required, hint,
+  uploadKind, uploadBucket, uploadPosition,
+}: {
+  name: any; en: string; ku?: string; accept?: string; required?: boolean; hint?: string;
+  uploadKind?: UploadKind;
+  uploadBucket?: "talent-media" | "talent-docs";
+  uploadPosition?: number;
+}) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -323,7 +386,19 @@ function FileField({ name, en, ku, accept, required, hint }: any) {
               {...rest}
             />
           </FormControl>
-          {value instanceof File && <FilePreview file={value} />}
+          {value instanceof File && (
+            <>
+              <FilePreview file={value} />
+              {uploadKind && uploadBucket && (
+                <UploadStatusBar
+                  kind={uploadKind}
+                  bucket={uploadBucket}
+                  file={value}
+                  position={uploadPosition}
+                />
+              )}
+            </>
+          )}
           {hint && (
             <p className="text-xs text-muted-foreground">{hint}</p>
           )}
@@ -336,7 +411,13 @@ function FileField({ name, en, ku, accept, required, hint }: any) {
 
 function MultiFileField({
   name, en, ku, accept, max = 4, required, hint,
-}: { name: any; en: string; ku?: string; accept?: string; max?: number; required?: boolean; hint?: string }) {
+  uploadKind, uploadBucket, uploadPositionStart = 0,
+}: {
+  name: any; en: string; ku?: string; accept?: string; max?: number; required?: boolean; hint?: string;
+  uploadKind?: UploadKind;
+  uploadBucket?: "talent-media" | "talent-docs";
+  uploadPositionStart?: number;
+}) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -392,6 +473,14 @@ function MultiFileField({
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
+                      {uploadKind && uploadBucket && (
+                        <UploadStatusBar
+                          kind={uploadKind}
+                          bucket={uploadBucket}
+                          file={f}
+                          position={uploadPositionStart + i}
+                        />
+                      )}
                     </li>
                   );
                 })}
@@ -763,6 +852,9 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Clear face shot, JPG/PNG/WEBP, max 5MB"
+          uploadKind="headshot"
+          uploadBucket="talent-media"
+          uploadPosition={0}
         />
         <FileField
           name="fullBodyPhoto"
@@ -771,6 +863,9 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Head-to-toe photo, JPG/PNG/WEBP, max 5MB"
+          uploadKind="fullbody"
+          uploadBucket="talent-media"
+          uploadPosition={1}
         />
       </div>
       <MultiFileField
@@ -780,6 +875,9 @@ export function Step7() {
         accept="image/jpeg,image/png,image/webp"
         max={4}
         hint="Optional · Waist-up shots, JPG/PNG/WEBP, max 5MB each"
+        uploadKind="medium"
+        uploadBucket="talent-media"
+        uploadPositionStart={10}
       />
       <div className="grid gap-4 md:grid-cols-2">
         <FileField
@@ -788,6 +886,8 @@ export function Step7() {
           ku="نموونەی دەنگ"
           accept="audio/*"
           hint="Optional · MP3/WAV/M4A, max 15MB"
+          uploadKind="voice_reel"
+          uploadBucket="talent-media"
         />
         <FileField
           name="cv"
@@ -795,6 +895,8 @@ export function Step7() {
           ku="سی ڤی"
           accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           hint="Optional · PDF or DOC/DOCX, max 5MB"
+          uploadKind="cv"
+          uploadBucket="talent-docs"
         />
       </div>
       <TextField
