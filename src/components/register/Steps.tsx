@@ -262,6 +262,67 @@ function FileField({ name, en, ku, accept }: any) {
   );
 }
 
+function MultiFileField({
+  name, en, ku, accept, max = 4,
+}: { name: any; en: string; ku?: string; accept?: string; max?: number }) {
+  const { control } = useFormContext<RegisterFormValues>();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { onChange, value } }) => {
+        const files: File[] = Array.isArray(value) ? value : [];
+        return (
+          <FormItem>
+            <FieldLabel en={en} ku={ku} />
+            <FormControl>
+              <Input
+                type="file"
+                accept={accept}
+                multiple
+                onChange={(e) => {
+                  const incoming = Array.from(e.target.files ?? []);
+                  const merged = [...files, ...incoming].slice(0, max);
+                  onChange(merged);
+                  e.target.value = "";
+                }}
+              />
+            </FormControl>
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {files.map((f, i) => (
+                  <li
+                    key={`${f.name}-${i}`}
+                    className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-1 text-xs"
+                  >
+                    <span className="truncate">{f.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const next = files.slice();
+                        next.splice(i, 1);
+                        onChange(next);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {files.length}/{max} selected
+            </p>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+}
+
 // -------------------- Steps --------------------
 
 export function Step1() {
@@ -588,6 +649,58 @@ export function Step6() {
         <TextField name="agentEmail" en="Agent Email" type="email" />
         <TextField name="agentPhone" en="Agent Phone Number" type="tel" />
       </div>
+    </div>
+  );
+}
+
+export function Step7() {
+  return (
+    <div className="space-y-6">
+      <SectionTitle sub="Media Uploads / بارکردنی میدیا">Step 7</SectionTitle>
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+        Accepted formats: images (JPG, PNG, WEBP) up to 5MB · audio (MP3, WAV, M4A) up to 15MB · documents (PDF, DOC, DOCX) up to 5MB.
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <FileField
+          name="headshot"
+          en="Headshot"
+          ku="وێنەی سەروشانە"
+          accept="image/jpeg,image/png,image/webp"
+        />
+        <FileField
+          name="fullBodyPhoto"
+          en="Full-Body Photo"
+          ku="وێنەی تەواوی جەستە"
+          accept="image/jpeg,image/png,image/webp"
+        />
+      </div>
+      <MultiFileField
+        name="mediumShots"
+        en="Medium Shots (up to 4)"
+        ku="وێنەی مامناوەند"
+        accept="image/jpeg,image/png,image/webp"
+        max={4}
+      />
+      <div className="grid gap-4 md:grid-cols-2">
+        <FileField
+          name="voiceReel"
+          en="Voice Reel"
+          ku="نموونەی دەنگ"
+          accept="audio/*"
+        />
+        <FileField
+          name="cv"
+          en="CV / Resume"
+          ku="سی ڤی"
+          accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        />
+      </div>
+      <TextField
+        name="showreelLink"
+        en="Showreel Link"
+        ku="بەستەری شۆڕیڵ"
+        placeholder="https://youtube.com/... or https://vimeo.com/..."
+      />
     </div>
   );
 }

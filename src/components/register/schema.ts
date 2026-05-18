@@ -86,6 +86,74 @@ export const registerSchema = z.object({
   agency: z.string().trim().max(120).optional().or(z.literal("")),
   agentEmail: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   agentPhone: z.string().trim().max(30).optional().or(z.literal("")),
+
+  // Step 7 — Media Uploads
+  headshot: z
+    .any()
+    .refine((f) => f instanceof File, "Headshot is required")
+    .refine(
+      (f) => !f || (f instanceof File && f.size <= 5 * 1024 * 1024),
+      "Max 5MB",
+    )
+    .refine(
+      (f) => !f || (f instanceof File && /^image\/(jpeg|png|webp)$/.test(f.type)),
+      "JPG, PNG, or WEBP only",
+    ),
+  mediumShots: z
+    .array(z.any())
+    .max(4, "Up to 4 images")
+    .default([])
+    .refine(
+      (arr) => arr.every((f) => f instanceof File && f.size <= 5 * 1024 * 1024),
+      "Each image must be under 5MB",
+    )
+    .refine(
+      (arr) => arr.every((f) => f instanceof File && /^image\/(jpeg|png|webp)$/.test(f.type)),
+      "JPG, PNG, or WEBP only",
+    ),
+  fullBodyPhoto: z
+    .any()
+    .refine((f) => f instanceof File, "Full-body photo is required")
+    .refine(
+      (f) => !f || (f instanceof File && f.size <= 5 * 1024 * 1024),
+      "Max 5MB",
+    )
+    .refine(
+      (f) => !f || (f instanceof File && /^image\/(jpeg|png|webp)$/.test(f.type)),
+      "JPG, PNG, or WEBP only",
+    ),
+  voiceReel: z
+    .any()
+    .optional()
+    .refine(
+      (f) => !f || (f instanceof File && f.size <= 15 * 1024 * 1024),
+      "Max 15MB",
+    )
+    .refine(
+      (f) => !f || (f instanceof File && /^audio\//.test(f.type)),
+      "Audio files only (mp3, wav, m4a)",
+    ),
+  cv: z
+    .any()
+    .optional()
+    .refine(
+      (f) => !f || (f instanceof File && f.size <= 5 * 1024 * 1024),
+      "Max 5MB",
+    )
+    .refine(
+      (f) =>
+        !f ||
+        (f instanceof File &&
+          /(pdf|msword|officedocument\.wordprocessingml\.document)/.test(f.type)),
+      "PDF or DOC/DOCX only",
+    ),
+  showreelLink: z
+    .string()
+    .trim()
+    .max(500)
+    .url("Enter a valid URL")
+    .optional()
+    .or(z.literal("")),
 }).superRefine((val, ctx) => {
   if (val.drivingLicense && val.drivingLicense !== "none" && !val.drivingLicenseFile) {
     ctx.addIssue({
@@ -115,4 +183,5 @@ export const STEP_FIELDS: (keyof RegisterFormValues)[][] = [
   ["nativeLanguage", "otherLanguages", "fluency", "kurdishDialect", "accents"],
   ["yearsOfExperience", "filmCredits", "tvCredits", "theatreCredits", "commercialCredits", "training", "workshops"],
   ["agentName", "agency", "agentEmail", "agentPhone"],
+  ["headshot", "mediumShots", "fullBodyPhoto", "voiceReel", "cv", "showreelLink"],
 ];

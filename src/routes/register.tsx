@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
-import { Step1, Step2, Step3, Step4, Step5, Step6 } from "@/components/register/Steps";
+import { Step1, Step2, Step3, Step4, Step5, Step6, Step7 } from "@/components/register/Steps";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -23,6 +23,7 @@ const STEPS = [
   { label: "Languages", render: <Step4 /> },
   { label: "Experience", render: <Step5 /> },
   { label: "Agent", render: <Step6 /> },
+  { label: "Media", render: <Step7 /> },
 ];
 
 function RegisterPage() {
@@ -42,6 +43,7 @@ function RegisterPage() {
       filmCredits: [], tvCredits: [], theatreCredits: [], commercialCredits: [],
       training: [], workshops: "",
       agentName: "", agency: "", agentEmail: "", agentPhone: "",
+      mediumShots: [], showreelLink: "",
     },
   });
 
