@@ -12,7 +12,10 @@ import {
   getApplicationDetail,
   addAdminNote,
   deleteAdminNote,
+  importDemoTalents,
 } from "@/lib/admin.functions";
+import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-talents-csv";
+import { Download, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,12 +40,13 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
-  const { isStaff, loading } = useAuth();
+  const { isStaff, isAdmin, loading } = useAuth();
   if (loading) return <div className="p-8">Loading…</div>;
   if (!isStaff) return <div className="p-8 text-destructive">Forbidden — staff only.</div>;
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-semibold mb-6">Admin Panel</h1>
+      {isAdmin && <ImportDemoTalentsCard />}
       <Tabs defaultValue="applications">
         <TabsList>
           <TabsTrigger value="applications">Applications</TabsTrigger>
@@ -52,6 +56,147 @@ function AdminPage() {
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
       </Tabs>
     </main>
+  );
+}
+
+function ImportDemoTalentsCard() {
+  const importFn = useServerFn(importDemoTalents);
+  const qc = useQueryClient();
+  const [csv, setCsv] = useState<string>("");
+  const [open, setOpen] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    created: number;
+    skipped: number;
+    failed: number;
+    results: Array<{ email: string; ok: boolean; error?: string }>;
+  } | null>(null);
+
+  const mut = useMutation({
+    mutationFn: () => importFn({ data: csv.trim() ? { csv } : {} }),
+    onSuccess: (res) => {
+      setLastResult(res);
+      toast.success(
+        `Imported ${res.created} talent${res.created === 1 ? "" : "s"}` +
+          (res.skipped ? ` · ${res.skipped} skipped` : "") +
+          (res.failed ? ` · ${res.failed} failed` : ""),
+      );
+      qc.invalidateQueries({ queryKey: ["admin-applications"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Import failed"),
+  });
+
+  const downloadSample = () => {
+    const blob = new Blob([DEMO_TALENTS_SAMPLE_CSV], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "demo-talents-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onFile = async (file: File) => {
+    const text = await file.text();
+    setCsv(text);
+    setOpen(true);
+  };
+
+  return (
+    <Card className="mb-6 border-dashed">
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
+        <div>
+          <CardTitle className="text-base">Import demo talents</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Admin only · seeds auth users + published profiles from a CSV file.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={downloadSample}>
+            <Download className="size-4 mr-2" /> Sample CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCsv("");
+              setOpen(true);
+            }}
+          >
+            <Upload className="size-4 mr-2" /> Paste / upload CSV
+          </Button>
+          <Button
+            size="sm"
+            disabled={mut.isPending}
+            onClick={() => mut.mutate()}
+          >
+            {mut.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+            Seed 3 demo talents
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Expected columns:</span>{" "}
+          <code className="text-[11px]">{DEMO_TALENTS_CSV_HEADERS.join(", ")}</code>.
+          Categories use <code>;</code> separator (allowed: actor, actress, model,
+          performer, voice_talent). Existing emails are skipped.
+        </div>
+        {lastResult && (
+          <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1 max-h-48 overflow-auto">
+            <p className="font-medium">
+              Result: {lastResult.created} created · {lastResult.skipped} skipped ·{" "}
+              {lastResult.failed} failed
+            </p>
+            <ul className="space-y-0.5">
+              {lastResult.results.map((r, i) => (
+                <li key={i} className={r.ok ? "" : "text-destructive"}>
+                  {r.ok ? (r.error ? "↺" : "✓") : "✕"} {r.email}
+                  {r.error ? ` — ${r.error}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import talents from CSV</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onFile(f);
+              }}
+            />
+            <Textarea
+              value={csv}
+              onChange={(e) => setCsv(e.target.value)}
+              rows={10}
+              placeholder={DEMO_TALENTS_SAMPLE_CSV}
+              className="font-mono text-xs"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setOpen(false);
+                  mut.mutate();
+                }}
+                disabled={mut.isPending || csv.trim().length === 0}
+              >
+                Import
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
 
