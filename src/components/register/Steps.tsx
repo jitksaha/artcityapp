@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { useFieldArray, useFormContext, Control } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, FileText, Music, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   FormControl,
@@ -235,6 +236,76 @@ function DateField({ name, en, ku, required }: any) {
   );
 }
 
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function ImagePreview({ file, className }: { file: File; className?: string }) {
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  if (!url) return null;
+  return (
+    <img
+      src={url}
+      alt={file.name}
+      className={cn("rounded-md border border-border object-cover", className)}
+    />
+  );
+}
+
+function AudioPreview({ file }: { file: File }) {
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    const u = URL.createObjectURL(file);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  if (!url) return null;
+  return <audio controls src={url} className="mt-2 w-full" />;
+}
+
+function FilePreview({ file }: { file: File }) {
+  const isImage = file.type.startsWith("image/");
+  const isAudio = file.type.startsWith("audio/");
+  if (isImage) {
+    return (
+      <div className="mt-2 flex items-center gap-3">
+        <ImagePreview file={file} className="h-24 w-24" />
+        <div className="text-xs text-muted-foreground">
+          <p className="font-medium text-foreground truncate max-w-[200px]">{file.name}</p>
+          <p>{formatBytes(file.size)}</p>
+        </div>
+      </div>
+    );
+  }
+  if (isAudio) {
+    return (
+      <div className="mt-2 space-y-1">
+        <div className="flex items-center gap-2 text-xs">
+          <Music className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium truncate">{file.name}</span>
+          <span className="text-muted-foreground">· {formatBytes(file.size)}</span>
+        </div>
+        <AudioPreview file={file} />
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
+      <FileText className="h-4 w-4 text-muted-foreground" />
+      <span className="font-medium truncate">{file.name}</span>
+      <span className="text-muted-foreground">· {formatBytes(file.size)}</span>
+      <span className="ml-auto text-emerald-600 dark:text-emerald-400">Ready</span>
+    </div>
+  );
+}
+
 function FileField({ name, en, ku, accept, required, hint }: any) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
@@ -252,9 +323,7 @@ function FileField({ name, en, ku, accept, required, hint }: any) {
               {...rest}
             />
           </FormControl>
-          {value instanceof File && (
-            <p className="text-xs text-muted-foreground">{value.name}</p>
-          )}
+          {value instanceof File && <FilePreview file={value} />}
           {hint && (
             <p className="text-xs text-muted-foreground">{hint}</p>
           )}
@@ -292,27 +361,40 @@ function MultiFileField({
               />
             </FormControl>
             {files.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {files.map((f, i) => (
-                  <li
-                    key={`${f.name}-${i}`}
-                    className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-1 text-xs"
-                  >
-                    <span className="truncate">{f.name}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const next = files.slice();
-                        next.splice(i, 1);
-                        onChange(next);
-                      }}
+              <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                {files.map((f, i) => {
+                  const isImage = f.type.startsWith("image/");
+                  return (
+                    <li
+                      key={`${f.name}-${i}`}
+                      className="relative rounded-md border border-border bg-muted/40 p-1 text-xs"
                     >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </li>
-                ))}
+                      {isImage ? (
+                        <ImagePreview file={f} className="h-24 w-full" />
+                      ) : (
+                        <div className="flex h-24 items-center justify-center">
+                          <FileText className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <span className="truncate" title={f.name}>{f.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            const next = files.slice();
+                            next.splice(i, 1);
+                            onChange(next);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <p className="text-xs text-muted-foreground">
