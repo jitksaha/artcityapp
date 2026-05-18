@@ -224,9 +224,6 @@ function DateField({ name, en, ku, required }: any) {
                 onSelect={field.onChange}
                 disabled={(d) => d > new Date() || d < new Date("1900-01-01")}
                 initialFocus
-                captionLayout="dropdown"
-                fromYear={1925}
-                toYear={new Date().getFullYear()}
                 className={cn("p-3 pointer-events-auto")}
               />
             </PopoverContent>
