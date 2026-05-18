@@ -28,6 +28,17 @@ import { FieldLabel, SectionTitle } from "./FieldLabel";
 import type { RegisterFormValues } from "./schema";
 import { useUploads } from "./upload-context";
 import type { UploadKind } from "@/lib/upload-constraints";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type FC = Control<RegisterFormValues>;
 
@@ -459,19 +470,40 @@ function MultiFileField({
                       )}
                       <div className="mt-1 flex items-center justify-between gap-1">
                         <span className="truncate" title={f.name}>{f.name}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            const next = files.slice();
-                            next.splice(i, 1);
-                            onChange(next);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              aria-label={`Remove ${f.name}`}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove this file?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                <span className="font-medium text-foreground">{f.name}</span> will be removed from your selection. You can add it again before submitting.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  const next = files.slice();
+                                  next.splice(i, 1);
+                                  onChange(next);
+                                }}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                       {uploadKind && uploadBucket && (
                         <UploadStatusBar
