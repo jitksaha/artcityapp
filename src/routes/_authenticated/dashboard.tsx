@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { getMyTalent } from "@/lib/talents.functions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getMyTalent, submitApplication, deleteMedia } from "@/lib/talents.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -21,20 +24,74 @@ const STATUS_LABEL: Record<string, string> = {
   published: "Published",
 };
 
+const STATUS_HINT: Record<
+  string,
+  { tone: "default" | "warn" | "success"; icon: any; text: string }
+> = {
+  draft: { tone: "default", icon: FileEdit, text: "Finish your application and submit it for review." },
+  submitted: { tone: "default", icon: Clock, text: "Submitted. The casting team will review your profile soon." },
+  under_review: { tone: "default", icon: Clock, text: "Currently being reviewed by the casting team." },
+  needs_revision: { tone: "warn", icon: AlertCircle, text: "Admin requested changes. Update your profile and resubmit." },
+  approved: { tone: "success", icon: CheckCircle2, text: "Approved! Your profile will be published shortly." },
+  published: { tone: "success", icon: CheckCircle2, text: "Live on the public talent directory." },
+  rejected: { tone: "warn", icon: AlertCircle, text: "Application was not accepted. See feedback below." },
+};
+
 function Dashboard() {
   const fn = useServerFn(getMyTalent);
+  const submitFn = useServerFn(submitApplication);
+  const deleteFn = useServerFn(deleteMedia);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["my-talent"], queryFn: () => fn() });
+
+  const mediaUrl = (bucket: string, path: string) =>
+    bucket === "talent-media"
+      ? supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl
+      : null;
+
+  const handleResubmit = async () => {
+    try {
+      await submitFn();
+      toast.success("Resubmitted for review");
+      qc.invalidateQueries({ queryKey: ["my-talent"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to resubmit");
+    }
+  };
+
+  const handleDeleteMedia = async (id: string) => {
+    try {
+      await deleteFn({ data: { id } });
+      toast.success("Removed");
+      qc.invalidateQueries({ queryKey: ["my-talent"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Delete failed");
+    }
+  };
+
+  const status = data?.talent?.status as string | undefined;
+  const hint = status ? STATUS_HINT[status] : undefined;
+  const HintIcon = hint?.icon;
+  const canEdit = !data?.talent || status === "draft" || status === "needs_revision";
+  const canResubmit = status === "needs_revision";
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">My Application</h1>
           <p className="text-sm text-muted-foreground">Track and manage your casting profile.</p>
         </div>
-        <Button asChild>
-          <Link to="/register">{data?.talent ? "Edit profile" : "Start application"}</Link>
-        </Button>
+        <div className="flex gap-2">
+          {canResubmit && (
+            <Button onClick={handleResubmit}>
+              <Send className="mr-2 h-4 w-4" /> Resubmit for review
+            </Button>
+          )}
+          <Button asChild variant={canEdit ? "default" : "outline"}>
+            <Link to="/register">{data?.talent ? "Edit profile" : "Start application"}</Link>
+          </Button>
+        </div>
       </header>
 
       {isLoading && <p className="text-muted-foreground">Loading…</p>}
@@ -52,18 +109,33 @@ function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Status</CardTitle>
-              <Badge variant={data.talent.status === "published" ? "default" : "secondary"}>
+              <Badge variant={status === "published" || status === "approved" ? "default" : "secondary"}>
                 {STATUS_LABEL[data.talent.status] ?? data.talent.status}
               </Badge>
             </CardHeader>
-            <CardContent className="grid gap-2 text-sm">
+            <CardContent className="grid gap-3 text-sm">
+              {hint && (
+                <div
+                  className={[
+                    "flex items-start gap-2 rounded-md border p-3",
+                    hint.tone === "warn"
+                      ? "border-destructive/40 bg-destructive/10 text-destructive"
+                      : hint.tone === "success"
+                      ? "border-primary/40 bg-primary/10"
+                      : "border-border bg-muted/40",
+                  ].join(" ")}
+                >
+                  {HintIcon && <HintIcon className="mt-0.5 h-4 w-4 shrink-0" />}
+                  <span>{hint.text}</span>
+                </div>
+              )}
               <div><span className="text-muted-foreground">Name:</span> {data.talent.full_name ?? data.talent.stage_name ?? "—"}</div>
               <div><span className="text-muted-foreground">Approved:</span> {data.talent.approved ? "Yes" : "No"}</div>
               <div><span className="text-muted-foreground">Published:</span> {data.talent.published ? "Yes" : "No"}</div>
               {data.talent.admin_feedback && (
                 <div className="mt-2 rounded-md border border-border bg-muted/40 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Latest admin feedback</p>
-                  <p className="mt-1">{data.talent.admin_feedback}</p>
+                  <p className="mt-1 whitespace-pre-wrap">{data.talent.admin_feedback}</p>
                 </div>
               )}
             </CardContent>
@@ -71,14 +143,42 @@ function Dashboard() {
 
           <Card>
             <CardHeader><CardTitle>Media</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {data.media.length === 0 && <p className="text-muted-foreground text-sm">No media uploaded yet.</p>}
-              {data.media.map((m: any) => (
-                <div key={m.id} className="flex justify-between text-sm border-b border-border py-2">
-                  <span>{m.kind}</span>
-                  <span className="text-muted-foreground truncate max-w-xs">{m.path}</span>
+            <CardContent className="space-y-3">
+              {data.media.length === 0 && (
+                <p className="text-muted-foreground text-sm">No media uploaded yet.</p>
+              )}
+              {data.media.length > 0 && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {data.media.map((m: any) => {
+                    const url = mediaUrl(m.bucket, m.path);
+                    const isImage = m.mime_type?.startsWith("image/");
+                    return (
+                      <div key={m.id} className="group relative overflow-hidden rounded-md border border-border bg-muted">
+                        {isImage && url ? (
+                          <img src={url} alt={m.kind} className="aspect-square w-full object-cover" />
+                        ) : (
+                          <div className="flex aspect-square items-center justify-center p-3 text-center text-xs text-muted-foreground">
+                            <span className="capitalize">{m.kind.replace(/_/g, " ")}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs">
+                          <span className="truncate capitalize">{m.kind.replace(/_/g, " ")}</span>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMedia(m.id)}
+                              className="text-muted-foreground hover:text-destructive"
+                              aria-label="Delete media"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
 
@@ -88,7 +188,7 @@ function Dashboard() {
               {data.notes.length === 0 && <p className="text-muted-foreground text-sm">No notes yet.</p>}
               {data.notes.map((n: any) => (
                 <div key={n.id} className="rounded-md border border-border p-3 text-sm">
-                  <p>{n.note}</p>
+                  <p className="whitespace-pre-wrap">{n.note}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString()}</p>
                 </div>
               ))}
