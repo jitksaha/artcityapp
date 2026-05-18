@@ -10,12 +10,19 @@ import {
   listCastingRequests,
   updateCastingRequest,
   getApplicationDetail,
+  addAdminNote,
+  deleteAdminNote,
 } from "@/lib/admin.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -99,9 +106,14 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const detailFn = useServerFn(getApplicationDetail);
   const reviewFn = useServerFn(reviewApplication);
   const flagFn = useServerFn(toggleFlag);
+  const addNoteFn = useServerFn(addAdminNote);
+  const deleteNoteFn = useServerFn(deleteAdminNote);
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["admin-app", id], queryFn: () => detailFn({ data: { id } }) });
   const [feedback, setFeedback] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [noteVisible, setNoteVisible] = useState(false);
+  const [orderInput, setOrderInput] = useState<string>("");
 
   const mut = useMutation({
     mutationFn: (action: any) => reviewFn({ data: { id, action, feedback: feedback || undefined } }),
@@ -124,6 +136,32 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
     },
   });
 
+  const orderMut = useMutation({
+    mutationFn: (order: number) =>
+      flagFn({ data: { id, flag: "featured", value: true, order } }),
+    onSuccess: () => {
+      toast.success("Featured order saved");
+      qc.invalidateQueries({ queryKey: ["admin-applications"] });
+      qc.invalidateQueries({ queryKey: ["admin-app", id] });
+    },
+  });
+
+  const noteMut = useMutation({
+    mutationFn: () =>
+      addNoteFn({ data: { talent_id: id, note: noteText, visible_to_applicant: noteVisible } }),
+    onSuccess: () => {
+      toast.success("Note added");
+      setNoteText("");
+      qc.invalidateQueries({ queryKey: ["admin-app", id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const noteDelMut = useMutation({
+    mutationFn: (noteId: string) => deleteNoteFn({ data: { id: noteId } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-app", id] }),
+  });
+
   const t = data?.talent;
 
   return (
@@ -143,7 +181,7 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
             </div>
             {t.bio && <p className="text-sm">{t.bio}</p>}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant={t.vip ? "default" : "outline"}
                 onClick={() => flagMut.mutate({ flag: "vip", value: !t.vip })}>VIP</Button>
               <Button size="sm" variant={t.featured ? "default" : "outline"}
@@ -152,6 +190,21 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
                 onClick={() => flagMut.mutate({ flag: "visible_publicly", value: !t.visible_publicly })}>
                 Visible
               </Button>
+              {t.featured && (
+                <div className="ml-2 flex items-center gap-1">
+                  <Input
+                    type="number"
+                    placeholder="order"
+                    className="h-8 w-20"
+                    defaultValue={t.featured_order ?? ""}
+                    onChange={(e) => setOrderInput(e.target.value)}
+                  />
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const n = parseInt(orderInput || String(t.featured_order ?? 0), 10);
+                    if (!Number.isNaN(n)) orderMut.mutate(n);
+                  }}>Save order</Button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -172,13 +225,82 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
 
             <div>
               <h3 className="font-semibold text-sm mb-2">Media ({data.media.length})</h3>
-              <ul className="text-xs space-y-1">
-                {data.media.map((m: any) => (
-                  <li key={m.id} className="flex justify-between border-b border-border py-1">
-                    <span>{m.kind}</span>
-                    <span className="truncate max-w-xs text-muted-foreground">{m.path}</span>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {data.media.map((m: any) => {
+                  const isImg = m.mime_type?.startsWith("image/");
+                  const url = m.bucket === "talent-media"
+                    ? supabase.storage.from("talent-media").getPublicUrl(m.path).data.publicUrl
+                    : null;
+                  return (
+                    <div key={m.id} className="overflow-hidden rounded-md border border-border bg-muted">
+                      {isImg && url ? (
+                        <img src={url} alt={m.kind} className="aspect-square w-full object-cover" />
+                      ) : (
+                        <div className="flex aspect-square items-center justify-center p-2 text-center text-[10px] text-muted-foreground">
+                          {m.kind}
+                        </div>
+                      )}
+                      <p className="truncate px-2 py-1 text-[10px] capitalize">{m.kind.replace(/_/g, " ")}</p>
+                    </div>
+                  );
+                })}
+                {data.media.length === 0 && (
+                  <p className="col-span-full text-xs text-muted-foreground">No media uploaded.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold text-sm">Admin Notes ({data.notes.length})</h3>
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Internal note or message…"
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Switch id="note-vis" checked={noteVisible} onCheckedChange={setNoteVisible} />
+                    <Label htmlFor="note-vis" className="text-xs">Visible to applicant</Label>
+                  </div>
+                  <Button size="sm" disabled={!noteText.trim() || noteMut.isPending} onClick={() => noteMut.mutate()}>
+                    Add note
+                  </Button>
+                </div>
+              </div>
+              <ul className="space-y-2">
+                {data.notes.map((n: any) => (
+                  <li key={n.id} className="rounded-md border border-border p-2 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="whitespace-pre-wrap">{n.note}</p>
+                      <button
+                        type="button"
+                        onClick={() => noteDelMut.mutate(n.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Delete note"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>{new Date(n.created_at).toLocaleString()}</span>
+                      {n.visible_to_applicant ? <Badge variant="secondary" className="text-[9px]">Shared</Badge> : <span>Internal</span>}
+                    </div>
                   </li>
                 ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-sm mb-2">Status History</h3>
+              <ul className="text-xs space-y-1">
+                {data.logs.map((l: any) => (
+                  <li key={l.id} className="flex justify-between border-b border-border py-1 text-muted-foreground">
+                    <span>{l.from_status ?? "—"} → {l.to_status}</span>
+                    <span>{new Date(l.created_at).toLocaleString()}</span>
+                  </li>
+                ))}
+                {data.logs.length === 0 && <li className="text-muted-foreground">No status changes yet.</li>}
               </ul>
             </div>
           </div>
