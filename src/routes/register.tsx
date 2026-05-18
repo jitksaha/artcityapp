@@ -16,6 +16,7 @@ import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
 import { SiteHeader } from "@/components/SiteHeader";
+import { UploadContext, type UploadContextValue } from "@/components/register/upload-context";
 
 export const Route = createFileRoute("/register")({
   beforeLoad: async ({ location }) => {
@@ -60,6 +61,18 @@ function RegisterPage() {
 
   const patchUpload = (key: string, patch: Partial<UploadItem>) =>
     setUploads((prev) => prev.map((u) => (u.key === key ? { ...u, ...patch } : u)));
+
+  const uploadKey = (kind: UploadKind, file: File, position?: number) =>
+    `${kind}-${position ?? 0}-${file.name}`;
+
+  const upsertUploadItem = (item: UploadItem) =>
+    setUploads((prev) => {
+      const i = prev.findIndex((u) => u.key === item.key);
+      if (i === -1) return [...prev, item];
+      const next = prev.slice();
+      next[i] = { ...next[i], ...item };
+      return next;
+    });
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema) as any,
@@ -145,7 +158,7 @@ function RegisterPage() {
       position?: number,
     ) =>
       list.push({
-        key: `${kind}-${position ?? 0}-${file.name}`,
+        key: uploadKey(kind, file, position),
         kind, bucket, file, position,
         fileName: file.name,
         progress: 0,
@@ -161,6 +174,43 @@ function RegisterPage() {
     if (values.drivingLicenseFile instanceof File)
       push("driving_license", "talent-docs", values.drivingLicenseFile);
     return list;
+  };
+
+  const uploadOne: UploadContextValue["uploadOne"] = async ({ kind, bucket, file, position }) => {
+    const key = uploadKey(kind, file, position);
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user.id;
+    if (!userId) {
+      toast.error("Sign in to upload");
+      return;
+    }
+    const item: UploadItem = {
+      key, kind, bucket, file, position,
+      fileName: file.name,
+      progress: 0,
+      status: "pending",
+    };
+    upsertUploadItem(item);
+    try {
+      const path = await runUpload(userId, item);
+      if (path && kind === "headshot") {
+        const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
+        const payload: any = buildDraftPayload(form.getValues());
+        await saveDraftFn({ data: { ...payload, headshot_url: url } });
+      }
+      toast.success(`${file.name} uploaded`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    }
+  };
+
+  const uploadCtx: UploadContextValue = {
+    uploadKey,
+    getStatus: (key) => {
+      const u = uploads.find((x) => x.key === key);
+      return u ? { progress: u.progress, status: u.status, error: u.error } : undefined;
+    },
+    uploadOne,
   };
 
   const runUpload = async (userId: string, item: UploadItem): Promise<string | null> => {
@@ -319,6 +369,7 @@ function RegisterPage() {
 
         <Card>
           <CardContent className="p-6 md:p-8">
+            <UploadContext.Provider value={uploadCtx}>
             <FormProvider {...form}>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -395,6 +446,7 @@ function RegisterPage() {
                 </form>
               </Form>
             </FormProvider>
+            </UploadContext.Provider>
           </CardContent>
         </Card>
       </div>
