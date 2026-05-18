@@ -176,43 +176,6 @@ function RegisterPage() {
     return list;
   };
 
-  const uploadOne: UploadContextValue["uploadOne"] = async ({ kind, bucket, file, position }) => {
-    const key = uploadKey(kind, file, position);
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user.id;
-    if (!userId) {
-      toast.error("Sign in to upload");
-      return;
-    }
-    const item: UploadItem = {
-      key, kind, bucket, file, position,
-      fileName: file.name,
-      progress: 0,
-      status: "pending",
-    };
-    upsertUploadItem(item);
-    try {
-      const path = await runUpload(userId, item);
-      if (path && kind === "headshot") {
-        const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
-        const payload: any = buildDraftPayload(form.getValues());
-        await saveDraftFn({ data: { ...payload, headshot_url: url } });
-      }
-      toast.success(`${file.name} uploaded`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Upload failed");
-    }
-  };
-
-  const uploadCtx: UploadContextValue = {
-    uploadKey,
-    getStatus: (key) => {
-      const u = uploads.find((x) => x.key === key);
-      return u ? { progress: u.progress, status: u.status, error: u.error } : undefined;
-    },
-    uploadOne,
-  };
-
   const runUpload = async (userId: string, item: UploadItem): Promise<string | null> => {
     const preflight = validateUpload(item.kind, item.file);
     if (preflight) {
