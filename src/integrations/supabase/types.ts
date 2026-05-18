@@ -379,6 +379,39 @@ export type Database = {
         }
         Relationships: []
       }
+      talent_submissions: {
+        Row: {
+          created_at: string
+          id: string
+          media_snapshot: Json
+          snapshot: Json
+          submitted_at: string
+          talent_id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          media_snapshot?: Json
+          snapshot: Json
+          submitted_at?: string
+          talent_id: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          media_snapshot?: Json
+          snapshot?: Json
+          submitted_at?: string
+          talent_id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -413,6 +446,10 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      record_talent_submission: {
+        Args: { _talent_id: string }
+        Returns: number
+      }
       seed_published_talent: {
         Args: { _actor: string; _payload: Json; _user_id: string }
         Returns: string
