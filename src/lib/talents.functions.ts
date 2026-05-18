@@ -179,6 +179,8 @@ export const listPublicTalents = createServerFn({ method: "GET" })
     if (data?.q) q = q.ilike("stage_name", `%${data.q}%`);
     if (data?.gender) q = q.eq("gender", data.gender);
     if (data?.category) q = q.contains("categories", [data.category]);
+    if (data?.language) q = q.ilike("native_language", `%${data.language}%`);
+    if (data?.location) q = q.ilike("location", `%${data.location}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
