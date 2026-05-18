@@ -167,7 +167,7 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
 
     const { data: talent } = await supabase
       .from("talent_profiles")
-      .select("id")
+      .select("id, status, revision_count")
       .eq("user_id", userId)
       .maybeSingle();
     if (!talent) throw new Error("Create draft first");
@@ -178,6 +178,18 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
       size_bytes: actualSize || data.size_bytes,
     });
     if (error) throw new Error(error.message);
+
+    // When uploading during a revision request, append a status log entry so
+    // admins can see exactly which assets were refreshed before resubmission.
+    if (talent.status === "needs_revision") {
+      await supabase.from("status_logs").insert({
+        talent_id: talent.id,
+        actor_id: userId,
+        from_status: "needs_revision",
+        to_status: "needs_revision",
+        reason: `Applicant uploaded updated ${rule.label} (revision in progress).`,
+      });
+    }
     return { ok: true };
   });
 
