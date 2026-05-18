@@ -183,3 +183,36 @@ export const updateCastingRequest = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const addAdminNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        talent_id: z.string().uuid(),
+        note: z.string().min(1).max(4000),
+        visible_to_applicant: z.boolean().default(false),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { error } = await context.supabase.from("admin_notes").insert({
+      talent_id: data.talent_id,
+      author_id: context.userId,
+      note: data.note,
+      visible_to_applicant: data.visible_to_applicant,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteAdminNote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { error } = await context.supabase.from("admin_notes").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
