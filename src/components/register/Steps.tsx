@@ -852,6 +852,9 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Clear face shot, JPG/PNG/WEBP, max 5MB"
+          uploadKind="headshot"
+          uploadBucket="talent-media"
+          uploadPosition={0}
         />
         <FileField
           name="fullBodyPhoto"
@@ -860,6 +863,9 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Head-to-toe photo, JPG/PNG/WEBP, max 5MB"
+          uploadKind="fullbody"
+          uploadBucket="talent-media"
+          uploadPosition={1}
         />
       </div>
       <MultiFileField
@@ -869,6 +875,9 @@ export function Step7() {
         accept="image/jpeg,image/png,image/webp"
         max={4}
         hint="Optional · Waist-up shots, JPG/PNG/WEBP, max 5MB each"
+        uploadKind="medium"
+        uploadBucket="talent-media"
+        uploadPositionStart={10}
       />
       <div className="grid gap-4 md:grid-cols-2">
         <FileField
@@ -877,6 +886,8 @@ export function Step7() {
           ku="نموونەی دەنگ"
           accept="audio/*"
           hint="Optional · MP3/WAV/M4A, max 15MB"
+          uploadKind="voice_reel"
+          uploadBucket="talent-media"
         />
         <FileField
           name="cv"
@@ -884,6 +895,8 @@ export function Step7() {
           ku="سی ڤی"
           accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           hint="Optional · PDF or DOC/DOCX, max 5MB"
+          uploadKind="cv"
+          uploadBucket="talent-docs"
         />
       </div>
       <TextField
