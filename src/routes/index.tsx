@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -8,8 +9,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="max-w-2xl text-center space-y-6">
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="flex items-center justify-center px-4 py-24">
+        <div className="max-w-2xl text-center space-y-6">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Art City Casting
         </p>
@@ -20,10 +23,12 @@ function Index() {
           Apply to join Art City's curated talent roster. All profiles are reviewed by admin
           before being published.
         </p>
-        <Button asChild size="lg">
-          <Link to="/register">Start Application</Link>
-        </Button>
-      </div>
-    </main>
+        <div className="flex justify-center gap-3">
+          <Button asChild size="lg"><Link to="/register">Start Application</Link></Button>
+          <Button asChild variant="outline" size="lg"><Link to="/talents">Browse Talents</Link></Button>
+        </div>
+        </div>
+      </main>
+    </div>
   );
 }
