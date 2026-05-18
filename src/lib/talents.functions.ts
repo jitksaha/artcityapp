@@ -77,6 +77,8 @@ export const submitApplication = createServerFn({ method: "POST" })
       })
       .eq("id", existing.id);
     if (error) throw new Error(error.message);
+    // Record an immutable snapshot of the profile + media as it was submitted.
+    await supabase.rpc("record_talent_submission", { _talent_id: existing.id });
     if (isRevision) {
       // Append an applicant-authored status log entry alongside the trigger-generated one
       await supabase.from("status_logs").insert({
@@ -100,7 +102,7 @@ export const getMyTalent = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!talent) return { talent: null, media: [], notes: [], logs: [] };
-    const [{ data: media }, { data: notes }, { data: logs }] = await Promise.all([
+    const [{ data: media }, { data: notes }, { data: logs }, { data: submissions }] = await Promise.all([
       supabase.from("media_uploads").select("*").eq("talent_id", talent.id).order("position"),
       supabase
         .from("admin_notes")
@@ -113,8 +115,19 @@ export const getMyTalent = createServerFn({ method: "GET" })
         .select("*")
         .eq("talent_id", talent.id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("talent_submissions")
+        .select("id, version, submitted_at, snapshot, media_snapshot")
+        .eq("talent_id", talent.id)
+        .order("version", { ascending: false }),
     ]);
-    return { talent, media: media ?? [], notes: notes ?? [], logs: logs ?? [] };
+    return {
+      talent,
+      media: media ?? [],
+      notes: notes ?? [],
+      logs: logs ?? [],
+      submissions: submissions ?? [],
+    };
   });
 
 export const recordMediaUpload = createServerFn({ method: "POST" })
