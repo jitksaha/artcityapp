@@ -413,6 +413,10 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      seed_published_talent: {
+        Args: { _actor: string; _payload: Json; _user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "applicant" | "casting_manager" | "admin"
