@@ -507,6 +507,7 @@ export function Step3() {
             en="Driving License Upload"
             ku="مۆڵەتی شۆفێری"
             accept="image/*,application/pdf"
+            hint="Optional · Image or PDF, max 5MB"
           />
         )}
       </div>
@@ -660,8 +661,17 @@ export function Step7() {
   return (
     <div className="space-y-6">
       <SectionTitle sub="Media Uploads / بارکردنی میدیا">Step 7</SectionTitle>
-      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-        Accepted formats: images (JPG, PNG, WEBP) up to 5MB · audio (MP3, WAV, M4A) up to 15MB · documents (PDF, DOC, DOCX) up to 5MB.
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+        <p>
+          Before submitting, make sure you have these files ready. Items marked{" "}
+          <span className="text-destructive font-medium">Required</span> must be
+          uploaded; <span className="font-medium">Optional</span> items
+          strengthen your application.
+        </p>
+        <p>
+          Accepted: images (JPG, PNG, WEBP) up to 5MB · audio (MP3, WAV, M4A) up
+          to 15MB · documents (PDF, DOC, DOCX) up to 5MB.
+        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <FileField
@@ -669,12 +679,16 @@ export function Step7() {
           en="Headshot"
           ku="وێنەی سەروشانە"
           accept="image/jpeg,image/png,image/webp"
+          required
+          hint="Required · Clear face shot, JPG/PNG/WEBP, max 5MB"
         />
         <FileField
           name="fullBodyPhoto"
           en="Full-Body Photo"
           ku="وێنەی تەواوی جەستە"
           accept="image/jpeg,image/png,image/webp"
+          required
+          hint="Required · Head-to-toe photo, JPG/PNG/WEBP, max 5MB"
         />
       </div>
       <MultiFileField
@@ -683,6 +697,7 @@ export function Step7() {
         ku="وێنەی مامناوەند"
         accept="image/jpeg,image/png,image/webp"
         max={4}
+        hint="Optional · Waist-up shots, JPG/PNG/WEBP, max 5MB each"
       />
       <div className="grid gap-4 md:grid-cols-2">
         <FileField
@@ -690,12 +705,14 @@ export function Step7() {
           en="Voice Reel"
           ku="نموونەی دەنگ"
           accept="audio/*"
+          hint="Optional · MP3/WAV/M4A, max 15MB"
         />
         <FileField
           name="cv"
           en="CV / Resume"
           ku="سی ڤی"
           accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          hint="Optional · PDF or DOC/DOCX, max 5MB"
         />
       </div>
       <TextField
