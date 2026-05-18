@@ -27,7 +27,7 @@ export const listApplications = createServerFn({ method: "GET" })
       .select("*")
       .order("updated_at", { ascending: false })
       .limit(500);
-    if (data?.status) q = q.eq("status", data.status);
+    if (data?.status) q = q.eq("status", data.status as any);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
@@ -107,7 +107,7 @@ export const reviewApplication = createServerFn({ method: "POST" })
     }
     const { error } = await context.supabase
       .from("talent_profiles")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     if (data.feedback) {
@@ -141,7 +141,7 @@ export const toggleFlag = createServerFn({ method: "POST" })
     }
     const { error } = await context.supabase
       .from("talent_profiles")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
