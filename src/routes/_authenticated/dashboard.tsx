@@ -51,8 +51,12 @@ function Dashboard() {
 
   const handleResubmit = async () => {
     try {
-      await submitFn();
-      toast.success("Resubmitted for review");
+      const res = await submitFn();
+      toast.success(
+        res?.is_revision
+          ? `Resubmitted (revision #${res.revision_count}). The casting team will re-review.`
+          : "Submitted for review",
+      );
       qc.invalidateQueries({ queryKey: ["my-talent"] });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to resubmit");
@@ -132,6 +136,12 @@ function Dashboard() {
               <div><span className="text-muted-foreground">Name:</span> {data.talent.full_name ?? data.talent.stage_name ?? "—"}</div>
               <div><span className="text-muted-foreground">Approved:</span> {data.talent.approved ? "Yes" : "No"}</div>
               <div><span className="text-muted-foreground">Published:</span> {data.talent.published ? "Yes" : "No"}</div>
+              {(data.talent.revision_count ?? 0) > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Revisions submitted:</span>{" "}
+                  <Badge variant="secondary">#{data.talent.revision_count}</Badge>
+                </div>
+              )}
               {data.talent.admin_feedback && (
                 <div className="mt-2 rounded-md border border-border bg-muted/40 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Latest admin feedback</p>
