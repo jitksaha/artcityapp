@@ -14,16 +14,419 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          note: string
+          talent_id: string
+          visible_to_applicant: boolean
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          note: string
+          talent_id: string
+          visible_to_applicant?: boolean
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          talent_id?: string
+          visible_to_applicant?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notes_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          casting_notification_email: string | null
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          casting_notification_email?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          casting_notification_email?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      casting_requests: {
+        Row: {
+          admin_notes: string | null
+          budget_range: string | null
+          company_name: string | null
+          contact_person: string
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          phone: string | null
+          production_title: string
+          production_type: string | null
+          requested_talent_name: string | null
+          role_description: string | null
+          shooting_dates: string | null
+          shooting_location: string | null
+          status: string
+          talent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          company_name?: string | null
+          contact_person: string
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          production_title: string
+          production_type?: string | null
+          requested_talent_name?: string | null
+          role_description?: string | null
+          shooting_dates?: string | null
+          shooting_location?: string | null
+          status?: string
+          talent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          company_name?: string | null
+          contact_person?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+          production_title?: string
+          production_type?: string | null
+          requested_talent_name?: string | null
+          role_description?: string | null
+          shooting_dates?: string | null
+          shooting_location?: string | null
+          status?: string
+          talent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "casting_requests_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_uploads: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: string
+          kind: string
+          mime_type: string | null
+          path: string
+          position: number | null
+          size_bytes: number | null
+          talent_id: string
+          user_id: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: string
+          kind: string
+          mime_type?: string | null
+          path: string
+          position?: number | null
+          size_bytes?: number | null
+          talent_id: string
+          user_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          path?: string
+          position?: number | null
+          size_bytes?: number | null
+          talent_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_uploads_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      status_logs: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["application_status"] | null
+          id: string
+          reason: string | null
+          talent_id: string
+          to_status: Database["public"]["Enums"]["application_status"]
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["application_status"] | null
+          id?: string
+          reason?: string | null
+          talent_id: string
+          to_status: Database["public"]["Enums"]["application_status"]
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["application_status"] | null
+          id?: string
+          reason?: string | null
+          talent_id?: string
+          to_status?: Database["public"]["Enums"]["application_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_logs_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      talent_profiles: {
+        Row: {
+          admin_feedback: string | null
+          age: number | null
+          agent: Json
+          agreements: Json
+          approved: boolean
+          approved_at: string | null
+          availability: Json
+          basic_info: Json
+          bio: string | null
+          categories: Database["public"]["Enums"]["talent_category"][] | null
+          created_at: string
+          experience: Json
+          extra_notes: Json
+          featured: boolean
+          featured_order: number | null
+          full_name: string | null
+          gender: string | null
+          headshot_url: string | null
+          id: string
+          languages: Json
+          location: string | null
+          nationality: string | null
+          native_language: string | null
+          physical: Json
+          playing_age: string | null
+          published: boolean
+          published_at: string | null
+          reviewed_at: string | null
+          showreel_link: string | null
+          skills: Json
+          slug: string | null
+          stage_name: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+          vip: boolean
+          visible_publicly: boolean
+        }
+        Insert: {
+          admin_feedback?: string | null
+          age?: number | null
+          agent?: Json
+          agreements?: Json
+          approved?: boolean
+          approved_at?: string | null
+          availability?: Json
+          basic_info?: Json
+          bio?: string | null
+          categories?: Database["public"]["Enums"]["talent_category"][] | null
+          created_at?: string
+          experience?: Json
+          extra_notes?: Json
+          featured?: boolean
+          featured_order?: number | null
+          full_name?: string | null
+          gender?: string | null
+          headshot_url?: string | null
+          id?: string
+          languages?: Json
+          location?: string | null
+          nationality?: string | null
+          native_language?: string | null
+          physical?: Json
+          playing_age?: string | null
+          published?: boolean
+          published_at?: string | null
+          reviewed_at?: string | null
+          showreel_link?: string | null
+          skills?: Json
+          slug?: string | null
+          stage_name?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+          vip?: boolean
+          visible_publicly?: boolean
+        }
+        Update: {
+          admin_feedback?: string | null
+          age?: number | null
+          agent?: Json
+          agreements?: Json
+          approved?: boolean
+          approved_at?: string | null
+          availability?: Json
+          basic_info?: Json
+          bio?: string | null
+          categories?: Database["public"]["Enums"]["talent_category"][] | null
+          created_at?: string
+          experience?: Json
+          extra_notes?: Json
+          featured?: boolean
+          featured_order?: number | null
+          full_name?: string | null
+          gender?: string | null
+          headshot_url?: string | null
+          id?: string
+          languages?: Json
+          location?: string | null
+          nationality?: string | null
+          native_language?: string | null
+          physical?: Json
+          playing_age?: string | null
+          published?: boolean
+          published_at?: string | null
+          reviewed_at?: string | null
+          showreel_link?: string | null
+          skills?: Json
+          slug?: string | null
+          stage_name?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+          vip?: boolean
+          visible_publicly?: boolean
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "applicant" | "casting_manager" | "admin"
+      application_status:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "needs_revision"
+        | "approved"
+        | "published"
+        | "rejected"
+      talent_category:
+        | "actor"
+        | "actress"
+        | "model"
+        | "performer"
+        | "voice_talent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +553,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["applicant", "casting_manager", "admin"],
+      application_status: [
+        "draft",
+        "submitted",
+        "under_review",
+        "needs_revision",
+        "approved",
+        "published",
+        "rejected",
+      ],
+      talent_category: [
+        "actor",
+        "actress",
+        "model",
+        "performer",
+        "voice_talent",
+      ],
+    },
   },
 } as const
