@@ -235,7 +235,7 @@ function DateField({ name, en, ku, required }: any) {
   );
 }
 
-function FileField({ name, en, ku, accept }: any) {
+function FileField({ name, en, ku, accept, required, hint }: any) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -243,7 +243,7 @@ function FileField({ name, en, ku, accept }: any) {
       name={name}
       render={({ field: { onChange, value, ...rest } }) => (
         <FormItem>
-          <FieldLabel en={en} ku={ku} />
+          <FieldLabel en={en} ku={ku} required={required} />
           <FormControl>
             <Input
               type="file"
@@ -255,6 +255,9 @@ function FileField({ name, en, ku, accept }: any) {
           {value instanceof File && (
             <p className="text-xs text-muted-foreground">{value.name}</p>
           )}
+          {hint && (
+            <p className="text-xs text-muted-foreground">{hint}</p>
+          )}
           <FormMessage />
         </FormItem>
       )}
@@ -263,8 +266,8 @@ function FileField({ name, en, ku, accept }: any) {
 }
 
 function MultiFileField({
-  name, en, ku, accept, max = 4,
-}: { name: any; en: string; ku?: string; accept?: string; max?: number }) {
+  name, en, ku, accept, max = 4, required, hint,
+}: { name: any; en: string; ku?: string; accept?: string; max?: number; required?: boolean; hint?: string }) {
   const { control } = useFormContext<RegisterFormValues>();
   return (
     <FormField
@@ -274,7 +277,7 @@ function MultiFileField({
         const files: File[] = Array.isArray(value) ? value : [];
         return (
           <FormItem>
-            <FieldLabel en={en} ku={ku} />
+            <FieldLabel en={en} ku={ku} required={required} />
             <FormControl>
               <Input
                 type="file"
@@ -313,7 +316,7 @@ function MultiFileField({
               </ul>
             )}
             <p className="text-xs text-muted-foreground">
-              {files.length}/{max} selected
+              {files.length}/{max} selected{hint ? ` · ${hint}` : ""}
             </p>
             <FormMessage />
           </FormItem>
