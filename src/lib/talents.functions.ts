@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabase } from "@/integrations/supabase/client";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 
 const profilePayload = z.object({
@@ -228,7 +228,7 @@ export const listPublicTalents = createServerFn({ method: "GET" })
       .parse(i),
   )
   .handler(async ({ data }) => {
-    let q = supabaseAdmin
+    let q = supabase
       .from("talent_profiles")
       .select(PUBLIC_COLS)
       .eq("approved", true)
@@ -252,7 +252,7 @@ export const listPublicTalents = createServerFn({ method: "GET" })
 export const getPublicTalent = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ slug: z.string().max(160) }).parse(i))
   .handler(async ({ data }) => {
-    const { data: talent } = await supabaseAdmin
+    const { data: talent } = await supabase
       .from("talent_profiles")
       .select("*")
       .eq("slug", data.slug)
@@ -261,7 +261,7 @@ export const getPublicTalent = createServerFn({ method: "GET" })
       .eq("visible_publicly", true)
       .maybeSingle();
     if (!talent) return null;
-    const { data: media } = await supabaseAdmin
+    const { data: media } = await supabase
       .from("media_uploads")
       .select("id, kind, bucket, path, position")
       .eq("talent_id", talent.id)
