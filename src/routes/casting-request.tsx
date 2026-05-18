@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SiteHeader } from "@/components/SiteHeader";
+import { AppErrorFallback } from "@/components/AppErrorFallback";
 
 export const Route = createFileRoute("/casting-request")({
   component: CastingRequestPage,
+  errorComponent: ({ error, reset }) => <AppErrorFallback error={error} reset={reset} />,
   head: () => ({
     meta: [
       { title: "Casting Request — Art City Casting" },
