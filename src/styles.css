@@ -142,3 +142,12 @@
     color: var(--color-foreground);
   }
 }
+
+/* NProgress — themed to design tokens */
+#nprogress .bar {
+  background: var(--primary) !important;
+  height: 2px !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px var(--primary), 0 0 5px var(--primary) !important;
+}
