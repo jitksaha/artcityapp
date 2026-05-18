@@ -283,6 +283,7 @@ export type Database = {
           published: boolean
           published_at: string | null
           reviewed_at: string | null
+          revision_count: number
           showreel_link: string | null
           skills: Json
           slug: string | null
@@ -323,6 +324,7 @@ export type Database = {
           published?: boolean
           published_at?: string | null
           reviewed_at?: string | null
+          revision_count?: number
           showreel_link?: string | null
           skills?: Json
           slug?: string | null
@@ -363,6 +365,7 @@ export type Database = {
           published?: boolean
           published_at?: string | null
           reviewed_at?: string | null
+          revision_count?: number
           showreel_link?: string | null
           skills?: Json
           slug?: string | null
