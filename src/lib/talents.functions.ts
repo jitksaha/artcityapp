@@ -189,10 +189,7 @@ export const getPublicTalent = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: talent } = await supabaseAdmin
       .from("talent_profiles")
-      .select(
-        PUBLIC_COLS +
-          ", basic_info, physical, skills, languages, experience, availability",
-      )
+      .select("*")
       .eq("slug", data.slug)
       .eq("approved", true)
       .eq("published", true)
