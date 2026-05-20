@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 
-export const Route = createFileRoute("/talents")({
+export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
   head: () => ({
     meta: [

@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as TalentsRouteImport } from './routes/talents'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -19,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as CastingRequestRouteImport } from './routes/casting-request'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TalentsIndexRouteImport } from './routes/talents.index'
 import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -31,11 +31,6 @@ import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TalentsRoute = TalentsRouteImport.update({
-  id: '/talents',
-  path: '/talents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -75,6 +70,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TalentsIndexRoute = TalentsIndexRouteImport.update({
+  id: '/talents/',
+  path: '/talents/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TalentsSlugRoute = TalentsSlugRouteImport.update({
@@ -126,12 +126,12 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/talents': typeof TalentsRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/talents/': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
@@ -145,12 +145,12 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/talents': typeof TalentsRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/talents': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
@@ -166,12 +166,12 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/talents': typeof TalentsRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/talents/': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
@@ -187,12 +187,12 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signup'
-    | '/talents'
     | '/verify-email'
     | '/admin'
     | '/dashboard'
     | '/preview'
     | '/talents/$slug'
+    | '/talents/'
     | '/api/public/casting-request'
     | '/api/public/embed.js'
     | '/api/public/signup'
@@ -206,12 +206,12 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signup'
-    | '/talents'
     | '/verify-email'
     | '/admin'
     | '/dashboard'
     | '/preview'
     | '/talents/$slug'
+    | '/talents'
     | '/api/public/casting-request'
     | '/api/public/embed.js'
     | '/api/public/signup'
@@ -226,12 +226,12 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/signup'
-    | '/talents'
     | '/verify-email'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/preview'
     | '/talents/$slug'
+    | '/talents/'
     | '/api/public/casting-request'
     | '/api/public/embed.js'
     | '/api/public/signup'
@@ -247,8 +247,8 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  TalentsRoute: typeof TalentsRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
+  TalentsIndexRoute: typeof TalentsIndexRoute
   ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
   ApiPublicEmbedDotjsRoute: typeof ApiPublicEmbedDotjsRoute
   ApiPublicSignupRoute: typeof ApiPublicSignupRoute
@@ -262,13 +262,6 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/talents': {
-      id: '/talents'
-      path: '/talents'
-      fullPath: '/talents'
-      preLoaderRoute: typeof TalentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -325,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/talents/': {
+      id: '/talents/'
+      path: '/talents'
+      fullPath: '/talents/'
+      preLoaderRoute: typeof TalentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/talents/$slug': {
@@ -402,17 +402,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface TalentsRouteChildren {
-  TalentsSlugRoute: typeof TalentsSlugRoute
-}
-
-const TalentsRouteChildren: TalentsRouteChildren = {
-  TalentsSlugRoute: TalentsSlugRoute,
-}
-
-const TalentsRouteWithChildren =
-  TalentsRoute._addFileChildren(TalentsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -422,8 +411,8 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  TalentsRoute: TalentsRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
+  TalentsIndexRoute: TalentsIndexRoute,
   ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
   ApiPublicEmbedDotjsRoute: ApiPublicEmbedDotjsRoute,
   ApiPublicSignupRoute: ApiPublicSignupRoute,
@@ -432,3 +421,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
