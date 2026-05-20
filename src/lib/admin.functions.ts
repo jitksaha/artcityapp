@@ -247,6 +247,49 @@ async function assertAdmin(supabase: any, userId: string) {
   if (!roles.includes("admin")) throw new Error("Forbidden: admin only");
 }
 
+export const getAppSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context.supabase, context.userId);
+    const { data, error } = await context.supabase
+      .from("app_settings")
+      .select("casting_notification_email, updated_at")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ?? { casting_notification_email: null, updated_at: null };
+  });
+
+export const updateAppSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        casting_notification_email: z
+          .string()
+          .trim()
+          .email("Must be a valid email")
+          .max(255)
+          .nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { error } = await supabaseAdmin
+      .from("app_settings")
+      .upsert(
+        {
+          id: 1,
+          casting_notification_email: data.casting_notification_email,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const importDemoTalents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
