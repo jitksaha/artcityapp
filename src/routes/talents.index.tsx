@@ -160,16 +160,16 @@ function TalentsPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-3 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur">
-          <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
-          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
+        <div className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+          <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:col-span-2" />
+          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
             <option value="">All genders</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="non_binary">Non-binary</option>
             <option value="other">Other</option>
           </select>
-          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={category ?? ""} onChange={(e) => setCategory(e.target.value || undefined)}>
+          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={category ?? ""} onChange={(e) => setCategory(e.target.value || undefined)}>
             <option value="">All categories</option>
             <option value="actor">Actor</option>
             <option value="actress">Actress</option>
@@ -177,39 +177,49 @@ function TalentsPage() {
             <option value="performer">Performer</option>
             <option value="voice_talent">Voice talent</option>
           </select>
-          <Input placeholder="Language" value={language} onChange={(e) => setLanguage(e.target.value)} className="max-w-[160px]" />
-          <Input placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} className="max-w-[180px]" />
-          <Input placeholder="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} className="max-w-[160px]" />
-          <Input placeholder="Playing age (e.g. 25-35)" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} className="max-w-[180px]" />
-          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="max-w-[110px]" />
-          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="max-w-[110px]" />
-          <Input placeholder="Skills (e.g. acting, dancing)" value={skills} onChange={(e) => setSkills(e.target.value)} className="max-w-[220px]" />
-          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={availability ?? ""} onChange={(e) => setAvailability(e.target.value || undefined)}>
+          <Input placeholder="Language" value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full" />
+          <Input placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full" />
+          <Input placeholder="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} className="w-full" />
+          <Input placeholder="Playing age (e.g. 25-35)" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} className="w-full" />
+          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="w-full" />
+          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="w-full" />
+          <Input placeholder="Skills (e.g. acting, dancing)" value={skills} onChange={(e) => setSkills(e.target.value)} className="w-full sm:col-span-2" />
+          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={availability ?? ""} onChange={(e) => setAvailability(e.target.value || undefined)}>
             <option value="">Any availability</option>
             <option value="available">Available</option>
             <option value="limited">Limited</option>
             <option value="unavailable">Unavailable</option>
           </select>
-          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
+          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
             <option value="">Any experience</option>
             <option value="beginner">Beginner</option>
             <option value="intermediate">Intermediate</option>
             <option value="experienced">Experienced</option>
             <option value="professional">Professional</option>
           </select>
-          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
             <option value="featured">Sort: Featured</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="name_asc">Name A–Z</option>
             <option value="name_desc">Name Z–A</option>
           </select>
-          <label className="inline-flex items-center gap-2 text-sm px-2">
-            <input type="checkbox" checked={vipOnly} onChange={(e) => setVipOnly(e.target.checked)} />
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent/40">
+            <input
+              type="checkbox"
+              checked={vipOnly}
+              onChange={(e) => setVipOnly(e.target.checked)}
+              className="h-4 w-4 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors checked:border-primary checked:bg-primary checked:shadow-[inset_0_0_0_3px_hsl(var(--background))]"
+            />
             VIP only
           </label>
-          <label className="inline-flex items-center gap-2 text-sm px-2">
-            <input type="checkbox" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent/40">
+            <input
+              type="checkbox"
+              checked={featuredOnly}
+              onChange={(e) => setFeaturedOnly(e.target.checked)}
+              className="h-4 w-4 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors checked:border-primary checked:bg-primary checked:shadow-[inset_0_0_0_3px_hsl(var(--background))]"
+            />
             Featured only
           </label>
           {hasAnyFilter && (

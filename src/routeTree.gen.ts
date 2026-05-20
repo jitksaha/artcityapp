@@ -78,9 +78,9 @@ const TalentsIndexRoute = TalentsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TalentsSlugRoute = TalentsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => TalentsRoute,
+  id: '/talents/$slug',
+  path: '/talents/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPreviewRoute = AuthenticatedPreviewRouteImport.update({
   id: '/preview',
@@ -248,6 +248,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
   ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
   ApiPublicEmbedDotjsRoute: typeof ApiPublicEmbedDotjsRoute
@@ -329,10 +330,10 @@ declare module '@tanstack/react-router' {
     }
     '/talents/$slug': {
       id: '/talents/$slug'
-      path: '/$slug'
+      path: '/talents/$slug'
       fullPath: '/talents/$slug'
       preLoaderRoute: typeof TalentsSlugRouteImport
-      parentRoute: typeof TalentsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/preview': {
       id: '/_authenticated/preview'
@@ -412,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
   ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
   ApiPublicEmbedDotjsRoute: ApiPublicEmbedDotjsRoute,
@@ -421,13 +423,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
