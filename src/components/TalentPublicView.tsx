@@ -92,9 +92,21 @@ export function TalentPublicView({
             </p>
             {t.bio && <p className="text-sm leading-relaxed">{t.bio}</p>}
             {showContactCta && (
-              <Button asChild>
-                <Link to="/casting-request" search={{ talent: t.id } as any}>Request this talent</Link>
-              </Button>
+              <div className="space-y-2">
+                <Button asChild>
+                  <Link
+                    to="/casting-request"
+                    search={{ talent: t.id, name: t.stage_name ?? t.full_name ?? "" } as any}
+                  >
+                    Request This Talent Through Art City
+                  </Link>
+                </Button>
+                <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                  Direct contact with listed talent is not available. All casting inquiries,
+                  negotiations, bookings, and confirmations are managed exclusively through
+                  Art City Casting.
+                </p>
+              </div>
             )}
           </div>
         </header>
