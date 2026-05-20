@@ -36,6 +36,9 @@ function TalentsPage() {
   const [ageMax, setAgeMax] = useState("");
   const [vipOnly, setVipOnly] = useState(false);
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [skills, setSkills] = useState("");
+  const [availability, setAvailability] = useState<string | undefined>();
+  const [experience, setExperience] = useState<string | undefined>();
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
 
   const dq = useDebouncedValue(q, 300);
@@ -45,11 +48,12 @@ function TalentsPage() {
   const dPlayingAge = useDebouncedValue(playingAge, 300);
   const dAgeMin = useDebouncedValue(ageMin, 400);
   const dAgeMax = useDebouncedValue(ageMax, 400);
+  const dSkills = useDebouncedValue(skills, 300);
 
   const isTyping =
     dq !== q || dLanguage !== language || dLocation !== location ||
     dNationality !== nationality || dPlayingAge !== playingAge ||
-    dAgeMin !== ageMin || dAgeMax !== ageMax;
+    dAgeMin !== ageMin || dAgeMax !== ageMax || dSkills !== skills;
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
@@ -80,9 +84,33 @@ function TalentsPage() {
 
   const hasAnyFilter =
     q || gender || category || language || location || nationality ||
-    playingAge || ageMin || ageMax || vipOnly || featuredOnly || sort !== "featured";
+    playingAge || ageMin || ageMax || vipOnly || featuredOnly ||
+    skills || availability || experience || sort !== "featured";
 
-  const all = (data ?? []) as any[];
+  const raw = (data ?? []) as any[];
+  const all = useMemo(() => {
+    const skillTerms = dSkills
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const avail = availability?.toLowerCase();
+    const exp = experience?.toLowerCase();
+    return raw.filter((t) => {
+      if (skillTerms.length > 0) {
+        const hay = JSON.stringify(t.skills ?? {}).toLowerCase();
+        if (!skillTerms.every((s) => hay.includes(s))) return false;
+      }
+      if (avail) {
+        const hay = JSON.stringify(t.availability ?? {}).toLowerCase();
+        if (!hay.includes(avail)) return false;
+      }
+      if (exp) {
+        const hay = JSON.stringify(t.experience ?? {}).toLowerCase();
+        if (!hay.includes(exp)) return false;
+      }
+      return true;
+    });
+  }, [raw, dSkills, availability, experience]);
   const featured = useMemo(() => all.filter((t) => t.featured).slice(0, 8), [all]);
   const vips = useMemo(() => all.filter((t) => t.vip && !t.featured).slice(0, 8), [all]);
   const regulars = useMemo(() => all.filter((t) => !t.featured && !t.vip), [all]);
@@ -125,7 +153,7 @@ function TalentsPage() {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-3 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur">
-          <Input placeholder="Search by stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
+          <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
           <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
             <option value="">All genders</option>
             <option value="male">Male</option>
@@ -147,6 +175,20 @@ function TalentsPage() {
           <Input placeholder="Playing age (e.g. 25-35)" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} className="max-w-[180px]" />
           <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="max-w-[110px]" />
           <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="max-w-[110px]" />
+          <Input placeholder="Skills (e.g. acting, dancing)" value={skills} onChange={(e) => setSkills(e.target.value)} className="max-w-[220px]" />
+          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={availability ?? ""} onChange={(e) => setAvailability(e.target.value || undefined)}>
+            <option value="">Any availability</option>
+            <option value="available">Available</option>
+            <option value="limited">Limited</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
+            <option value="">Any experience</option>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="experienced">Experienced</option>
+            <option value="professional">Professional</option>
+          </select>
           <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
             <option value="featured">Sort: Featured</option>
             <option value="newest">Newest</option>
@@ -172,6 +214,7 @@ function TalentsPage() {
                 setNationality(""); setPlayingAge("");
                 setAgeMin(""); setAgeMax("");
                 setVipOnly(false); setFeaturedOnly(false);
+                setSkills(""); setAvailability(undefined); setExperience(undefined);
                 setSort("featured");
               }}
             >
