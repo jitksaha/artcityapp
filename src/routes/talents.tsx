@@ -253,6 +253,33 @@ function TalentsPage() {
             <TalentCard key={t.id} t={t} />
           ))}
         </div>
+
+        <section className="mt-20 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-card to-card p-8 sm:p-12">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
+              <Sparkles className="h-4 w-4" /> Join the roster
+            </div>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight">
+              Apply to Join Art City Casting
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Actors, actresses, models, voice talents, and performers can submit their
+              information for review. Approved applicants may be added to the Art City
+              Casting talent database.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground/80">
+              You must create an account or sign in before submitting the application form.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Button asChild size="lg">
+                <Link to="/dashboard">Start your application</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/login">Sign in</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );
