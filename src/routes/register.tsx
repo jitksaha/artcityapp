@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { useServerFn } from "@tanstack/react-start";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
-import { Step1, Step2, Step3, Step4, Step5, Step6, Step7 } from "@/components/register/Steps";
+import { Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "@/components/register/Steps";
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +37,9 @@ const STEPS = [
   { label: "Experience", render: <Step5 /> },
   { label: "Agent", render: <Step6 /> },
   { label: "Media", render: <Step7 /> },
+  { label: "Availability", render: <Step8 /> },
+  { label: "Notes", render: <Step9 /> },
+  { label: "Agreements", render: <Step10 /> },
 ];
 
 type UploadItem = {
@@ -89,6 +92,9 @@ function RegisterPage() {
       training: [], workshops: "",
       agentName: "", agency: "", agentEmail: "", agentPhone: "",
       mediumShots: [], showreelLink: "",
+      specialSkills: "", awards: "", notes: "", languageNotes: "", castingNotes: "",
+      personalDataAccepted: false, mediaUsageAccepted: false,
+      termsAccepted: false, publishAcknowledged: false,
     },
   });
 
@@ -146,6 +152,27 @@ function RegisterPage() {
     agent: {
       agentName: v.agentName, agency: v.agency,
       agentEmail: v.agentEmail, agentPhone: v.agentPhone,
+    },
+    availability: {
+      availableForWork: v.availableForWork,
+      travelAvailability: v.travelAvailability,
+      passport: v.passport,
+      workPermit: v.workPermit,
+      willingToTravel: v.willingToTravel,
+    },
+    extra_notes: {
+      specialSkills: v.specialSkills,
+      awards: v.awards,
+      notes: v.notes,
+      languageNotes: v.languageNotes,
+      castingNotes: v.castingNotes,
+    },
+    agreements: {
+      personalDataAccepted: !!v.personalDataAccepted,
+      mediaUsageAccepted: !!v.mediaUsageAccepted,
+      termsAccepted: !!v.termsAccepted,
+      publishAcknowledged: !!v.publishAcknowledged,
+      acceptedAt: new Date().toISOString(),
     },
   });
 
