@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 const PUBLIC_COLS =
-  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, showreel_link, categories, vip, featured, featured_order, published_at";
+  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, showreel_link, categories, skills, availability, experience, vip, featured, featured_order, published_at";
 
 export const listPublicTalents = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) =>
@@ -34,7 +34,10 @@ export const listPublicTalents = createServerFn({ method: "GET" })
       .eq("visible_publicly", true)
       .limit(200);
 
-    if (data?.q) q = q.ilike("stage_name", `%${data.q}%`);
+    if (data?.q) {
+      const safe = data.q.replace(/[,()]/g, " ").trim();
+      if (safe) q = q.or(`stage_name.ilike.%${safe}%,full_name.ilike.%${safe}%`);
+    }
     if (data?.gender) q = q.eq("gender", data.gender);
     if (data?.category) q = q.contains("categories", [data.category]);
     if (data?.language) q = q.ilike("native_language", `%${data.language}%`);
