@@ -20,11 +20,14 @@ export const Route = createFileRoute("/casting-request")({
       { name: "description", content: "Request talent from Art City for your next production." },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({ talent: (s.talent as string) || undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    talent: (s.talent as string) || undefined,
+    name: (s.name as string) || undefined,
+  }),
 });
 
 function CastingRequestPage() {
-  const { talent } = Route.useSearch();
+  const { talent, name } = Route.useSearch();
   const [form, setForm] = useState({
     production_title: "",
     production_type: "",
@@ -37,7 +40,7 @@ function CastingRequestPage() {
     phone: "",
     email: "",
     message: "",
-    requested_talent_name: "",
+    requested_talent_name: name ?? "",
   });
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
