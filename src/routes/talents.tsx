@@ -1,21 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listPublicTalents } from "@/lib/public-talents.functions";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/talents")({
   component: TalentsPage,
   head: () => ({
     meta: [
-      { title: "Talent Directory — Art City" },
-      { name: "description", content: "Browse Art City's curated roster of actors, models, and performers." },
+      { title: "Art City Casting — Talent Gallery" },
+      { name: "description", content: "Browse Art City Casting's represented actors, actresses, models, voice talents, and performers for films, series, commercials, music videos, and branded productions." },
+      { property: "og:title", content: "Art City Casting — Talent Gallery" },
+      { property: "og:description", content: "Premium casting talents represented by Art City." },
     ],
   }),
 });
@@ -35,8 +38,6 @@ function TalentsPage() {
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
 
-  // Debounce free-text inputs so each keystroke doesn't fire a request,
-  // while selects/checkboxes still apply instantly for that "realtime" feel.
   const dq = useDebouncedValue(q, 300);
   const dLanguage = useDebouncedValue(language, 300);
   const dLocation = useDebouncedValue(location, 300);
@@ -74,37 +75,65 @@ function TalentsPage() {
           sort,
         },
       }),
-    placeholderData: (prev) => prev, // keep showing previous results while refetching
+    placeholderData: (prev) => prev,
   });
 
   const hasAnyFilter =
     q || gender || category || language || location || nationality ||
     playingAge || ageMin || ageMax || vipOnly || featuredOnly || sort !== "featured";
 
+  const all = (data ?? []) as any[];
+  const featured = useMemo(() => all.filter((t) => t.featured).slice(0, 8), [all]);
+  const vips = useMemo(() => all.filter((t) => t.vip && !t.featured).slice(0, 8), [all]);
+  const regulars = useMemo(() => all.filter((t) => !t.featured && !t.vip), [all]);
+  const heroPool = featured.length > 0 ? featured : all.slice(0, 5);
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight mb-2">Talent Directory</h1>
-        <p className="text-muted-foreground mb-6">Curated, admin-approved talents from Art City.</p>
-        <div className="mb-6 flex flex-wrap gap-3">
+
+      <HeroSlideshow items={heroPool} loading={isLoading && all.length === 0} />
+
+      {!hasAnyFilter && vips.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
+                <Crown className="h-4 w-4" /> VIP Talent
+              </div>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Premium roster</h2>
+              <p className="text-sm text-muted-foreground">Highly requested talents selected by Art City Casting.</p>
+            </div>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {vips.map((t) => (
+              <TalentCard key={t.id} t={t} variant="vip" />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <main id="directory" className="mx-auto max-w-7xl px-4 pb-16 pt-8">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
+              <Sparkles className="h-4 w-4" /> Directory
+            </div>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">All represented talents</h2>
+            <p className="text-sm text-muted-foreground">Approved and published by Art City Casting.</p>
+          </div>
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-3 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur">
           <Input placeholder="Search by stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
-          <select
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={gender ?? ""}
-            onChange={(e) => setGender(e.target.value || undefined)}
-          >
+          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
             <option value="">All genders</option>
             <option value="male">Male</option>
             <option value="female">Female</option>
             <option value="non_binary">Non-binary</option>
             <option value="other">Other</option>
           </select>
-          <select
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={category ?? ""}
-            onChange={(e) => setCategory(e.target.value || undefined)}
-          >
+          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={category ?? ""} onChange={(e) => setCategory(e.target.value || undefined)}>
             <option value="">All categories</option>
             <option value="actor">Actor</option>
             <option value="actress">Actress</option>
@@ -112,55 +141,13 @@ function TalentsPage() {
             <option value="performer">Performer</option>
             <option value="voice_talent">Voice talent</option>
           </select>
-          <Input
-            placeholder="Language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="max-w-[160px]"
-          />
-          <Input
-            placeholder="Location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="max-w-[180px]"
-          />
-          <Input
-            placeholder="Nationality"
-            value={nationality}
-            onChange={(e) => setNationality(e.target.value)}
-            className="max-w-[160px]"
-          />
-          <Input
-            placeholder="Playing age (e.g. 25-35)"
-            value={playingAge}
-            onChange={(e) => setPlayingAge(e.target.value)}
-            className="max-w-[180px]"
-          />
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={120}
-            placeholder="Min age"
-            value={ageMin}
-            onChange={(e) => setAgeMin(e.target.value)}
-            className="max-w-[110px]"
-          />
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={120}
-            placeholder="Max age"
-            value={ageMax}
-            onChange={(e) => setAgeMax(e.target.value)}
-            className="max-w-[110px]"
-          />
-          <select
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as typeof sort)}
-          >
+          <Input placeholder="Language" value={language} onChange={(e) => setLanguage(e.target.value)} className="max-w-[160px]" />
+          <Input placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} className="max-w-[180px]" />
+          <Input placeholder="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} className="max-w-[160px]" />
+          <Input placeholder="Playing age (e.g. 25-35)" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} className="max-w-[180px]" />
+          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="max-w-[110px]" />
+          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="max-w-[110px]" />
+          <select className="rounded-md border border-input bg-background px-3 py-2 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
             <option value="featured">Sort: Featured</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
@@ -200,39 +187,175 @@ function TalentsPage() {
             </span>
           ) : (
             <span>
-              {(data ?? []).length} {((data ?? []).length === 1) ? "result" : "results"}
+              {all.length} {all.length === 1 ? "result" : "results"}
               {hasAnyFilter ? " match your filters" : ""}
             </span>
           )}
         </div>
         {isLoading && <p className="text-muted-foreground">Loading…</p>}
-        {!isLoading && (data ?? []).length === 0 && (
+        {!isLoading && all.length === 0 && (
           <p className="text-muted-foreground">No talents published yet.</p>
         )}
 
-        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
-          {(data ?? []).map((t: any) => (
-            <Link key={t.id} to="/talents/$slug" params={{ slug: t.slug ?? t.id }}>
-              <Card className="overflow-hidden hover:border-primary transition-colors">
-                {t.headshot_url && (
-                  <div className="aspect-[3/4] bg-muted overflow-hidden">
-                    <img src={t.headshot_url} alt={t.stage_name ?? "Talent"} className="w-full h-full object-cover" loading="lazy" />
-                  </div>
-                )}
-                <CardContent className="py-4 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{t.stage_name ?? t.full_name ?? "Untitled"}</p>
-                    {t.vip && <Badge>VIP</Badge>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {[t.gender, t.playing_age, t.location].filter(Boolean).join(" · ")}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+        <div className={`grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
+          {(hasAnyFilter ? all : regulars).map((t: any) => (
+            <TalentCard key={t.id} t={t} />
           ))}
         </div>
       </main>
     </div>
+  );
+}
+
+function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
+  return (
+    <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }} className="group">
+      <Card className={`overflow-hidden border-border/60 bg-card/60 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-elegant)] ${variant === "vip" ? "ring-1 ring-primary/30" : ""}`}>
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+          {t.headshot_url ? (
+            <img
+              src={t.headshot_url}
+              alt={t.stage_name ?? "Talent"}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No photo</div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+          <div className="absolute left-3 top-3 flex gap-1.5">
+            {t.featured && <Badge className="bg-primary text-primary-foreground">Featured</Badge>}
+            {t.vip && <Badge className="bg-gradient-to-r from-primary to-[color:var(--primary-glow)] text-primary-foreground border-0">VIP</Badge>}
+          </div>
+          <div className="absolute inset-x-3 bottom-3 text-white">
+            <p className="text-lg font-semibold leading-tight drop-shadow">{t.stage_name ?? t.full_name ?? "Untitled"}</p>
+            <p className="mt-0.5 text-xs text-white/80">
+              {[t.gender, t.playing_age, t.location].filter(Boolean).join(" · ") || "—"}
+            </p>
+          </div>
+        </div>
+        <CardContent className="flex items-center justify-between gap-2 py-3">
+          <span className="truncate text-xs text-muted-foreground">
+            {(t.categories ?? []).slice(0, 2).join(", ") || "Talent"}
+          </span>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+            View <ArrowRight className="h-3 w-3" />
+          </span>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
+  const [idx, setIdx] = useState(0);
+  const safe = items.filter((t) => t.headshot_url);
+  useEffect(() => {
+    if (safe.length < 2) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % safe.length), 6000);
+    return () => clearInterval(id);
+  }, [safe.length]);
+
+  const current = safe[idx];
+
+  return (
+    <section className="relative isolate overflow-hidden border-b border-border/50" style={{ background: "var(--gradient-hero)" }}>
+      <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(60%_60%_at_50%_40%,black,transparent)]">
+        <div className="absolute -left-20 top-1/4 h-96 w-96 rounded-full bg-primary/40 blur-3xl" />
+        <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-[color:var(--primary-glow)]/40 blur-3xl" />
+      </div>
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-14 md:grid-cols-2 md:py-20">
+        <div className="flex flex-col justify-center text-white">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/80 backdrop-blur">
+            <Sparkles className="h-3.5 w-3.5" /> Art City Casting
+          </div>
+          <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+            Talent Gallery
+          </h1>
+          <p className="mt-4 max-w-xl text-base text-white/75 sm:text-lg">
+            Browse our represented actors, actresses, models, voice talents, and performers — for films, series, commercials, music videos, and branded productions. All casting requests are handled directly through Art City.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild size="lg" className="bg-white text-[oklch(0.12_0.06_270)] hover:bg-white/90">
+              <a href="#directory">Browse the roster <ArrowRight className="ml-2 h-4 w-4" /></a>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10">
+              <Link to="/casting-request">Submit a casting request</Link>
+            </Button>
+          </div>
+
+          {safe.length > 1 && (
+            <div className="mt-8 flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Previous"
+                onClick={() => setIdx((i) => (i - 1 + safe.length) % safe.length)}
+                className="rounded-full border border-white/20 bg-white/5 p-2 text-white/90 hover:bg-white/10"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="flex gap-1.5">
+                {safe.map((_, i) => (
+                  <button
+                    key={i}
+                    aria-label={`Slide ${i + 1}`}
+                    onClick={() => setIdx(i)}
+                    className={`h-1.5 rounded-full transition-all ${i === idx ? "w-8 bg-white" : "w-3 bg-white/30"}`}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-label="Next"
+                onClick={() => setIdx((i) => (i + 1) % safe.length)}
+                className="rounded-full border border-white/20 bg-white/5 p-2 text-white/90 hover:bg-white/10"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="relative">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[var(--shadow-elegant)]">
+            {loading && (
+              <div className="flex h-full items-center justify-center text-white/60">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            )}
+            {!loading && current && (
+              <Link to="/talents/$slug" params={{ slug: current.slug ?? current.id }}>
+                <img
+                  key={current.id}
+                  src={current.headshot_url}
+                  alt={current.stage_name ?? "Featured talent"}
+                  className="h-full w-full animate-in fade-in object-cover duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute inset-x-5 bottom-5 text-white">
+                  <div className="flex gap-1.5">
+                    {current.featured && <Badge className="bg-primary">Featured</Badge>}
+                    {current.vip && <Badge className="bg-gradient-to-r from-primary to-[color:var(--primary-glow)] border-0">VIP</Badge>}
+                  </div>
+                  <p className="mt-2 text-2xl font-semibold">{current.stage_name ?? current.full_name}</p>
+                  <p className="text-sm text-white/80">
+                    {[current.gender, current.playing_age, current.location].filter(Boolean).join(" · ")}
+                  </p>
+                  <Button size="sm" className="mt-3 bg-white text-[oklch(0.12_0.06_270)] hover:bg-white/90">
+                    View profile <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </Link>
+            )}
+            {!loading && !current && (
+              <div className="flex h-full items-center justify-center p-6 text-center text-sm text-white/60">
+                No featured talents yet. Admin can mark talents as Featured to fill this hero.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
