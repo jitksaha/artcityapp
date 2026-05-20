@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   listApplications,
@@ -13,6 +13,8 @@ import {
   addAdminNote,
   deleteAdminNote,
   importDemoTalents,
+  getAppSettings,
+  updateAppSettings,
 } from "@/lib/admin.functions";
 import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-talents-csv";
 import { Download, Upload, Loader2 } from "lucide-react";
@@ -51,11 +53,74 @@ function AdminPage() {
         <TabsList>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
+          {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
+        {isAdmin && (
+          <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
+        )}
       </Tabs>
     </main>
+  );
+}
+
+function SettingsTab() {
+  const getFn = useServerFn(getAppSettings);
+  const updFn = useServerFn(updateAppSettings);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["app-settings"],
+    queryFn: () => getFn(),
+  });
+  const [email, setEmail] = useState("");
+  useEffect(() => {
+    if (data?.casting_notification_email) setEmail(data.casting_notification_email);
+  }, [data?.casting_notification_email]);
+
+  const mut = useMutation({
+    mutationFn: () =>
+      updFn({
+        data: { casting_notification_email: email.trim() ? email.trim() : null },
+      }),
+    onSuccess: () => {
+      toast.success("Settings saved");
+      qc.invalidateQueries({ queryKey: ["app-settings"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Save failed"),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Site settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2 max-w-md">
+          <Label htmlFor="cne">Casting notification email</Label>
+          <Input
+            id="cne"
+            type="email"
+            placeholder="casting@artcity.example"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+          />
+          <p className="text-xs text-muted-foreground">
+            New applications and resubmissions will be emailed to this address
+            once email sending is enabled.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          disabled={mut.isPending || isLoading}
+          onClick={() => mut.mutate()}
+        >
+          {mut.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+          Save settings
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
