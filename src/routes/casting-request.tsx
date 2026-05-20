@@ -83,6 +83,11 @@ function CastingRequestPage() {
             <CardTitle>Casting Request</CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="mb-5 rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+              Direct contact with listed talent is not available. All casting inquiries,
+              negotiations, bookings, and confirmations are managed exclusively through
+              Art City Casting.
+            </p>
             <form
               onSubmit={(e) => { e.preventDefault(); mut.mutate(); }}
               className="space-y-4"
