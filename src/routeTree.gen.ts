@@ -25,6 +25,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
 import { Route as ApiPublicSignupRouteImport } from './routes/api/public/signup'
+import { Route as ApiPublicEmbedDotjsRouteImport } from './routes/api/public/embed[.]js'
 import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -106,6 +107,11 @@ const ApiPublicSignupRoute = ApiPublicSignupRouteImport.update({
   path: '/api/public/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEmbedDotjsRoute = ApiPublicEmbedDotjsRouteImport.update({
+  id: '/api/public/embed.js',
+  path: '/api/public/embed.js',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
   id: '/api/public/casting-request',
   path: '/api/public/casting-request',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
   fileRoutesByTo: FileRoutesByTo
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
   id:
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/_authenticated/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
   fileRoutesById: FileRoutesById
@@ -238,6 +250,7 @@ export interface RootRouteChildren {
   TalentsRoute: typeof TalentsRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
+  ApiPublicEmbedDotjsRoute: typeof ApiPublicEmbedDotjsRoute
   ApiPublicSignupRoute: typeof ApiPublicSignupRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
 }
@@ -356,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/embed.js': {
+      id: '/api/public/embed.js'
+      path: '/api/public/embed.js'
+      fullPath: '/api/public/embed.js'
+      preLoaderRoute: typeof ApiPublicEmbedDotjsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/casting-request': {
       id: '/api/public/casting-request'
       path: '/api/public/casting-request'
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   TalentsRoute: TalentsRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
+  ApiPublicEmbedDotjsRoute: ApiPublicEmbedDotjsRoute,
   ApiPublicSignupRoute: ApiPublicSignupRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRoute,
 }
