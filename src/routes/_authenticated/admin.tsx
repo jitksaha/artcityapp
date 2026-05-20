@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   listApplications,
@@ -74,12 +74,9 @@ function SettingsTab() {
     queryFn: () => getFn(),
   });
   const [email, setEmail] = useState("");
-  const initial = data?.casting_notification_email ?? "";
-  // sync local state when query resolves
-  if (data && email === "" && initial && email !== initial) {
-    // run once on first load
-    setTimeout(() => setEmail(initial), 0);
-  }
+  useEffect(() => {
+    if (data?.casting_notification_email) setEmail(data.casting_notification_email);
+  }, [data?.casting_notification_email]);
 
   const mut = useMutation({
     mutationFn: () =>
