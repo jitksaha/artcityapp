@@ -122,6 +122,14 @@ function TalentsPage() {
 
       <HeroSlideshow items={heroPool} loading={isLoading && all.length === 0} />
 
+      <div className="mx-auto max-w-7xl px-4 pt-6">
+        <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+          Direct contact with listed talent is not available. All casting inquiries,
+          negotiations, bookings, and confirmations are managed exclusively through
+          Art City Casting.
+        </p>
+      </div>
+
       {!hasAnyFilter && vips.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12">
           <div className="mb-6 flex items-end justify-between gap-4">
