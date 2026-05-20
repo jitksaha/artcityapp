@@ -26,7 +26,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Dashboard — Art City Casting" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Art City" }] }),
 });
 
 const STATUS_LABEL: Record<string, string> = {

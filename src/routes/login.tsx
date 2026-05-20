@@ -13,7 +13,7 @@ export const Route = createFileRoute("/login")({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
   }),
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Login — Art City Casting" }] }),
+  head: () => ({ meta: [{ title: "Login — Art City" }] }),
 });
 
 function LoginPage() {

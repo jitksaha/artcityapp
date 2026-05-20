@@ -327,7 +327,7 @@ function RegisterPage() {
       <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">
         <header className="mb-8 space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Art City Casting
+            Art City
           </p>
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
             Actor Register and Post Feeds

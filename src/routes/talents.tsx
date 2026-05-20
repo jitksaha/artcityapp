@@ -14,8 +14,8 @@ export const Route = createFileRoute("/talents")({
   component: TalentsPage,
   head: () => ({
     meta: [
-      { title: "Talent Directory — Art City Casting" },
-      { name: "description", content: "Browse Art City Casting's curated roster of actors, models, and performers." },
+      { title: "Talent Directory — Art City" },
+      { name: "description", content: "Browse Art City's curated roster of actors, models, and performers." },
     ],
   }),
 });
@@ -86,7 +86,7 @@ function TalentsPage() {
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <h1 className="text-3xl font-semibold tracking-tight mb-2">Talent Directory</h1>
-        <p className="text-muted-foreground mb-6">Curated, admin-approved talents from Art City Casting.</p>
+        <p className="text-muted-foreground mb-6">Curated, admin-approved talents from Art City.</p>
         <div className="mb-6 flex flex-wrap gap-3">
           <Input placeholder="Search by stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
           <select

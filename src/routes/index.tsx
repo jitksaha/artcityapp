@@ -14,7 +14,7 @@ function Index() {
       <main className="flex items-center justify-center px-4 py-24">
         <div className="max-w-2xl text-center space-y-6">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          Art City Casting
+          Art City
         </p>
         <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
           Actor Register and Post Feeds

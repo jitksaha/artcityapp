@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/preview")({
   component: PreviewPage,
-  head: () => ({ meta: [{ title: "Profile Preview — Art City Casting" }] }),
+  head: () => ({ meta: [{ title: "Profile Preview — Art City" }] }),
 });
 
 function formatDate(d?: string | null) {

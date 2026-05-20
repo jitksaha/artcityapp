@@ -14,7 +14,7 @@ export const Route = createFileRoute("/verify-email")({
     email: typeof s.email === "string" ? s.email : undefined,
   }),
   component: VerifyEmailPage,
-  head: () => ({ meta: [{ title: "Verify your email — Art City Casting" }] }),
+  head: () => ({ meta: [{ title: "Verify your email — Art City" }] }),
 });
 
 function VerifyEmailPage() {

@@ -16,8 +16,8 @@ export const Route = createFileRoute("/casting-request")({
   errorComponent: ({ error, reset }) => <AppErrorFallback error={error} reset={reset} />,
   head: () => ({
     meta: [
-      { title: "Casting Request — Art City Casting" },
-      { name: "description", content: "Request talent from Art City Casting for your next production." },
+      { title: "Casting Request — Art City" },
+      { name: "description", content: "Request talent from Art City for your next production." },
     ],
   }),
   validateSearch: (s: Record<string, unknown>) => ({ talent: (s.talent as string) || undefined }),
