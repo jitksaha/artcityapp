@@ -24,6 +24,7 @@ import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
+import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -99,6 +100,11 @@ const ApiPublicTalentsRoute = ApiPublicTalentsRouteImport.update({
   path: '/api/public/talents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
+  id: '/api/public/casting-request',
+  path: '/api/public/casting-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesByTo {
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesById {
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
+  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRouteTypes {
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/talents/$slug'
+    | '/api/public/casting-request'
     | '/api/public/talents'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/talents/$slug'
+    | '/api/public/casting-request'
     | '/api/public/talents'
   id:
     | '__root__'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/preview'
     | '/talents/$slug'
+    | '/api/public/casting-request'
     | '/api/public/talents'
   fileRoutesById: FileRoutesById
 }
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   TalentsRoute: typeof TalentsRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
 }
 
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTalentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/casting-request': {
+      id: '/api/public/casting-request'
+      path: '/api/public/casting-request'
+      fullPath: '/api/public/casting-request'
+      preLoaderRoute: typeof ApiPublicCastingRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -364,6 +384,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   TalentsRoute: TalentsRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
+  ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRoute,
 }
 export const routeTree = rootRouteImport
