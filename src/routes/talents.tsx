@@ -286,14 +286,15 @@ function TalentsPage() {
 }
 
 function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
+  const displayName = t.stage_name ?? t.full_name ?? "Talent";
   return (
-    <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }} className="group">
-      <Card className={`overflow-hidden border-border/60 bg-card/60 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-elegant)] ${variant === "vip" ? "ring-1 ring-primary/30" : ""}`}>
+    <Card className={`group overflow-hidden border-border/60 bg-card/60 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-elegant)] ${variant === "vip" ? "ring-1 ring-primary/30" : ""}`}>
+      <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           {t.headshot_url ? (
             <img
               src={t.headshot_url}
-              alt={t.stage_name ?? "Talent"}
+              alt={displayName}
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
             />
@@ -306,22 +307,33 @@ function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
             {t.vip && <Badge className="bg-gradient-to-r from-primary to-[color:var(--primary-glow)] text-primary-foreground border-0">VIP</Badge>}
           </div>
           <div className="absolute inset-x-3 bottom-3 text-white">
-            <p className="text-lg font-semibold leading-tight drop-shadow">{t.stage_name ?? t.full_name ?? "Untitled"}</p>
+            <p className="text-lg font-semibold leading-tight drop-shadow">{displayName}</p>
             <p className="mt-0.5 text-xs text-white/80">
               {[t.gender, t.playing_age, t.location].filter(Boolean).join(" · ") || "—"}
             </p>
           </div>
         </div>
-        <CardContent className="flex items-center justify-between gap-2 py-3">
+      </Link>
+      <CardContent className="flex flex-col gap-2 py-3">
+        <div className="flex items-center justify-between gap-2">
           <span className="truncate text-xs text-muted-foreground">
             {(t.categories ?? []).slice(0, 2).join(", ") || "Talent"}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-            View <ArrowRight className="h-3 w-3" />
-          </span>
-        </CardContent>
-      </Card>
-    </Link>
+          <Link
+            to="/talents/$slug"
+            params={{ slug: t.slug ?? t.id }}
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            View profile <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <Button asChild size="sm" variant="secondary" className="w-full">
+          <Link to="/casting-request" search={{ talent: t.id, name: displayName } as any}>
+            Request Through Art City
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
