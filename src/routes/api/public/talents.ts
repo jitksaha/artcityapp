@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { CORS_HEADERS, jsonResponse, preflight } from "@/lib/cors";
+import { supabase } from "@/integrations/supabase/client";
+import { jsonResponse, preflight } from "@/lib/cors";
 
 const PUBLIC_COLS =
   "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, showreel_link, categories, vip, featured, featured_order, published_at";
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/talents")({
         try {
           const url = new URL(request.url);
           const p = url.searchParams;
-          let q = supabaseAdmin
+          let q = supabase
             .from("talent_profiles")
             .select(PUBLIC_COLS)
             .eq("approved", true)
@@ -50,6 +50,3 @@ export const Route = createFileRoute("/api/public/talents")({
     },
   },
 });
-
-// keep CORS_HEADERS reachable in case of future use
-void CORS_HEADERS;
