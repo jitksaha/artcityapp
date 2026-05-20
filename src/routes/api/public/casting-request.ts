@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { jsonResponse, preflight } from "@/lib/cors";
 
 const Schema = z.object({
@@ -30,6 +29,7 @@ export const Route = createFileRoute("/api/public/casting-request")({
           if (!parsed.success) {
             return jsonResponse({ error: "Invalid input", details: parsed.error.flatten() }, 400);
           }
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { error } = await supabaseAdmin.from("casting_requests").insert(parsed.data);
           if (error) return jsonResponse({ error: error.message }, 500);
           return jsonResponse({ ok: true });

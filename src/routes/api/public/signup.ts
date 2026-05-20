@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { jsonResponse, preflight } from "@/lib/cors";
 
 const Schema = z.object({
@@ -22,8 +21,8 @@ export const Route = createFileRoute("/api/public/signup")({
             return jsonResponse({ error: "Invalid input", details: parsed.error.flatten() }, 400);
           }
           const { full_name, email, password, redirect_to } = parsed.data;
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-          // Create user via admin API (sends confirmation email automatically)
           const { data, error } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
