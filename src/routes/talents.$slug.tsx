@@ -8,7 +8,7 @@ import { TalentPublicView } from "@/components/TalentPublicView";
 export const Route = createFileRoute("/talents/$slug")({
   component: TalentPage,
   head: () => ({
-    meta: [{ title: "Talent Profile — Art City Casting" }],
+    meta: [{ title: "Talent Profile — Art City" }],
   }),
 });
 

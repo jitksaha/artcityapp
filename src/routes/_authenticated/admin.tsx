@@ -36,7 +36,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
-  head: () => ({ meta: [{ title: "Admin — Art City Casting" }] }),
+  head: () => ({ meta: [{ title: "Admin — Art City" }] }),
 });
 
 function AdminPage() {

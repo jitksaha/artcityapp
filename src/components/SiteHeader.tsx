@@ -8,7 +8,7 @@ export function SiteHeader() {
   return (
     <header className="border-b border-border bg-background/80 backdrop-blur sticky top-0 z-40">
       <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="font-semibold tracking-tight">Art City Casting</Link>
+        <Link to="/" className="font-semibold tracking-tight">Art City</Link>
         <nav className="flex items-center gap-2 text-sm">
           <Link to="/talents" className="px-3 py-2 hover:text-foreground text-muted-foreground">Talents</Link>
           <Link to="/casting-request" className="px-3 py-2 hover:text-foreground text-muted-foreground">Casting Request</Link>
