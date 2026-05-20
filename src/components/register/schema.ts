@@ -154,6 +154,26 @@ export const registerSchema = z.object({
     .url("Enter a valid URL")
     .optional()
     .or(z.literal("")),
+
+  // Step 8 — Availability
+  availableForWork: z.enum(["yes", "no", "limited"]).optional(),
+  travelAvailability: z.enum(["local", "national", "international", "none"]).optional(),
+  passport: z.enum(["yes", "no"]).optional(),
+  workPermit: z.enum(["yes", "no", "pending"]).optional(),
+  willingToTravel: z.enum(["yes", "no"]).optional(),
+
+  // Step 9 — Special Skills & Notes
+  specialSkills: z.string().trim().max(1000).optional().or(z.literal("")),
+  awards: z.string().trim().max(1000).optional().or(z.literal("")),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  languageNotes: z.string().trim().max(1000).optional().or(z.literal("")),
+  castingNotes: z.string().trim().max(1000).optional().or(z.literal("")),
+
+  // Step 10 — Agreements
+  personalDataAccepted: z.boolean().refine((v) => v === true, "Required"),
+  mediaUsageAccepted: z.boolean().refine((v) => v === true, "Required"),
+  termsAccepted: z.boolean().refine((v) => v === true, "Required"),
+  publishAcknowledged: z.boolean().refine((v) => v === true, "Required"),
 }).superRefine((val, ctx) => {
   if (val.drivingLicense && val.drivingLicense !== "none" && !val.drivingLicenseFile) {
     ctx.addIssue({
@@ -184,4 +204,7 @@ export const STEP_FIELDS: (keyof RegisterFormValues)[][] = [
   ["yearsOfExperience", "filmCredits", "tvCredits", "theatreCredits", "commercialCredits", "training", "workshops"],
   ["agentName", "agency", "agentEmail", "agentPhone"],
   ["headshot", "mediumShots", "fullBodyPhoto", "voiceReel", "cv", "showreelLink"],
+  ["availableForWork", "travelAvailability", "passport", "workPermit", "willingToTravel"],
+  ["specialSkills", "awards", "notes", "languageNotes", "castingNotes"],
+  ["personalDataAccepted", "mediaUsageAccepted", "termsAccepted", "publishAcknowledged"],
 ];

@@ -940,3 +940,131 @@ export function Step7() {
     </div>
   );
 }
+
+export function Step8() {
+  return (
+    <div className="space-y-6">
+      <SectionTitle sub="Availability / بەردەستی">Step 8</SectionTitle>
+      <RadioField
+        name="availableForWork"
+        en="Available for Work"
+        options={[
+          { value: "yes", label: "Yes" },
+          { value: "limited", label: "Limited" },
+          { value: "no", label: "Not currently" },
+        ]}
+      />
+      <RadioField
+        name="travelAvailability"
+        en="Travel Availability"
+        options={[
+          { value: "local", label: "Local only" },
+          { value: "national", label: "National" },
+          { value: "international", label: "International" },
+          { value: "none", label: "None" },
+        ]}
+      />
+      <div className="grid gap-4 md:grid-cols-3">
+        <RadioField
+          name="passport"
+          en="Passport"
+          options={[
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ]}
+        />
+        <RadioField
+          name="workPermit"
+          en="Work Permit"
+          options={[
+            { value: "yes", label: "Yes" },
+            { value: "pending", label: "Pending" },
+            { value: "no", label: "No" },
+          ]}
+        />
+        <RadioField
+          name="willingToTravel"
+          en="Willing to Travel"
+          options={[
+            { value: "yes", label: "Yes" },
+            { value: "no", label: "No" },
+          ]}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function Step9() {
+  return (
+    <div className="space-y-6">
+      <SectionTitle sub="Special Skills & Notes / لێهاتووییە تایبەتەکان">Step 9</SectionTitle>
+      <TextAreaField name="specialSkills" en="Special Skills" placeholder="e.g. archery, horse riding, martial arts…" />
+      <TextAreaField name="awards" en="Awards" placeholder="Recognitions, festival selections, prizes…" />
+      <TextAreaField name="notes" en="Notes" placeholder="Anything else casting should know" />
+      <TextAreaField name="languageNotes" en="Language Notes" placeholder="Dialect specifics, accent training…" />
+      <TextAreaField name="castingNotes" en="Casting Notes" placeholder="Roles you are best suited for…" />
+    </div>
+  );
+}
+
+function AgreementCheckbox({
+  name, label,
+}: { name: any; label: string }) {
+  const { control } = useFormContext<RegisterFormValues>();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <label
+            className={cn(
+              "flex items-start gap-3 rounded-md border border-input p-3 cursor-pointer transition-colors",
+              field.value && "border-primary bg-accent",
+            )}
+          >
+            <FormControl>
+              <Checkbox
+                checked={!!field.value}
+                onCheckedChange={(c) => field.onChange(c === true)}
+                className="mt-0.5"
+              />
+            </FormControl>
+            <span className="text-sm leading-relaxed">{label}</span>
+          </label>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+export function Step10() {
+  return (
+    <div className="space-y-6">
+      <SectionTitle sub="Agreements / ڕێککەوتنەکان">Step 10</SectionTitle>
+      <p className="text-sm text-muted-foreground">
+        Please confirm the following before submitting your application.
+      </p>
+      <div className="space-y-3">
+        <AgreementCheckbox
+          name="personalDataAccepted"
+          label="I accept that Art City may collect and process my personal data for casting and representation purposes."
+        />
+        <AgreementCheckbox
+          name="mediaUsageAccepted"
+          label="I accept that the photos, voice reels, and showreel I upload may be used by Art City for casting submissions and promotion."
+        />
+        <AgreementCheckbox
+          name="termsAccepted"
+          label="I have read and accept the Art City Casting terms and conditions."
+        />
+        <AgreementCheckbox
+          name="publishAcknowledged"
+          label="I understand that submitting this form does not automatically publish my profile. My profile will only appear in the Art City Casting talent directory after review, approval, and publishing by Art City admin."
+        />
+      </div>
+    </div>
+  );
+}
