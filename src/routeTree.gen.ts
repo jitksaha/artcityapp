@@ -24,6 +24,7 @@ import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
+import { Route as ApiPublicSignupRouteImport } from './routes/api/public/signup'
 import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -100,6 +101,11 @@ const ApiPublicTalentsRoute = ApiPublicTalentsRouteImport.update({
   path: '/api/public/talents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSignupRoute = ApiPublicSignupRouteImport.update({
+  id: '/api/public/signup',
+  path: '/api/public/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
   id: '/api/public/casting-request',
   path: '/api/public/casting-request',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesByTo {
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesById {
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
+  '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRouteTypes {
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/signup'
     | '/api/public/talents'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/signup'
     | '/api/public/talents'
   id:
     | '__root__'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/preview'
     | '/talents/$slug'
     | '/api/public/casting-request'
+    | '/api/public/signup'
     | '/api/public/talents'
   fileRoutesById: FileRoutesById
 }
@@ -226,6 +238,7 @@ export interface RootRouteChildren {
   TalentsRoute: typeof TalentsRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
+  ApiPublicSignupRoute: typeof ApiPublicSignupRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
 }
 
@@ -336,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTalentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/signup': {
+      id: '/api/public/signup'
+      path: '/api/public/signup'
+      fullPath: '/api/public/signup'
+      preLoaderRoute: typeof ApiPublicSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/casting-request': {
       id: '/api/public/casting-request'
       path: '/api/public/casting-request'
@@ -385,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   TalentsRoute: TalentsRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
+  ApiPublicSignupRoute: ApiPublicSignupRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRoute,
 }
 export const routeTree = rootRouteImport
