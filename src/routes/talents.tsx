@@ -370,7 +370,7 @@ function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
             <Button asChild size="lg" className="bg-white text-[oklch(0.12_0.06_270)] hover:bg-white/90">
               <a href="#directory">Browse the roster <ArrowRight className="ml-2 h-4 w-4" /></a>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10">
+            <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white">
               <Link to="/casting-request">Submit a casting request</Link>
             </Button>
           </div>
