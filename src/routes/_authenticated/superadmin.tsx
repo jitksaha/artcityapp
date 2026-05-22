@@ -39,16 +39,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
-  head: () => ({ meta: [{ title: "Admin — Art City" }] }),
+  head: () => ({ meta: [{ title: "Super Admin — Art City" }] }),
 });
 
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useAuth();
-  if (loading) return <div className="p-8">Loading…</div>;
+  if (loading) return <AdminSkeleton />;
   if (!isStaff) return <div className="p-8 text-destructive">Forbidden — staff only.</div>;
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Admin Panel</h1>
+      <h1 className="text-2xl font-semibold mb-6">Super Admin</h1>
       {isAdmin && <ImportDemoTalentsCard />}
       <Tabs defaultValue="applications">
         <TabsList>
@@ -63,6 +63,36 @@ function AdminPage() {
         )}
       </Tabs>
     </main>
+  );
+}
+
+function AdminSkeleton() {
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+      <Skeleton className="h-8 w-48" />
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-28" />
+        <Skeleton className="h-9 w-36" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <ListSkeleton rows={6} />
+    </main>
+  );
+}
+
+function ListSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rounded-md border border-border p-4 flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-8 w-20" />
+        </div>
+      ))}
+    </div>
   );
 }
 
