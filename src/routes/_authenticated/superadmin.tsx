@@ -15,6 +15,9 @@ import {
   importDemoTalents,
   getAppSettings,
   updateAppSettings,
+  getAdminAnalytics,
+  listUsersWithRoles,
+  setUserRole,
 } from "@/lib/admin.functions";
 import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-talents-csv";
 import { Download, Upload, Loader2 } from "lucide-react";
@@ -52,12 +55,18 @@ function AdminPage() {
       {isAdmin && <ImportDemoTalentsCard />}
       <Tabs defaultValue="applications">
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
+          {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
+        <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
+        {isAdmin && (
+          <TabsContent value="users" className="mt-4"><UsersTab currentUserId={undefined} /></TabsContent>
+        )}
         {isAdmin && (
           <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
         )}
