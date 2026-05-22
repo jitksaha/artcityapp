@@ -35,6 +35,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
@@ -288,7 +289,7 @@ function ApplicationsTab() {
           </Button>
         ))}
       </div>
-      {isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {isLoading && <ListSkeleton rows={5} />}
       <div className="grid gap-3">
         {(data ?? []).map((t: any) => (
           <Card key={t.id}>
