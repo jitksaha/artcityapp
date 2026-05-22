@@ -31,7 +31,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useServerFn as _useServerFn } from "@tanstack/react-start";
 import { pushTalentsToWordPress, checkWordPressConnection } from "@/lib/wordpress.functions";
 import { Copy, ExternalLink, Check } from "lucide-react";
 import {
@@ -254,8 +253,8 @@ curl -X POST "${origin}/api/public/signup" \\
 }
 
 function WordPressPushCard({ origin: _origin }: { origin: string }) {
-  const check = _useServerFn(checkWordPressConnection);
-  const push = _useServerFn(pushTalentsToWordPress);
+  const check = useServerFn(checkWordPressConnection);
+  const push = useServerFn(pushTalentsToWordPress);
   const { data: status, refetch } = useQuery({
     queryKey: ["wp-connection"],
     queryFn: () => check(),
