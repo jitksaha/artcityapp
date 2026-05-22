@@ -412,3 +412,144 @@ export const importDemoTalents = createServerFn({ method: "POST" })
     const failed = results.filter((r) => !r.ok).length;
     return { created, skipped, failed, results };
   });
+
+export const getAdminAnalytics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertStaff(context.supabase, context.userId);
+
+    const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [talents, casting, recentTalents, recentCasting] = await Promise.all([
+      context.supabase
+        .from("talent_profiles")
+        .select("status, vip, featured, published, created_at")
+        .limit(2000),
+      context.supabase
+        .from("casting_requests")
+        .select("status, created_at")
+        .limit(2000),
+      context.supabase
+        .from("talent_profiles")
+        .select("id, stage_name, full_name, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+      context.supabase
+        .from("casting_requests")
+        .select("id, production_title, contact_person, status, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+    ]);
+
+    if (talents.error) throw new Error(talents.error.message);
+    if (casting.error) throw new Error(casting.error.message);
+
+    const tRows = talents.data ?? [];
+    const cRows = casting.data ?? [];
+
+    const byStatus: Record<string, number> = {};
+    for (const r of tRows) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+
+    const castingByStatus: Record<string, number> = {};
+    for (const r of cRows) castingByStatus[r.status] = (castingByStatus[r.status] ?? 0) + 1;
+
+    return {
+      totals: {
+        talents: tRows.length,
+        published: tRows.filter((r) => r.published).length,
+        vip: tRows.filter((r) => r.vip).length,
+        featured: tRows.filter((r) => r.featured).length,
+        pendingReview: tRows.filter((r) =>
+          ["submitted", "under_review", "needs_revision"].includes(r.status),
+        ).length,
+        casting: cRows.length,
+        newTalents30d: tRows.filter((r) => r.created_at >= since30).length,
+        newCasting30d: cRows.filter((r) => r.created_at >= since30).length,
+      },
+      byStatus,
+      castingByStatus,
+      recentTalents: recentTalents.data ?? [],
+      recentCasting: recentCasting.data ?? [],
+    };
+  });
+
+export const listUsersWithRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({ query: z.string().max(120).optional() }).optional().parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const q = (data?.query ?? "").trim().toLowerCase();
+
+    const { data: users, error: userErr } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
+    if (userErr) throw new Error(userErr.message);
+
+    const { data: roleRows, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id, role");
+    if (roleErr) throw new Error(roleErr.message);
+
+    const rolesByUser = new Map<string, string[]>();
+    for (const r of roleRows ?? []) {
+      const list = rolesByUser.get(r.user_id) ?? [];
+      list.push(r.role);
+      rolesByUser.set(r.user_id, list);
+    }
+
+    const result = (users?.users ?? [])
+      .filter((u) => {
+        if (!q) return true;
+        const name = ((u.user_metadata as any)?.full_name ?? "").toLowerCase();
+        return (u.email ?? "").toLowerCase().includes(q) || name.includes(q);
+      })
+      .map((u) => ({
+        id: u.id,
+        email: u.email ?? "",
+        full_name: ((u.user_metadata as any)?.full_name as string) ?? null,
+        created_at: u.created_at,
+        roles: rolesByUser.get(u.id) ?? [],
+      }))
+      .sort((a, b) => (a.email > b.email ? 1 : -1));
+
+    return result;
+  });
+
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        user_id: z.string().uuid(),
+        role: z.enum(["admin", "casting_manager", "applicant"]),
+        grant: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+
+    if (!data.grant && data.user_id === context.userId && data.role === "admin") {
+      throw new Error("You cannot remove your own admin role");
+    }
+
+    if (data.grant) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: data.user_id, role: data.role }, {
+          onConflict: "user_id,role",
+        });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.user_id)
+        .eq("role", data.role);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
