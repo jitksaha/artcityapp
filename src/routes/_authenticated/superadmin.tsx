@@ -65,7 +65,7 @@ function AdminPage() {
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
         {isAdmin && (
-          <TabsContent value="users" className="mt-4"><UsersTab currentUserId={undefined} /></TabsContent>
+          <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         )}
         {isAdmin && (
           <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
