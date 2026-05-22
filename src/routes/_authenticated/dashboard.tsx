@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { useAuth } from "@/hooks/use-auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +56,7 @@ const STATUS_HINT: Record<
 };
 
 function Dashboard() {
+  const { isStaff, loading: authLoading } = useAuth();
   const fn = useServerFn(getMyTalent);
   const submitFn = useServerFn(submitApplication);
   const deleteFn = useServerFn(deleteMedia);
@@ -68,6 +70,8 @@ function Dashboard() {
   });
   const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
+
+  if (!authLoading && isStaff) return <Navigate to="/superadmin" replace />;
 
   const mediaUrl = (bucket: string, path: string) =>
     bucket === "talent-media"

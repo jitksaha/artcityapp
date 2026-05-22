@@ -1,10 +1,12 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 
 export function SiteHeader() {
-  const { user, isStaff, signOut } = useAuth();
+  const { user, isStaff, isAdmin, signOut } = useAuth();
   const router = useRouter();
+  const roleLabel = isAdmin ? "Admin" : isStaff ? "Casting" : user ? "Talent" : null;
   return (
     <header className="border-b border-border bg-background/80 backdrop-blur sticky top-0 z-40">
       <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
@@ -14,9 +16,14 @@ export function SiteHeader() {
           <Link to="/casting-request" className="px-3 py-2 hover:text-foreground text-muted-foreground">Casting Request</Link>
           {user ? (
             <>
-              <Link to="/dashboard" className="px-3 py-2 hover:text-foreground text-muted-foreground">Dashboard</Link>
+              {!isStaff && (
+                <Link to="/dashboard" className="px-3 py-2 hover:text-foreground text-muted-foreground">Dashboard</Link>
+              )}
               {isStaff && (
                 <Link to="/superadmin" preload="intent" className="px-3 py-2 hover:text-foreground text-muted-foreground">Super Admin</Link>
+              )}
+              {roleLabel && (
+                <Badge variant="outline" className="ml-1 hidden sm:inline-flex">{roleLabel}</Badge>
               )}
               <Button variant="outline" size="sm" onClick={async () => { await signOut(); router.navigate({ to: "/" }); }}>
                 Sign out
