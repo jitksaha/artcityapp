@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
   head: () => ({ meta: [{ title: "Admin — Art City" }] }),
 });
