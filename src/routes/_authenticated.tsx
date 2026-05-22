@@ -15,13 +15,11 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function Layout() {
-  const { loading, user } = useAuth();
-  if (loading) return <div className="p-8 text-sm text-muted-foreground">Loading…</div>;
-  if (!user) return null;
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <Outlet />
+      {user ? <Outlet /> : null}
     </div>
   );
 }
