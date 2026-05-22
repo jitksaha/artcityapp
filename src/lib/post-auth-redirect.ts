@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Decide where to send a user after sign-in / sign-up.
  * Priority: explicit ?redirect param → role-based default.
- * Staff (admin or casting_manager) → /admin, everyone else → /dashboard.
+ * Staff (admin or casting_manager) → /superadmin, everyone else → /dashboard.
  */
 export async function resolvePostAuthRedirect(explicit?: string | null): Promise<string> {
   if (explicit && explicit.startsWith("/") && !explicit.startsWith("//")) {
@@ -18,7 +18,7 @@ export async function resolvePostAuthRedirect(explicit?: string | null): Promise
     .eq("user_id", userId);
   const list = (roles ?? []).map((r) => r.role);
   if (list.includes("admin") || list.includes("casting_manager")) {
-    return "/admin";
+    return "/superadmin";
   }
   return "/dashboard";
 }
