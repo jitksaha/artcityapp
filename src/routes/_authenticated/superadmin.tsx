@@ -31,6 +31,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn as _useServerFn } from "@tanstack/react-start";
+import { pushTalentsToWordPress, checkWordPressConnection } from "@/lib/wordpress.functions";
+import { Copy, ExternalLink, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -58,12 +61,14 @@ function AdminPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
+        <TabsContent value="integrations" className="mt-4"><IntegrationsTab isAdmin={isAdmin} /></TabsContent>
         {isAdmin && (
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         )}
@@ -72,6 +77,272 @@ function AdminPage() {
         )}
       </Tabs>
     </main>
+  );
+}
+
+function CopyBlock({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="relative">
+      <pre className="bg-muted text-foreground/90 p-3 rounded-md text-xs overflow-x-auto border">
+        <code>{code}</code>
+      </pre>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        className="absolute top-2 right-2 h-7 px-2"
+        onClick={() => {
+          navigator.clipboard.writeText(code);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        }}
+      >
+        {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      </Button>
+    </div>
+  );
+}
+
+function IntegrationsTab({ isAdmin }: { isAdmin: boolean }) {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://acbe.lovable.app";
+
+  const scriptDirectory = `<!-- Talent Directory (live, auto-syncs) -->
+<script async src="${origin}/api/public/embed.js"
+  data-widget="directory"
+  data-columns="4"
+  data-limit="12"
+  data-featured="true"
+  data-refresh="60"></script>`;
+
+  const scriptDirectoryFull = `<!-- Filterable directory -->
+<script async src="${origin}/api/public/embed.js"
+  data-widget="directory"
+  data-title="Our Talent"
+  data-columns="3"
+  data-category="actor"
+  data-location="Paris"
+  data-language="French"
+  data-vip="false"
+  data-featured="false"
+  data-limit="24"
+  data-filters="true"
+  data-refresh="120"></script>`;
+
+  const scriptSignup = `<!-- Talent Signup Form -->
+<script async src="${origin}/api/public/embed.js"
+  data-widget="signup"></script>`;
+
+  const scriptCasting = `<!-- Casting Request Form -->
+<script async src="${origin}/api/public/embed.js"
+  data-widget="casting"></script>`;
+
+  const iframeDirectory = `<iframe
+  src="${origin}/embed/directory?columns=4&limit=12&featured=true"
+  style="width:100%;min-height:800px;border:0"
+  loading="lazy"
+  title="Talent Directory"></iframe>`;
+
+  const wpShortcode = `[html]
+<script async src="${origin}/api/public/embed.js"
+  data-widget="directory" data-columns="4" data-limit="12"></script>
+[/html]`;
+
+  const apiExamples = `# List approved talents (JSON)
+curl "${origin}/api/public/talents?category=actor&location=Paris&limit=20"
+
+# Submit a casting request
+curl -X POST "${origin}/api/public/casting-request" \\
+  -H "Content-Type: application/json" \\
+  -d '{"production_title":"My Film","contact_person":"Jane","email":"jane@x.com"}'
+
+# Talent signup
+curl -X POST "${origin}/api/public/signup" \\
+  -H "Content-Type: application/json" \\
+  -d '{"full_name":"John","email":"john@x.com","password":"secret123"}'`;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Embed on any website</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            Paste these snippets into any HTML page, WordPress Custom HTML block,
+            Webflow Embed, Squarespace Code block, Shopify section, etc. The
+            content syncs <strong>live</strong> with your platform via the public API.
+          </p>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">1. Directory grid (recommended)</Label>
+            <p className="text-xs text-muted-foreground">Auto-refreshes every 60s. Drop on a homepage or "Our Talent" page.</p>
+            <CopyBlock code={scriptDirectory} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">2. Directory with filters (advanced)</Label>
+            <p className="text-xs text-muted-foreground">
+              Available data-attributes: <code className="text-xs">data-widget</code>,
+              <code className="text-xs"> data-category</code>,
+              <code className="text-xs"> data-location</code>,
+              <code className="text-xs"> data-language</code>,
+              <code className="text-xs"> data-vip</code>,
+              <code className="text-xs"> data-featured</code>,
+              <code className="text-xs"> data-limit</code>,
+              <code className="text-xs"> data-columns</code>,
+              <code className="text-xs"> data-title</code>,
+              <code className="text-xs"> data-filters</code> (true/false),
+              <code className="text-xs"> data-refresh</code> (seconds),
+              <code className="text-xs"> data-link-base</code>.
+            </p>
+            <CopyBlock code={scriptDirectoryFull} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">3. Talent signup form</Label>
+            <CopyBlock code={scriptSignup} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">4. Casting request form</Label>
+            <CopyBlock code={scriptCasting} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">5. iframe (for themes that strip JS)</Label>
+            <p className="text-xs text-muted-foreground">
+              Use this if your CMS blocks third-party scripts. Same filter params via query string.
+            </p>
+            <CopyBlock code={iframeDirectory} />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">6. WordPress.com shortcode</Label>
+            <p className="text-xs text-muted-foreground">
+              Paste inside a Custom HTML block, or wrap in <code>[html]</code> if your theme requires it.
+            </p>
+            <CopyBlock code={wpShortcode} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Public REST API</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            CORS-enabled. No auth required for public reads. Use these to build your own integrations.
+          </p>
+          <CopyBlock code={apiExamples} />
+          <a
+            href={`${origin}/api/public/talents?limit=3`}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            Open live JSON sample <ExternalLink className="h-3 w-3" />
+          </a>
+        </CardContent>
+      </Card>
+
+      {isAdmin && <WordPressPushCard origin={origin} />}
+    </div>
+  );
+}
+
+function WordPressPushCard({ origin: _origin }: { origin: string }) {
+  const check = _useServerFn(checkWordPressConnection);
+  const push = _useServerFn(pushTalentsToWordPress);
+  const { data: status, refetch } = useQuery({
+    queryKey: ["wp-connection"],
+    queryFn: () => check(),
+  });
+  const [siteId, setSiteId] = useState("");
+  const [postStatus, setPostStatus] = useState<"publish" | "draft">("publish");
+  const [pushing, setPushing] = useState(false);
+  const [result, setResult] = useState<{ pushed: number; failed: number } | null>(null);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Push to WordPress.com
+          {status?.connected ? (
+            <Badge variant="secondary" className="bg-green-100 text-green-800">Connected</Badge>
+          ) : (
+            <Badge variant="outline">Not connected</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {!status?.connected ? (
+          <p className="text-sm text-muted-foreground">
+            Ask Lovable to <em>"connect WordPress.com"</em> in chat — the connector picker will appear.
+            After connecting, refresh this tab.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Publishes all approved & public talents as posts on the given WordPress.com site.
+            Run this whenever you want to mirror your roster.
+          </p>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="sm:col-span-2">
+            <Label htmlFor="wp-site" className="text-xs">Site ID or domain</Label>
+            <Input
+              id="wp-site"
+              value={siteId}
+              onChange={(e) => setSiteId(e.target.value)}
+              placeholder="example.wordpress.com"
+              disabled={!status?.connected}
+            />
+          </div>
+          <div>
+            <Label htmlFor="wp-status" className="text-xs">Post status</Label>
+            <select
+              id="wp-status"
+              className="w-full h-10 rounded-md border px-3 text-sm bg-background"
+              value={postStatus}
+              onChange={(e) => setPostStatus(e.target.value as "publish" | "draft")}
+              disabled={!status?.connected}
+            >
+              <option value="publish">Publish</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            disabled={!status?.connected || !siteId || pushing}
+            onClick={async () => {
+              setPushing(true);
+              setResult(null);
+              try {
+                const r = await push({ data: { siteId, status: postStatus } });
+                setResult({ pushed: r.pushed, failed: r.failed });
+                toast.success(`Pushed ${r.pushed} talent(s)${r.failed ? `, ${r.failed} failed` : ""}`);
+              } catch (e: any) {
+                toast.error(e?.message ?? "Push failed");
+              } finally {
+                setPushing(false);
+              }
+            }}
+          >
+            {pushing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Push approved talents
+          </Button>
+          <Button variant="ghost" onClick={() => refetch()}>Re-check connection</Button>
+        </div>
+        {result && (
+          <p className="text-sm">
+            ✅ {result.pushed} pushed · ❌ {result.failed} failed
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

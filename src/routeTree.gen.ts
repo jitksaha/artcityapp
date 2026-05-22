@@ -20,6 +20,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TalentsIndexRouteImport } from './routes/talents.index'
 import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
+import { Route as EmbedDirectoryRouteImport } from './routes/embed.directory'
 import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -82,6 +83,11 @@ const TalentsSlugRoute = TalentsSlugRouteImport.update({
   path: '/talents/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmbedDirectoryRoute = EmbedDirectoryRouteImport.update({
+  id: '/embed/directory',
+  path: '/embed/directory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSuperadminRoute = AuthenticatedSuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
+  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
+  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
+  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
   '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
+    | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
     | '/api/public/casting-request'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
+    | '/embed/directory'
     | '/talents/$slug'
     | '/talents'
     | '/api/public/casting-request'
@@ -230,6 +241,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/preview'
     | '/_authenticated/superadmin'
+    | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
     | '/api/public/casting-request'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  EmbedDirectoryRoute: typeof EmbedDirectoryRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
   ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
@@ -335,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalentsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/embed/directory': {
+      id: '/embed/directory'
+      path: '/embed/directory'
+      fullPath: '/embed/directory'
+      preLoaderRoute: typeof EmbedDirectoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/superadmin': {
       id: '/_authenticated/superadmin'
       path: '/superadmin'
@@ -413,6 +433,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  EmbedDirectoryRoute: EmbedDirectoryRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
   ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
