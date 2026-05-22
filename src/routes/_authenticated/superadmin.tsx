@@ -409,7 +409,13 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{t?.stage_name || t?.full_name || "Application"}</DialogTitle></DialogHeader>
-        {!data && <p>Loading…</p>}
+        {!data && (
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        )}
         {t && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -571,7 +577,7 @@ function CastingTab() {
     onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["admin-casting"] }); },
   });
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <ListSkeleton rows={4} />;
   return (
     <div className="space-y-3">
       {(data ?? []).map((r: any) => (

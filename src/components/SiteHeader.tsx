@@ -16,7 +16,7 @@ export function SiteHeader() {
             <>
               <Link to="/dashboard" className="px-3 py-2 hover:text-foreground text-muted-foreground">Dashboard</Link>
               {isStaff && (
-                <Link to="/admin" className="px-3 py-2 hover:text-foreground text-muted-foreground">Admin</Link>
+                <Link to="/superadmin" preload="intent" className="px-3 py-2 hover:text-foreground text-muted-foreground">Super Admin</Link>
               )}
               <Button variant="outline" size="sm" onClick={async () => { await signOut(); router.navigate({ to: "/" }); }}>
                 Sign out
