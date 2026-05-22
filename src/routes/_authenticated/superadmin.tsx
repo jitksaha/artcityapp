@@ -15,6 +15,9 @@ import {
   importDemoTalents,
   getAppSettings,
   updateAppSettings,
+  getAdminAnalytics,
+  listUsersWithRoles,
+  setUserRole,
 } from "@/lib/admin.functions";
 import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-talents-csv";
 import { Download, Upload, Loader2 } from "lucide-react";
@@ -52,12 +55,18 @@ function AdminPage() {
       {isAdmin && <ImportDemoTalentsCard />}
       <Tabs defaultValue="applications">
         <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
+          {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
+        <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
+        {isAdmin && (
+          <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
+        )}
         {isAdmin && (
           <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
         )}
@@ -610,6 +619,190 @@ function CastingTab() {
         </Card>
       ))}
       {(data ?? []).length === 0 && <p className="text-muted-foreground">No casting requests yet.</p>}
+    </div>
+  );
+}
+
+function StatCard({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-2xl font-semibold tracking-tight">{value}</p>
+        {hint && <p className="text-[11px] text-muted-foreground mt-1">{hint}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function OverviewTab() {
+  const fn = useServerFn(getAdminAnalytics);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-analytics"],
+    queryFn: () => fn(),
+  });
+
+  if (isLoading || !data) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  const t = data.totals;
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total talents" value={t.talents} hint={`+${t.newTalents30d} in 30 days`} />
+        <StatCard label="Published" value={t.published} />
+        <StatCard label="Pending review" value={t.pendingReview} />
+        <StatCard label="VIP / Featured" value={`${t.vip} / ${t.featured}`} />
+        <StatCard label="Casting requests" value={t.casting} hint={`+${t.newCasting30d} in 30 days`} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Talents by status</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {Object.entries(data.byStatus).length === 0 && (
+              <p className="text-xs text-muted-foreground">No talents yet.</p>
+            )}
+            {Object.entries(data.byStatus).map(([s, n]) => (
+              <div key={s} className="flex items-center justify-between text-sm">
+                <span className="capitalize">{s.replace(/_/g, " ")}</span>
+                <Badge variant="outline">{n}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Casting by status</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {Object.entries(data.castingByStatus).length === 0 && (
+              <p className="text-xs text-muted-foreground">No casting requests yet.</p>
+            )}
+            {Object.entries(data.castingByStatus).map(([s, n]) => (
+              <div key={s} className="flex items-center justify-between text-sm">
+                <span className="capitalize">{s}</span>
+                <Badge variant="outline">{n}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="text-base">Recent talents</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {data.recentTalents.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nothing yet.</p>
+            )}
+            {data.recentTalents.map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between text-sm">
+                <span className="truncate">{r.stage_name || r.full_name || "Untitled"}</span>
+                <Badge variant="outline">{r.status}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="text-base">Recent casting requests</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {data.recentCasting.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nothing yet.</p>
+            )}
+            {data.recentCasting.map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between text-sm">
+                <span className="truncate">{r.production_title}</span>
+                <Badge variant="outline">{r.status}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function UsersTab() {
+  const { user } = useAuth();
+  const listFn = useServerFn(listUsersWithRoles);
+  const setFn = useServerFn(setUserRole);
+  const qc = useQueryClient();
+  const [query, setQuery] = useState("");
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-users", query],
+    queryFn: () => listFn({ data: { query } }),
+  });
+
+  const mut = useMutation({
+    mutationFn: (vars: { user_id: string; role: "admin" | "casting_manager" | "applicant"; grant: boolean }) =>
+      setFn({ data: vars }),
+    onSuccess: () => {
+      toast.success("Roles updated");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed"),
+  });
+
+  const ROLES: Array<"admin" | "casting_manager" | "applicant"> = [
+    "admin",
+    "casting_manager",
+    "applicant",
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Input
+        placeholder="Search by email or name…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="max-w-sm"
+      />
+      {isLoading && <ListSkeleton rows={5} />}
+      <div className="grid gap-2">
+        {(data ?? []).map((u: any) => (
+          <Card key={u.id}>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{u.email}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {u.full_name || "—"} · joined {new Date(u.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {ROLES.map((role) => {
+                  const active = u.roles.includes(role);
+                  const disableSelfAdmin =
+                    role === "admin" && active && u.id === user?.id;
+                  return (
+                    <Button
+                      key={role}
+                      size="sm"
+                      variant={active ? "default" : "outline"}
+                      disabled={mut.isPending || disableSelfAdmin}
+                      onClick={() =>
+                        mut.mutate({ user_id: u.id, role, grant: !active })
+                      }
+                      title={disableSelfAdmin ? "Cannot remove your own admin role" : undefined}
+                    >
+                      {active ? "✓ " : "+ "}
+                      {role.replace("_", " ")}
+                    </Button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {!isLoading && (data ?? []).length === 0 && (
+          <p className="text-sm text-muted-foreground">No users found.</p>
+        )}
+      </div>
     </div>
   );
 }
