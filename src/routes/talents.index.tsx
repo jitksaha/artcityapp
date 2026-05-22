@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createFileRoute("/talents/")({
@@ -253,7 +254,17 @@ function TalentsPage() {
             </span>
           )}
         </div>
-        {isLoading && <p className="text-muted-foreground">Loading…</p>}
+        {isLoading && (
+          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-[3/4] w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            ))}
+          </div>
+        )}
         {!isLoading && all.length === 0 && (
           <p className="text-muted-foreground">No talents published yet.</p>
         )}

@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
@@ -26,7 +28,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Dashboard — Art City" }] }),
+  head: () => ({ meta: [{ title: "Talent Portal — Art City" }] }),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -59,7 +61,11 @@ function Dashboard() {
   const recordMediaFn = useServerFn(recordMediaUpload);
   const saveDraftFn = useServerFn(saveDraft);
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ["my-talent"], queryFn: () => fn() });
+  const { data, isLoading } = useQuery({
+    queryKey: ["my-talent"],
+    queryFn: () => fn(),
+    staleTime: 60_000,
+  });
   const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
 
@@ -150,7 +156,7 @@ function Dashboard() {
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">My Application</h1>
+          <h1 className="text-2xl font-semibold">Talent Portal</h1>
           <p className="text-sm text-muted-foreground">Track and manage your casting profile.</p>
         </div>
         <div className="flex gap-2">
@@ -161,16 +167,16 @@ function Dashboard() {
           )}
           {data?.talent && (
             <Button asChild variant="outline">
-              <Link to="/preview"><Eye className="mr-2 h-4 w-4" /> Preview public profile</Link>
+              <Link to="/preview" preload="intent"><Eye className="mr-2 h-4 w-4" /> Preview public profile</Link>
             </Button>
           )}
           <Button asChild variant={canEdit ? "default" : "outline"}>
-            <Link to="/register">{data?.talent ? "Edit profile" : "Start application"}</Link>
+            <Link to="/register" preload="intent">{data?.talent ? "Edit profile" : "Start application"}</Link>
           </Button>
         </div>
       </header>
 
-      {isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {isLoading && <DashboardSkeleton />}
 
       {!isLoading && !data?.talent && (
         <Card>
@@ -181,8 +187,16 @@ function Dashboard() {
       )}
 
       {data?.talent && (
-        <>
-          <Card>
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:inline-flex">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="media">Media{data.media.length ? ` (${data.media.length})` : ""}</TabsTrigger>
+            <TabsTrigger value="submissions">Submissions</TabsTrigger>
+            <TabsTrigger value="messages">Messages{data.notes.length ? ` (${data.notes.length})` : ""}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile" className="mt-4 space-y-4">
+            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Status</CardTitle>
               <Badge variant={status === "published" || status === "approved" ? "default" : "secondary"}>
@@ -221,9 +235,11 @@ function Dashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          </TabsContent>
 
-          <Card>
+          <TabsContent value="media" className="mt-4 space-y-4">
+            <Card>
             <CardHeader><CardTitle>Media</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {canResubmit && (
@@ -289,10 +305,45 @@ function Dashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          </TabsContent>
 
-          <Card>
-            <CardHeader><CardTitle>Notes from Admin</CardTitle></CardHeader>
+          <TabsContent value="submissions" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader><CardTitle>Submission History</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {(data as any).submissions?.length ? (
+                  (data as any).submissions.map((s: any) => (
+                    <div key={s.id} className="flex items-center justify-between rounded-md border border-border p-3 text-sm">
+                      <div>
+                        <p className="font-medium">Version #{s.version}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(s.submitted_at).toLocaleString()}</p>
+                      </div>
+                      <Badge variant="outline">{(s.media_snapshot?.length ?? 0)} media</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-sm">No submissions recorded yet.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Status History</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {data.logs.length === 0 && <p className="text-muted-foreground text-sm">No history yet.</p>}
+                {data.logs.map((l: any) => (
+                  <div key={l.id} className="flex justify-between text-xs text-muted-foreground border-b border-border py-1">
+                    <span>{l.from_status ?? "—"} → {l.to_status}</span>
+                    <span>{new Date(l.created_at).toLocaleString()}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader><CardTitle>Messages from Admin</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {data.notes.length === 0 && <p className="text-muted-foreground text-sm">No notes yet.</p>}
               {data.notes.map((n: any) => (
@@ -302,23 +353,26 @@ function Dashboard() {
                 </div>
               ))}
             </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader><CardTitle>Status History</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {data.logs.length === 0 && <p className="text-muted-foreground text-sm">No history yet.</p>}
-              {data.logs.map((l: any) => (
-                <div key={l.id} className="flex justify-between text-xs text-muted-foreground border-b border-border py-1">
-                  <span>{l.from_status ?? "—"} → {l.to_status}</span>
-                  <span>{new Date(l.created_at).toLocaleString()}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
     </main>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-28" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <Skeleton className="h-32 w-full rounded-lg" />
+      <Skeleton className="h-48 w-full rounded-lg" />
+    </div>
   );
 }
 
