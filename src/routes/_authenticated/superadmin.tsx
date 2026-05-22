@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/superadmin")({
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useAuth();
   if (loading) return <AdminSkeleton />;
-  if (!isStaff) return <div className="p-8 text-destructive">Forbidden — staff only.</div>;
+  if (!isStaff) return <Navigate to="/dashboard" replace />;
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-2xl font-semibold mb-6">Super Admin</h1>
