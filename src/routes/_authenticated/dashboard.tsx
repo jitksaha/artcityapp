@@ -56,6 +56,7 @@ const STATUS_HINT: Record<
 };
 
 function Dashboard() {
+  const { isStaff, loading: authLoading } = useAuth();
   const fn = useServerFn(getMyTalent);
   const submitFn = useServerFn(submitApplication);
   const deleteFn = useServerFn(deleteMedia);
@@ -69,6 +70,8 @@ function Dashboard() {
   });
   const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
+
+  if (!authLoading && isStaff) return <Navigate to="/superadmin" replace />;
 
   const mediaUrl = (bucket: string, path: string) =>
     bucket === "talent-media"
