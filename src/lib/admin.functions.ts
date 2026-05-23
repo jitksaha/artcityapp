@@ -478,6 +478,35 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
     const castingByStatus: Record<string, number> = {};
     for (const r of cRows) castingByStatus[r.status] = (castingByStatus[r.status] ?? 0) + 1;
 
+    // Build 30-day timeseries (talents created vs casting created per day)
+    const days: string[] = [];
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setUTCDate(d.getUTCDate() - i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const tByDay: Record<string, number> = {};
+    const cByDay: Record<string, number> = {};
+    for (const d of days) {
+      tByDay[d] = 0;
+      cByDay[d] = 0;
+    }
+    for (const r of tRows) {
+      const k = String(r.created_at).slice(0, 10);
+      if (k in tByDay) tByDay[k] += 1;
+    }
+    for (const r of cRows) {
+      const k = String(r.created_at).slice(0, 10);
+      if (k in cByDay) cByDay[k] += 1;
+    }
+    const timeseries = days.map((d) => ({
+      date: d,
+      talents: tByDay[d],
+      casting: cByDay[d],
+    }));
+
     return {
       totals: {
         talents: tRows.length,
@@ -493,6 +522,7 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
       },
       byStatus,
       castingByStatus,
+      timeseries,
       recentTalents: recentTalents.data ?? [],
       recentCasting: recentCasting.data ?? [],
     };

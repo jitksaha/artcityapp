@@ -23,7 +23,6 @@ import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-ta
 import { Download, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -46,7 +45,7 @@ import {
   rotateEmbedSecret,
   mintEmbedToken,
 } from "@/lib/embed-security.functions";
-import { Copy, ExternalLink, Check } from "lucide-react";
+import { Copy, ExternalLink, Check, TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +54,20 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AdminSidebar, type AdminView } from "@/components/admin/AdminSidebar";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
@@ -63,35 +76,54 @@ export const Route = createFileRoute("/_authenticated/superadmin")({
 
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useAuth();
+  const [view, setView] = useState<AdminView>("overview");
   if (loading) return <AdminSkeleton />;
   if (!isStaff) return <Navigate to="/dashboard" replace />;
+  const titles: Record<AdminView, string> = {
+    overview: "Dashboard",
+    applications: "Talent Applications",
+    casting: "Casting Requests",
+    integrations: "Integrations",
+    snippets: "Snippets & Dev Mode",
+    users: "Users & Roles",
+    settings: "Settings",
+  };
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Super Admin</h1>
-      {isAdmin && <ImportDemoTalentsCard />}
-      <Tabs defaultValue="applications">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="casting">Casting Requests</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="snippets">Snippets</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
-        <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
-        <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
-        <TabsContent value="integrations" className="mt-4"><IntegrationsTab isAdmin={isAdmin} /></TabsContent>
-        <TabsContent value="snippets" className="mt-4"><SnippetsTab /></TabsContent>
-        {isAdmin && (
-          <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
-        )}
-        {isAdmin && (
-          <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
-        )}
-      </Tabs>
-    </main>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "15rem",
+          "--sidebar-width-icon": "3.25rem",
+        } as React.CSSProperties
+      }
+    >
+      <AdminSidebar view={view} onChange={setView} isAdmin={isAdmin} />
+      <SidebarInset className="bg-muted/30">
+        <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur">
+          <SidebarTrigger />
+          <div className="h-4 w-px bg-border mx-1" />
+          <p className="text-sm font-medium tracking-tight">{titles[view]}</p>
+          <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="hidden sm:inline">Super Admin</span>
+            <Badge variant="outline" className="font-mono text-[10px]">v1</Badge>
+          </div>
+        </header>
+        <div className="p-4 sm:p-6 space-y-6">
+          {view === "overview" && <OverviewTab />}
+          {view === "applications" && (
+            <>
+              {isAdmin && <ImportDemoTalentsCard />}
+              <ApplicationsTab />
+            </>
+          )}
+          {view === "casting" && <CastingTab />}
+          {view === "integrations" && <IntegrationsTab isAdmin={isAdmin} />}
+          {view === "snippets" && <SnippetsTab />}
+          {view === "users" && isAdmin && <UsersTab />}
+          {view === "settings" && isAdmin && <SettingsTab />}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
@@ -1596,12 +1628,64 @@ function CastingTab() {
   );
 }
 
-function StatCard({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
+function StatCard({
+  label,
+  value,
+  hint,
+  delta,
+  icon: Icon,
+  tone = "default",
+}: {
+  label: string;
+  value: number | string;
+  hint?: string;
+  delta?: number;
+  icon?: any;
+  tone?: "default" | "primary" | "warn" | "success";
+}) {
+  const toneClasses: Record<string, string> = {
+    default: "from-muted/40 to-transparent",
+    primary: "from-primary/15 to-transparent",
+    warn: "from-amber-500/15 to-transparent",
+    success: "from-emerald-500/15 to-transparent",
+  };
+  const positive = (delta ?? 0) >= 0;
   return (
-    <Card>
-      <CardContent className="py-4">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-2xl font-semibold tracking-tight">{value}</p>
+    <Card className="relative overflow-hidden">
+      <div
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${toneClasses[tone]}`}
+      />
+      <CardContent className="relative py-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+          {Icon && (
+            <div className="grid h-7 w-7 place-items-center rounded-md bg-background/70 border">
+              <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+        <div className="mt-1 flex items-end justify-between gap-2">
+          <p className="text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
+          {typeof delta === "number" && (
+            <span
+              className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                positive
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : "bg-destructive/15 text-destructive"
+              }`}
+            >
+              {positive ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              {positive ? "+" : ""}
+              {delta}
+            </span>
+          )}
+        </div>
         {hint && <p className="text-[11px] text-muted-foreground mt-1">{hint}</p>}
       </CardContent>
     </Card>
@@ -1617,81 +1701,242 @@ function OverviewTab() {
 
   if (isLoading || !data) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
-        ))}
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   const t = data.totals;
+  const series = (data as any).timeseries ?? [];
+  const fmtDay = (iso: string) => {
+    const d = new Date(iso + "T00:00:00Z");
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  };
+  const statusColors = [
+    "hsl(var(--chart-1, 220 70% 50%))",
+    "hsl(var(--chart-2, 160 60% 45%))",
+    "hsl(var(--chart-3, 30 80% 55%))",
+    "hsl(var(--chart-4, 280 65% 60%))",
+    "hsl(var(--chart-5, 340 75% 55%))",
+  ];
+  const statusData = Object.entries(data.byStatus).map(([name, value], i) => ({
+    name: name.replace(/_/g, " "),
+    value: value as number,
+    fill: statusColors[i % statusColors.length],
+  }));
+
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total talents" value={t.talents} hint={`+${t.newTalents30d} in 30 days`} />
-        <StatCard label="Published" value={t.published} />
-        <StatCard label="Pending review" value={t.pendingReview} />
-        <StatCard label="VIP / Featured" value={`${t.vip} / ${t.featured}`} />
-        <StatCard label="Casting requests" value={t.casting} hint={`+${t.newCasting30d} in 30 days`} />
+        <StatCard
+          label="Total Talents"
+          value={t.talents}
+          icon={UsersIcon}
+          tone="primary"
+          delta={t.newTalents30d}
+          hint="vs previous 30 days"
+        />
+        <StatCard
+          label="Published"
+          value={t.published}
+          icon={Sparkles}
+          tone="success"
+          hint={`${t.vip} VIP · ${t.featured} featured`}
+        />
+        <StatCard
+          label="Pending Review"
+          value={t.pendingReview}
+          icon={Clock}
+          tone="warn"
+          hint="awaiting moderator action"
+        />
+        <StatCard
+          label="Casting Requests"
+          value={t.casting}
+          icon={Megaphone}
+          delta={t.newCasting30d}
+          hint="last 30 days"
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Activity · Last 30 days</CardTitle>
+            <p className="text-xs text-muted-foreground">New talents and casting requests per day</p>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <ChartContainer
+              config={{
+                talents: { label: "Talents", color: "hsl(var(--chart-1, 220 70% 50%))" },
+                casting: { label: "Casting", color: "hsl(var(--chart-2, 160 60% 45%))" },
+              }}
+              className="h-[260px] w-full"
+            >
+              <AreaChart data={series} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="g-talents" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-talents)" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="var(--color-talents)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="g-casting" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-casting)" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="var(--color-casting)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={fmtDay}
+                  minTickGap={24}
+                  fontSize={11}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  width={28}
+                  fontSize={11}
+                  allowDecimals={false}
+                />
+                <ChartTooltip
+                  cursor={{ strokeDasharray: "3 3" }}
+                  content={<ChartTooltipContent labelFormatter={(v) => fmtDay(String(v))} />}
+                />
+                <Area
+                  dataKey="talents"
+                  type="monotone"
+                  stroke="var(--color-talents)"
+                  fill="url(#g-talents)"
+                  strokeWidth={2}
+                />
+                <Area
+                  dataKey="casting"
+                  type="monotone"
+                  stroke="var(--color-casting)"
+                  fill="url(#g-casting)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Status Breakdown</CardTitle>
+            <p className="text-xs text-muted-foreground">Talents grouped by current status</p>
+          </CardHeader>
+          <CardContent>
+            {statusData.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-8 text-center">No data yet.</p>
+            ) : (
+              <>
+                <div className="h-[180px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statusData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={45}
+                        outerRadius={75}
+                        strokeWidth={2}
+                        stroke="hsl(var(--background))"
+                      >
+                        {statusData.map((entry, i) => (
+                          <Cell key={i} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="space-y-1.5 text-xs">
+                  {statusData.map((s) => (
+                    <li key={s.name} className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 capitalize">
+                        <span
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ background: s.fill }}
+                        />
+                        {s.name}
+                      </span>
+                      <span className="tabular-nums font-medium">{s.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base">Talents by status</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {Object.entries(data.byStatus).length === 0 && (
-              <p className="text-xs text-muted-foreground">No talents yet.</p>
-            )}
-            {Object.entries(data.byStatus).map(([s, n]) => (
-              <div key={s} className="flex items-center justify-between text-sm">
-                <span className="capitalize">{s.replace(/_/g, " ")}</span>
-                <Badge variant="outline">{n}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Casting by status</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Casting Pipeline</CardTitle>
+            <p className="text-xs text-muted-foreground">By request status</p>
+          </CardHeader>
           <CardContent className="space-y-2">
             {Object.entries(data.castingByStatus).length === 0 && (
               <p className="text-xs text-muted-foreground">No casting requests yet.</p>
             )}
-            {Object.entries(data.castingByStatus).map(([s, n]) => (
-              <div key={s} className="flex items-center justify-between text-sm">
-                <span className="capitalize">{s}</span>
-                <Badge variant="outline">{n}</Badge>
-              </div>
-            ))}
+            {Object.entries(data.castingByStatus).map(([s, n], i) => {
+              const total = Object.values(data.castingByStatus).reduce(
+                (a: number, b: any) => a + (b as number),
+                0,
+              );
+              const pct = total ? ((n as number) / total) * 100 : 0;
+              return (
+                <div key={s} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="capitalize">{s}</span>
+                    <span className="tabular-nums text-muted-foreground">{n as number}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${pct}%`,
+                        background: statusColors[i % statusColors.length],
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base">Recent talents</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Recent Talents</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
             {data.recentTalents.length === 0 && (
               <p className="text-xs text-muted-foreground">Nothing yet.</p>
             )}
             {data.recentTalents.map((r: any) => (
-              <div key={r.id} className="flex items-center justify-between text-sm">
-                <span className="truncate">{r.stage_name || r.full_name || "Untitled"}</span>
-                <Badge variant="outline">{r.status}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Recent casting requests</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {data.recentCasting.length === 0 && (
-              <p className="text-xs text-muted-foreground">Nothing yet.</p>
-            )}
-            {data.recentCasting.map((r: any) => (
-              <div key={r.id} className="flex items-center justify-between text-sm">
-                <span className="truncate">{r.production_title}</span>
-                <Badge variant="outline">{r.status}</Badge>
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/60"
+              >
+                <span className="truncate font-medium">
+                  {r.stage_name || r.full_name || "Untitled"}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </span>
+                  <Badge variant="outline" className="text-[10px]">{r.status}</Badge>
+                </div>
               </div>
             ))}
           </CardContent>

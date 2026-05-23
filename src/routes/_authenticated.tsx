@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +16,11 @@ export const Route = createFileRoute("/_authenticated")({
 
 function Layout() {
   const { user } = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isFullscreen = pathname.startsWith("/superadmin");
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
+      {!isFullscreen && <SiteHeader />}
       {user ? <Outlet /> : null}
     </div>
   );
