@@ -31,7 +31,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { pushTalentsToWordPress, checkWordPressConnection } from "@/lib/wordpress.functions";
+import {
+  pushTalentsToWordPress,
+  checkWordPressConnection,
+  getWordPressSettings,
+  saveWordPressSettings,
+} from "@/lib/wordpress.functions";
 import { Copy, ExternalLink, Check } from "lucide-react";
 import {
   Dialog,
