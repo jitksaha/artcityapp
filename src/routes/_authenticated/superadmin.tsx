@@ -36,6 +36,9 @@ import {
   checkWordPressConnection,
   getWordPressSettings,
   saveWordPressSettings,
+  getWordPressCredentials,
+  saveWordPressCredentials,
+  testWordPressCredentials,
 } from "@/lib/wordpress.functions";
 import {
   getEmbedSecurity,
