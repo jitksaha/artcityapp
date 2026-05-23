@@ -38,7 +38,6 @@ function TalentsPage() {
   const [vipOnly, setVipOnly] = useState(false);
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [skills, setSkills] = useState("");
-  const [availability, setAvailability] = useState<string | undefined>();
   const [experience, setExperience] = useState<string | undefined>();
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -87,7 +86,7 @@ function TalentsPage() {
   const hasAnyFilter =
     q || gender || category || language || location || nationality ||
     playingAge || ageMin || ageMax || vipOnly || featuredOnly ||
-    skills || availability || experience || sort !== "featured";
+    skills || experience || sort !== "featured";
 
   const raw = (data ?? []) as any[];
   const all = useMemo(() => {
@@ -95,16 +94,11 @@ function TalentsPage() {
       .split(",")
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
-    const avail = availability?.toLowerCase();
     const exp = experience?.toLowerCase();
     return raw.filter((t) => {
       if (skillTerms.length > 0) {
         const hay = JSON.stringify(t.skills ?? {}).toLowerCase();
         if (!skillTerms.every((s) => hay.includes(s))) return false;
-      }
-      if (avail) {
-        const hay = JSON.stringify(t.availability ?? {}).toLowerCase();
-        if (!hay.includes(avail)) return false;
       }
       if (exp) {
         const hay = JSON.stringify(t.experience ?? {}).toLowerCase();
@@ -112,7 +106,7 @@ function TalentsPage() {
       }
       return true;
     });
-  }, [raw, dSkills, availability, experience]);
+  }, [raw, dSkills, experience]);
   const featured = useMemo(() => all.filter((t) => t.featured).slice(0, 8), [all]);
   const vips = useMemo(() => all.filter((t) => t.vip && !t.featured).slice(0, 8), [all]);
   const regulars = useMemo(() => all.filter((t) => !t.featured && !t.vip), [all]);
