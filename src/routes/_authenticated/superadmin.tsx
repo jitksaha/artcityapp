@@ -264,8 +264,194 @@ curl -X POST "${origin}/api/public/signup" \\
       </Card>
 
       {isAdmin && <WordPressPushCard origin={origin} />}
+      {isAdmin && <WordPressConnectionCard />}
       {isAdmin && <EmbedSecurityCard origin={origin} />}
     </div>
+  );
+}
+
+function WordPressConnectionCard() {
+  const getCreds = useServerFn(getWordPressCredentials);
+  const saveCreds = useServerFn(saveWordPressCredentials);
+  const testCreds = useServerFn(testWordPressCredentials);
+  const { data: creds, refetch } = useQuery({
+    queryKey: ["wp-creds"],
+    queryFn: () => getCreds(),
+  });
+  const [mode, setMode] = useState<"connector" | "self_hosted">("connector");
+  const [siteUrl, setSiteUrl] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  useEffect(() => {
+    if (creds) {
+      setMode(creds.mode);
+      setSiteUrl(creds.site_url ?? "");
+      setUsername(creds.username ?? "");
+    }
+  }, [creds]);
+
+  const handleSave = async (opts?: { clearPassword?: boolean }) => {
+    setSaving(true);
+    try {
+      await saveCreds({
+        data: {
+          mode,
+          site_url: siteUrl,
+          username,
+          app_password: password || undefined,
+          clear_password: opts?.clearPassword,
+        },
+      });
+      setPassword("");
+      toast.success("WordPress connection saved");
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r: any = await testCreds({ data: {} });
+      if (r.ok) {
+        setTestResult({ ok: true, msg: r.user ? `Connected as ${r.user}` : "Connection OK" });
+      } else {
+        setTestResult({ ok: false, msg: r.error ?? "Failed" });
+      }
+    } catch (e: any) {
+      setTestResult({ ok: false, msg: e?.message ?? "Failed" });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          WordPress connection
+          {creds?.has_password && mode === "self_hosted" && (
+            <Badge variant="secondary" className="bg-green-100 text-green-800">Saved</Badge>
+          )}
+          {mode === "connector" && creds?.connector_available && (
+            <Badge variant="secondary" className="bg-green-100 text-green-800">Connector linked</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label className="text-xs">Connection mode</Label>
+          <div className="flex gap-2 mt-1">
+            <Button
+              type="button"
+              variant={mode === "connector" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("connector")}
+            >
+              WordPress.com connector
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "self_hosted" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("self_hosted")}
+            >
+              Self-hosted (any WordPress site)
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {mode === "connector"
+              ? "Uses the Lovable WordPress.com connector linked in chat."
+              : "Connect any self-hosted WordPress site with an Application Password."}
+          </p>
+        </div>
+
+        {mode === "self_hosted" && (
+          <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+            <div>
+              <Label htmlFor="wp-url" className="text-xs">Site URL</Label>
+              <Input
+                id="wp-url"
+                value={siteUrl}
+                onChange={(e) => setSiteUrl(e.target.value)}
+                placeholder="https://yoursite.com"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="wp-user" className="text-xs">Username</Label>
+                <Input
+                  id="wp-user"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin"
+                />
+              </div>
+              <div>
+                <Label htmlFor="wp-pass" className="text-xs">
+                  Application Password
+                  {creds?.has_password && (
+                    <span className="ml-2 text-muted-foreground">(saved — leave blank to keep)</span>
+                  )}
+                </Label>
+                <Input
+                  id="wp-pass"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="xxxx xxxx xxxx xxxx"
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Create one in WordPress: <strong>Users → Profile → Application Passwords</strong>.
+              Stored encrypted at rest, only readable by admins.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => handleSave()} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Save connection
+          </Button>
+          <Button variant="secondary" onClick={handleTest} disabled={testing}>
+            {testing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Test connection
+          </Button>
+          {mode === "self_hosted" && creds?.has_password && (
+            <Button
+              variant="ghost"
+              onClick={() => handleSave({ clearPassword: true })}
+              disabled={saving}
+            >
+              Clear saved password
+            </Button>
+          )}
+        </div>
+
+        {testResult && (
+          <p className={`text-sm ${testResult.ok ? "text-green-700" : "text-destructive"}`}>
+            {testResult.ok ? "✅ " : "❌ "}
+            {testResult.msg}
+          </p>
+        )}
+        {creds?.updated_at && (
+          <p className="text-xs text-muted-foreground">
+            Last updated: {new Date(creds.updated_at).toLocaleString()}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
