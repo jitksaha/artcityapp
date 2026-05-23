@@ -320,7 +320,7 @@ function WordPressConnectionCard() {
     setTesting(true);
     setTestResult(null);
     try {
-      const r: any = await testCreds({ data: {} });
+      const r: any = await testCreds();
       if (r.ok) {
         setTestResult({ ok: true, msg: r.user ? `Connected as ${r.user}` : "Connection OK" });
       } else {
