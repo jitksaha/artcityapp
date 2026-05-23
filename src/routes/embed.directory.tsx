@@ -19,7 +19,7 @@ function EmbedDirectory() {
   const url = new URL(window.location.href);
   const params = url.searchParams;
   const dataAttrs: Record<string, string> = { "data-widget": "directory", "data-target": "acw-mount" };
-  ["category", "location", "language", "vip", "featured", "limit", "columns", "filters", "title", "refresh", "link-base"].forEach((k) => {
+  ["category", "location", "language", "vip", "featured", "limit", "columns", "filters", "title", "refresh", "link-base", "token"].forEach((k) => {
     const v = params.get(k);
     if (v != null) dataAttrs[`data-${k}`] = v;
   });
