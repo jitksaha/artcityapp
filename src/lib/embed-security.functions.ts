@@ -52,7 +52,11 @@ export const updateEmbedSecurity = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      require_token?: boolean;
+      allowed_origins?: string[];
+      token_ttl_seconds?: number;
+    } = {};
     if (data.require_token !== undefined) patch.require_token = data.require_token;
     if (data.allowed_origins !== undefined) {
       patch.allowed_origins = data.allowed_origins
