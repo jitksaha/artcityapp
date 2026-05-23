@@ -31,7 +31,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { pushTalentsToWordPress, checkWordPressConnection } from "@/lib/wordpress.functions";
+import {
+  pushTalentsToWordPress,
+  checkWordPressConnection,
+  getWordPressSettings,
+  saveWordPressSettings,
+} from "@/lib/wordpress.functions";
 import { Copy, ExternalLink, Check } from "lucide-react";
 import {
   Dialog,
@@ -255,24 +260,50 @@ curl -X POST "${origin}/api/public/signup" \\
 function WordPressPushCard({ origin: _origin }: { origin: string }) {
   const check = useServerFn(checkWordPressConnection);
   const push = useServerFn(pushTalentsToWordPress);
+  const getSettings = useServerFn(getWordPressSettings);
+  const saveSettings = useServerFn(saveWordPressSettings);
   const { data: status, refetch } = useQuery({
     queryKey: ["wp-connection"],
     queryFn: () => check(),
   });
+  const { data: settings, refetch: refetchSettings } = useQuery({
+    queryKey: ["wp-settings"],
+    queryFn: () => getSettings(),
+  });
   const [siteId, setSiteId] = useState("");
   const [postStatus, setPostStatus] = useState<"publish" | "draft">("publish");
+  const [autoSync, setAutoSync] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [pushing, setPushing] = useState(false);
-  const [result, setResult] = useState<{ pushed: number; failed: number } | null>(null);
+  const [result, setResult] = useState<{ pushed: number; updated: number; failed: number; skipped: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setSiteId(settings.site_id ?? "");
+      setPostStatus(settings.default_status ?? "publish");
+      setAutoSync(!!settings.auto_sync);
+    }
+  }, [settings]);
+
+  const webhookUrl = `${_origin}/api/public/hooks/wordpress-sync`;
+  const anonKey =
+    (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ??
+    "YOUR_SUPABASE_ANON_KEY";
+  const curlSnippet = `curl -X POST "${webhookUrl}" \\\n  -H "Content-Type: application/json" \\\n  -H "apikey: ${anonKey}" \\\n  -d '{"onlyUnsynced": true}'`;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Push to WordPress.com
+          WordPress.com sync
           {status?.connected ? (
             <Badge variant="secondary" className="bg-green-100 text-green-800">Connected</Badge>
           ) : (
             <Badge variant="outline">Not connected</Badge>
+          )}
+          {autoSync && status?.connected && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">Auto-sync on</Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -284,8 +315,8 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Publishes all approved & public talents as posts on the given WordPress.com site.
-            Run this whenever you want to mirror your roster.
+            Mirrors your approved & public roster to WordPress.com. Posts are created the first time
+            and updated on subsequent syncs (tracked by WordPress post ID per talent).
           </p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -300,7 +331,7 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
             />
           </div>
           <div>
-            <Label htmlFor="wp-status" className="text-xs">Post status</Label>
+            <Label htmlFor="wp-status" className="text-xs">Default post status</Label>
             <select
               id="wp-status"
               className="w-full h-10 rounded-md border px-3 text-sm bg-background"
@@ -313,16 +344,56 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
             </select>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="wp-auto" className="text-sm font-medium">Auto-sync on approval/publish</Label>
+            <p className="text-xs text-muted-foreground">
+              When an admin approves or publishes a talent, push it to WordPress.com immediately.
+            </p>
+          </div>
+          <Switch
+            id="wp-auto"
+            checked={autoSync}
+            onCheckedChange={setAutoSync}
+            disabled={!status?.connected}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="secondary"
+            disabled={savingSettings || !status?.connected}
+            onClick={async () => {
+              setSavingSettings(true);
+              try {
+                await saveSettings({
+                  data: { site_id: siteId, auto_sync: autoSync, default_status: postStatus },
+                });
+                toast.success("Settings saved");
+                refetchSettings();
+              } catch (e: any) {
+                toast.error(e?.message ?? "Save failed");
+              } finally {
+                setSavingSettings(false);
+              }
+            }}
+          >
+            {savingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Save settings
+          </Button>
           <Button
             disabled={!status?.connected || !siteId || pushing}
             onClick={async () => {
               setPushing(true);
               setResult(null);
               try {
-                const r = await push({ data: { siteId, status: postStatus } });
-                setResult({ pushed: r.pushed, failed: r.failed });
-                toast.success(`Pushed ${r.pushed} talent(s)${r.failed ? `, ${r.failed} failed` : ""}`);
+                const r = await push({
+                  data: { siteId, status: postStatus, onlyUnsynced: true },
+                });
+                setResult({ pushed: r.pushed, updated: r.updated, failed: r.failed, skipped: r.skipped });
+                toast.success(
+                  `Synced ${r.pushed + r.updated} talent(s)${r.failed ? `, ${r.failed} failed` : ""}`,
+                );
+                refetchSettings();
               } catch (e: any) {
                 toast.error(e?.message ?? "Push failed");
               } finally {
@@ -331,15 +402,58 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
             }}
           >
             {pushing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Push approved talents
+            Run sync now
           </Button>
           <Button variant="ghost" onClick={() => refetch()}>Re-check connection</Button>
         </div>
         {result && (
           <p className="text-sm">
-            ✅ {result.pushed} pushed · ❌ {result.failed} failed
+            ✅ {result.pushed} new · 🔄 {result.updated} updated · ⏭️ {result.skipped} unchanged
+            {result.failed ? ` · ❌ ${result.failed} failed` : ""}
           </p>
         )}
+        {settings?.last_run_at && (
+          <p className="text-xs text-muted-foreground">
+            Last run: {new Date(settings.last_run_at).toLocaleString()}
+            {settings.last_run_summary
+              ? ` — ${(settings.last_run_summary as any).pushed ?? 0} new, ${(settings.last_run_summary as any).updated ?? 0} updated, ${(settings.last_run_summary as any).failed ?? 0} failed`
+              : ""}
+          </p>
+        )}
+
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <Label className="text-sm font-semibold">Webhook / cron endpoint</Label>
+          <p className="text-xs text-muted-foreground">
+            Call this URL with the <code className="rounded bg-muted px-1">apikey</code> header to trigger a sync
+            from anywhere — external automations, GitHub Actions, or a pg_cron schedule.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-background px-2 py-1 text-xs">{webhookUrl}</code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+              Show curl example
+            </summary>
+            <pre className="mt-2 overflow-x-auto rounded bg-background p-2 text-xs">{curlSnippet}</pre>
+            <p className="mt-2 text-muted-foreground">
+              To schedule it via Supabase pg_cron (e.g. every 15 minutes), run a SQL snippet using
+              <code className="mx-1 rounded bg-muted px-1">net.http_post</code> targeting this URL with the same
+              <code className="mx-1 rounded bg-muted px-1">apikey</code> header.
+            </p>
+          </details>
+        </div>
       </CardContent>
     </Card>
   );

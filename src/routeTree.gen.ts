@@ -28,6 +28,7 @@ import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talent
 import { Route as ApiPublicSignupRouteImport } from './routes/api/public/signup'
 import { Route as ApiPublicEmbedDotjsRouteImport } from './routes/api/public/embed[.]js'
 import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
+import { Route as ApiPublicHooksWordpressSyncRouteImport } from './routes/api/public/hooks/wordpress-sync'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -123,6 +124,12 @@ const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
   path: '/api/public/casting-request',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWordpressSyncRoute =
+  ApiPublicHooksWordpressSyncRouteImport.update({
+    id: '/api/public/hooks/wordpress-sync',
+    path: '/api/public/hooks/wordpress-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
+  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesByTo {
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
+  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -185,6 +194,7 @@ export interface FileRoutesById {
   '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
+  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
+    | '/api/public/hooks/wordpress-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
+    | '/api/public/hooks/wordpress-sync'
   id:
     | '__root__'
     | '/'
@@ -248,6 +260,7 @@ export interface FileRouteTypes {
     | '/api/public/embed.js'
     | '/api/public/signup'
     | '/api/public/talents'
+    | '/api/public/hooks/wordpress-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -267,6 +280,7 @@ export interface RootRouteChildren {
   ApiPublicEmbedDotjsRoute: typeof ApiPublicEmbedDotjsRoute
   ApiPublicSignupRoute: typeof ApiPublicSignupRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
+  ApiPublicHooksWordpressSyncRoute: typeof ApiPublicHooksWordpressSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -404,6 +418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCastingRequestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wordpress-sync': {
+      id: '/api/public/hooks/wordpress-sync'
+      path: '/api/public/hooks/wordpress-sync'
+      fullPath: '/api/public/hooks/wordpress-sync'
+      preLoaderRoute: typeof ApiPublicHooksWordpressSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -440,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmbedDotjsRoute: ApiPublicEmbedDotjsRoute,
   ApiPublicSignupRoute: ApiPublicSignupRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRoute,
+  ApiPublicHooksWordpressSyncRoute: ApiPublicHooksWordpressSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
