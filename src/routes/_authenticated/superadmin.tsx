@@ -46,7 +46,7 @@ import {
   rotateEmbedSecret,
   mintEmbedToken,
 } from "@/lib/embed-security.functions";
-import { Copy, ExternalLink, Check } from "lucide-react";
+import { Copy, ExternalLink, Check, TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,20 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AdminSidebar, type AdminView } from "@/components/admin/AdminSidebar";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
@@ -63,35 +77,54 @@ export const Route = createFileRoute("/_authenticated/superadmin")({
 
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useAuth();
+  const [view, setView] = useState<AdminView>("overview");
   if (loading) return <AdminSkeleton />;
   if (!isStaff) return <Navigate to="/dashboard" replace />;
+  const titles: Record<AdminView, string> = {
+    overview: "Dashboard",
+    applications: "Talent Applications",
+    casting: "Casting Requests",
+    integrations: "Integrations",
+    snippets: "Snippets & Dev Mode",
+    users: "Users & Roles",
+    settings: "Settings",
+  };
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-6">Super Admin</h1>
-      {isAdmin && <ImportDemoTalentsCard />}
-      <Tabs defaultValue="applications">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="casting">Casting Requests</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="snippets">Snippets</TabsTrigger>
-          {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
-          {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="overview" className="mt-4"><OverviewTab /></TabsContent>
-        <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
-        <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
-        <TabsContent value="integrations" className="mt-4"><IntegrationsTab isAdmin={isAdmin} /></TabsContent>
-        <TabsContent value="snippets" className="mt-4"><SnippetsTab /></TabsContent>
-        {isAdmin && (
-          <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
-        )}
-        {isAdmin && (
-          <TabsContent value="settings" className="mt-4"><SettingsTab /></TabsContent>
-        )}
-      </Tabs>
-    </main>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "15rem",
+          "--sidebar-width-icon": "3.25rem",
+        } as React.CSSProperties
+      }
+    >
+      <AdminSidebar view={view} onChange={setView} isAdmin={isAdmin} />
+      <SidebarInset className="bg-muted/30">
+        <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur">
+          <SidebarTrigger />
+          <div className="h-4 w-px bg-border mx-1" />
+          <p className="text-sm font-medium tracking-tight">{titles[view]}</p>
+          <div className="ml-auto flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="hidden sm:inline">Super Admin</span>
+            <Badge variant="outline" className="font-mono text-[10px]">v1</Badge>
+          </div>
+        </header>
+        <div className="p-4 sm:p-6 space-y-6">
+          {view === "overview" && <OverviewTab />}
+          {view === "applications" && (
+            <>
+              {isAdmin && <ImportDemoTalentsCard />}
+              <ApplicationsTab />
+            </>
+          )}
+          {view === "casting" && <CastingTab />}
+          {view === "integrations" && <IntegrationsTab isAdmin={isAdmin} />}
+          {view === "snippets" && <SnippetsTab />}
+          {view === "users" && isAdmin && <UsersTab />}
+          {view === "settings" && isAdmin && <SettingsTab />}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
