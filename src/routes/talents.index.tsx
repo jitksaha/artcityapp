@@ -179,7 +179,7 @@ function TalentsPage() {
                     setNationality(""); setPlayingAge("");
                     setAgeMin(""); setAgeMax("");
                     setVipOnly(false); setFeaturedOnly(false);
-                    setSkills(""); setAvailability(undefined); setExperience(undefined);
+                    setSkills(""); setExperience(undefined);
                     setSort("featured");
                   }}
                 >
@@ -220,12 +220,6 @@ function TalentsPage() {
           <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="w-full" />
           <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="w-full" />
           <Input placeholder="Skills (e.g. acting, dancing)" value={skills} onChange={(e) => setSkills(e.target.value)} className="w-full sm:col-span-2" />
-          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={availability ?? ""} onChange={(e) => setAvailability(e.target.value || undefined)}>
-            <option value="">Any availability</option>
-            <option value="available">Available</option>
-            <option value="limited">Limited</option>
-            <option value="unavailable">Unavailable</option>
-          </select>
           <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
             <option value="">Any experience</option>
             <option value="beginner">Beginner</option>
