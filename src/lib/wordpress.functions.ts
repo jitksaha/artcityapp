@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/wordpress_com";
@@ -40,10 +41,132 @@ export const pushTalentsToWordPress = createServerFn({ method: "POST" })
 
 export const checkWordPressConnection = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data: creds } = await supabase
+      .from("wordpress_credentials")
+      .select("mode, site_url, username, app_password")
+      .eq("id", 1)
+      .maybeSingle();
+    const mode = (creds?.mode as "connector" | "self_hosted") || "connector";
+    if (mode === "self_hosted") {
+      return {
+        connected: !!(creds?.site_url && creds?.username && creds?.app_password),
+        mode,
+      };
+    }
     return {
       connected: !!(process.env.LOVABLE_API_KEY && process.env.WORDPRESS_COM_API_KEY),
+      mode,
     };
+  });
+
+// ---------- Self-hosted / one-click WP credentials ----------
+
+async function assertAdmin(supabase: SupabaseClient, userId: string) {
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+  if (!(roles ?? []).some((r: any) => r.role === "admin")) {
+    throw new Error("Forbidden: admin only");
+  }
+}
+
+export const getWordPressCredentials = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data } = await supabaseAdmin
+      .from("wordpress_credentials")
+      .select("mode, site_url, username, app_password, updated_at")
+      .eq("id", 1)
+      .maybeSingle();
+    return {
+      mode: (data?.mode as "connector" | "self_hosted") ?? "connector",
+      site_url: data?.site_url ?? "",
+      username: data?.username ?? "",
+      has_password: !!data?.app_password,
+      updated_at: data?.updated_at ?? null,
+      connector_available: !!(process.env.LOVABLE_API_KEY && process.env.WORDPRESS_COM_API_KEY),
+    };
+  });
+
+const CredsSchema = z.object({
+  mode: z.enum(["connector", "self_hosted"]),
+  site_url: z.string().max(300).optional(),
+  username: z.string().max(200).optional(),
+  app_password: z.string().max(500).optional(),
+  clear_password: z.boolean().optional(),
+});
+
+export const saveWordPressCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => CredsSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const update: {
+      mode: "connector" | "self_hosted";
+      updated_by: string;
+      site_url?: string | null;
+      username?: string | null;
+      app_password?: string | null;
+    } = {
+      mode: data.mode,
+      updated_by: context.userId,
+    };
+    if (data.site_url !== undefined) {
+      let url = data.site_url.trim();
+      if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+      update.site_url = url || null;
+    }
+    if (data.username !== undefined) update.username = data.username.trim() || null;
+    if (data.clear_password) {
+      update.app_password = null;
+    } else if (data.app_password && data.app_password.trim()) {
+      update.app_password = data.app_password.trim();
+    }
+    const { error } = await supabaseAdmin
+      .from("wordpress_credentials")
+      .update(update)
+      .eq("id", 1);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const testWordPressCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data: creds } = await supabaseAdmin
+      .from("wordpress_credentials")
+      .select("mode, site_url, username, app_password")
+      .eq("id", 1)
+      .maybeSingle();
+    const mode = (creds?.mode as "connector" | "self_hosted") ?? "connector";
+    if (mode === "connector") {
+      if (!(process.env.LOVABLE_API_KEY && process.env.WORDPRESS_COM_API_KEY)) {
+        return { ok: false, error: "WordPress.com connector is not linked." };
+      }
+      return { ok: true, mode };
+    }
+    if (!creds?.site_url || !creds?.username || !creds?.app_password) {
+      return { ok: false, error: "Missing site URL, username, or application password." };
+    }
+    try {
+      const auth = Buffer.from(`${creds.username}:${creds.app_password}`).toString("base64");
+      const res = await fetch(`${creds.site_url.replace(/\/+$/, "")}/wp-json/wp/v2/users/me?context=edit`, {
+        headers: { Authorization: `Basic ${auth}` },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        return { ok: false, error: `HTTP ${res.status}: ${text.slice(0, 160)}` };
+      }
+      const me: any = await res.json().catch(() => ({}));
+      return { ok: true, mode, user: me?.name ?? me?.slug ?? creds.username };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Network error" };
+    }
   });
 
 const SettingsSchema = z.object({
@@ -137,13 +260,30 @@ export async function runWordPressSync(
   skipped: number;
   results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }>;
 }> {
+  const { data: creds } = await supabaseAdmin
+    .from("wordpress_credentials")
+    .select("mode, site_url, username, app_password")
+    .eq("id", 1)
+    .maybeSingle();
+  const mode: "connector" | "self_hosted" =
+    (creds?.mode as any) ?? "connector";
+
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const WP_KEY = process.env.WORDPRESS_COM_API_KEY;
-  if (!LOVABLE_API_KEY || !WP_KEY) {
+  if (mode === "connector" && (!LOVABLE_API_KEY || !WP_KEY)) {
     throw new Error(
-      "WordPress.com is not connected. Ask Lovable to 'connect WordPress.com' in chat.",
+      "WordPress.com connector is not linked. Switch to Self-hosted in admin or connect the connector.",
     );
   }
+  if (mode === "self_hosted" && (!creds?.site_url || !creds?.username || !creds?.app_password)) {
+    throw new Error("Self-hosted WordPress credentials are incomplete. Open admin → WordPress to set them.");
+  }
+  const selfHostedBase = creds?.site_url?.replace(/\/+$/, "") ?? "";
+  const selfHostedAuth =
+    mode === "self_hosted"
+      ? "Basic " +
+        Buffer.from(`${creds!.username}:${creds!.app_password}`).toString("base64")
+      : "";
 
   const { data: settings } = await supabase
     .from("app_settings")
@@ -154,7 +294,7 @@ export async function runWordPressSync(
   const siteId = opts.siteIdOverride || settings?.wordpress_site_id || "";
   const status: "publish" | "draft" =
     opts.statusOverride || (settings?.wordpress_default_status as any) || "publish";
-  if (!siteId) {
+  if (mode === "connector" && !siteId) {
     throw new Error("No WordPress site configured. Set the site ID in Integrations first.");
   }
 
@@ -190,18 +330,28 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
 <p><a href="https://acbe.lovable.app/talents/${t.slug ?? t.id}">View full profile</a></p>`.trim();
 
     const isUpdate = !!t.wordpress_post_id;
-    const url = isUpdate
-      ? `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/${t.wordpress_post_id}`
-      : `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/new`;
+    const url =
+      mode === "self_hosted"
+        ? isUpdate
+          ? `${selfHostedBase}/wp-json/wp/v2/posts/${t.wordpress_post_id}`
+          : `${selfHostedBase}/wp-json/wp/v2/posts`
+        : isUpdate
+          ? `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/${t.wordpress_post_id}`
+          : `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/new`;
+
+    const headers: Record<string, string> =
+      mode === "self_hosted"
+        ? { Authorization: selfHostedAuth, "Content-Type": "application/json" }
+        : {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "X-Connection-Api-Key": WP_KEY!,
+            "Content-Type": "application/json",
+          };
 
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": WP_KEY,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           title: name,
           content: html,
@@ -219,11 +369,12 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
           .update({ wordpress_sync_error: msg })
           .eq("id", t.id);
       } else {
-        results.push({ id: t.id, ok: true, postId: json?.ID, updated: isUpdate });
+        const postId = json?.ID ?? json?.id;
+        results.push({ id: t.id, ok: true, postId, updated: isUpdate });
         await supabase
           .from("talent_profiles")
           .update({
-            wordpress_post_id: json?.ID ?? t.wordpress_post_id,
+            wordpress_post_id: postId ?? t.wordpress_post_id,
             wordpress_synced_at: new Date().toISOString(),
             wordpress_sync_error: null,
           })

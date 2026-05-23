@@ -484,6 +484,36 @@ export type Database = {
         }
         Relationships: []
       }
+      wordpress_credentials: {
+        Row: {
+          app_password: string | null
+          id: number
+          mode: string
+          site_url: string | null
+          updated_at: string
+          updated_by: string | null
+          username: string | null
+        }
+        Insert: {
+          app_password?: string | null
+          id?: number
+          mode?: string
+          site_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+        }
+        Update: {
+          app_password?: string | null
+          id?: number
+          mode?: string
+          site_url?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
