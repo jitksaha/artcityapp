@@ -677,6 +677,7 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
 }
 
 function AdminSkeleton() {
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <Skeleton className="h-8 w-48" />
