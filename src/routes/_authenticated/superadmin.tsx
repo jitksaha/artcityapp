@@ -72,6 +72,7 @@ function AdminPage() {
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="snippets">Snippets</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
@@ -79,6 +80,7 @@ function AdminPage() {
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><IntegrationsTab isAdmin={isAdmin} /></TabsContent>
+        <TabsContent value="snippets" className="mt-4"><SnippetsTab /></TabsContent>
         {isAdmin && (
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         )}
