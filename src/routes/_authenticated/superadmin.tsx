@@ -71,6 +71,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
+  ssr: false,
   head: () => ({ meta: [{ title: "Super Admin — Art City" }] }),
 });
 
