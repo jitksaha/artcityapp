@@ -72,6 +72,7 @@ function AdminPage() {
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="casting">Casting Requests</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="snippets">Snippets</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">Users & Roles</TabsTrigger>}
           {isAdmin && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
@@ -79,6 +80,7 @@ function AdminPage() {
         <TabsContent value="applications" className="mt-4"><ApplicationsTab /></TabsContent>
         <TabsContent value="casting" className="mt-4"><CastingTab /></TabsContent>
         <TabsContent value="integrations" className="mt-4"><IntegrationsTab isAdmin={isAdmin} /></TabsContent>
+        <TabsContent value="snippets" className="mt-4"><SnippetsTab /></TabsContent>
         {isAdmin && (
           <TabsContent value="users" className="mt-4"><UsersTab /></TabsContent>
         )}
@@ -673,8 +675,191 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
     </Card>
   );
 }
+function SnippetsTab() {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://acbe.lovable.app";
+
+  const [widget, setWidget] = useState<"directory" | "signup" | "casting">("directory");
+  const [category, setCategory] = useState("");
+  const [location, setLocation] = useState("");
+  const [language, setLanguage] = useState("");
+  const [vipOnly, setVipOnly] = useState(false);
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [limit, setLimit] = useState(12);
+  const [columns, setColumns] = useState(4);
+  const [title, setTitle] = useState("Our Talent");
+  const [showFilters, setShowFilters] = useState(true);
+  const [refreshSec, setRefreshSec] = useState(60);
+  const [token, setToken] = useState("");
+
+  const attrs: Array<[string, string]> = [["data-widget", widget]];
+  if (widget === "directory") {
+    if (title) attrs.push(["data-title", title]);
+    if (category) attrs.push(["data-category", category]);
+    if (location) attrs.push(["data-location", location]);
+    if (language) attrs.push(["data-language", language]);
+    if (vipOnly) attrs.push(["data-vip", "true"]);
+    if (featuredOnly) attrs.push(["data-featured", "true"]);
+    if (limit) attrs.push(["data-limit", String(limit)]);
+    if (columns) attrs.push(["data-columns", String(columns)]);
+    attrs.push(["data-filters", showFilters ? "true" : "false"]);
+    if (refreshSec > 0) attrs.push(["data-refresh", String(refreshSec)]);
+  }
+  if (token) attrs.push(["data-token", token]);
+
+  const attrLines = attrs.map(([k, v]) => `  ${k}="${v}"`).join("\n");
+  const scriptSnippet = `<!-- Talent ${widget} widget -->\n<script async src="${origin}/api/public/embed.js"\n${attrLines}></script>`;
+
+  // iframe — only meaningful for the directory widget
+  const qs = new URLSearchParams();
+  if (widget === "directory") {
+    if (title) qs.set("title", title);
+    if (category) qs.set("category", category);
+    if (location) qs.set("location", location);
+    if (language) qs.set("language", language);
+    if (vipOnly) qs.set("vip", "true");
+    if (featuredOnly) qs.set("featured", "true");
+    if (limit) qs.set("limit", String(limit));
+    if (columns) qs.set("columns", String(columns));
+    qs.set("filters", showFilters ? "true" : "false");
+    if (refreshSec > 0) qs.set("refresh", String(refreshSec));
+  }
+  if (token) qs.set("token", token);
+  const iframeSnippet = `<iframe\n  src="${origin}/embed/directory?${qs.toString()}"\n  style="width:100%;min-height:800px;border:0"\n  loading="lazy"\n  title="${title || "Talent Directory"}"></iframe>`;
+
+  const wpShortcode = `<!-- Paste inside a WordPress "Custom HTML" block -->\n${scriptSnippet}`;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Embed snippet generator</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-xs">Widget type</Label>
+            <select
+              className="mt-1 w-full h-10 rounded-md border px-3 text-sm bg-background"
+              value={widget}
+              onChange={(e) => setWidget(e.target.value as any)}
+            >
+              <option value="directory">Talent directory grid</option>
+              <option value="signup">Talent signup form</option>
+              <option value="casting">Casting request form</option>
+            </select>
+          </div>
+
+          {widget === "directory" && (
+            <>
+              <div>
+                <Label htmlFor="snip-title" className="text-xs">Title</Label>
+                <Input id="snip-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="snip-cat" className="text-xs">Category</Label>
+                  <select
+                    id="snip-cat"
+                    className="mt-1 w-full h-10 rounded-md border px-3 text-sm bg-background"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="">Any</option>
+                    <option value="actor">Actor</option>
+                    <option value="model">Model</option>
+                    <option value="voice">Voice</option>
+                    <option value="dancer">Dancer</option>
+                    <option value="singer">Singer</option>
+                    <option value="presenter">Presenter</option>
+                    <option value="extra">Extra</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="snip-loc" className="text-xs">Location</Label>
+                  <Input id="snip-loc" placeholder="e.g. Paris" value={location} onChange={(e) => setLocation(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="snip-lang" className="text-xs">Language</Label>
+                  <Input id="snip-lang" placeholder="e.g. French" value={language} onChange={(e) => setLanguage(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="snip-refresh" className="text-xs">Auto-refresh (sec)</Label>
+                  <Input id="snip-refresh" type="number" min={0} value={refreshSec} onChange={(e) => setRefreshSec(parseInt(e.target.value || "0", 10))} />
+                </div>
+                <div>
+                  <Label htmlFor="snip-limit" className="text-xs">Limit</Label>
+                  <Input id="snip-limit" type="number" min={1} max={200} value={limit} onChange={(e) => setLimit(parseInt(e.target.value || "12", 10))} />
+                </div>
+                <div>
+                  <Label htmlFor="snip-cols" className="text-xs">Columns</Label>
+                  <Input id="snip-cols" type="number" min={1} max={8} value={columns} onChange={(e) => setColumns(parseInt(e.target.value || "4", 10))} />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch checked={vipOnly} onCheckedChange={setVipOnly} /> VIP only
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch checked={featuredOnly} onCheckedChange={setFeaturedOnly} /> Featured only
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <Switch checked={showFilters} onCheckedChange={setShowFilters} /> Show filter bar
+                </label>
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label htmlFor="snip-token" className="text-xs">Embed token (optional)</Label>
+            <Input
+              id="snip-token"
+              placeholder="Paste a token from Integrations → Embed security"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Required only if you have "Require signed embed token" enabled.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Generated snippets</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm font-semibold">Script tag (WordPress Custom HTML, Webflow, Shopify, raw HTML…)</Label>
+            <div className="mt-1"><CopyBlock code={scriptSnippet} /></div>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold">iframe (CMS that strips JS)</Label>
+            <div className="mt-1"><CopyBlock code={iframeSnippet} /></div>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold">WordPress.com Custom HTML block</Label>
+            <div className="mt-1"><CopyBlock code={wpShortcode} /></div>
+          </div>
+          <div>
+            <Label className="text-sm font-semibold">Live preview</Label>
+            <div className="mt-1 rounded-md border bg-muted/30 p-2">
+              <iframe
+                title="Embed preview"
+                src={`${origin}/embed/directory?${qs.toString()}`}
+                style={{ width: "100%", minHeight: 480, border: 0, background: "white" }}
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function AdminSkeleton() {
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <Skeleton className="h-8 w-48" />
