@@ -260,13 +260,30 @@ export async function runWordPressSync(
   skipped: number;
   results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }>;
 }> {
+  const { data: creds } = await supabaseAdmin
+    .from("wordpress_credentials")
+    .select("mode, site_url, username, app_password")
+    .eq("id", 1)
+    .maybeSingle();
+  const mode: "connector" | "self_hosted" =
+    (creds?.mode as any) ?? "connector";
+
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const WP_KEY = process.env.WORDPRESS_COM_API_KEY;
-  if (!LOVABLE_API_KEY || !WP_KEY) {
+  if (mode === "connector" && (!LOVABLE_API_KEY || !WP_KEY)) {
     throw new Error(
-      "WordPress.com is not connected. Ask Lovable to 'connect WordPress.com' in chat.",
+      "WordPress.com connector is not linked. Switch to Self-hosted in admin or connect the connector.",
     );
   }
+  if (mode === "self_hosted" && (!creds?.site_url || !creds?.username || !creds?.app_password)) {
+    throw new Error("Self-hosted WordPress credentials are incomplete. Open admin → WordPress to set them.");
+  }
+  const selfHostedBase = creds?.site_url?.replace(/\/+$/, "") ?? "";
+  const selfHostedAuth =
+    mode === "self_hosted"
+      ? "Basic " +
+        Buffer.from(`${creds!.username}:${creds!.app_password}`).toString("base64")
+      : "";
 
   const { data: settings } = await supabase
     .from("app_settings")
@@ -277,7 +294,7 @@ export async function runWordPressSync(
   const siteId = opts.siteIdOverride || settings?.wordpress_site_id || "";
   const status: "publish" | "draft" =
     opts.statusOverride || (settings?.wordpress_default_status as any) || "publish";
-  if (!siteId) {
+  if (mode === "connector" && !siteId) {
     throw new Error("No WordPress site configured. Set the site ID in Integrations first.");
   }
 
@@ -313,18 +330,28 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
 <p><a href="https://acbe.lovable.app/talents/${t.slug ?? t.id}">View full profile</a></p>`.trim();
 
     const isUpdate = !!t.wordpress_post_id;
-    const url = isUpdate
-      ? `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/${t.wordpress_post_id}`
-      : `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/new`;
+    const url =
+      mode === "self_hosted"
+        ? isUpdate
+          ? `${selfHostedBase}/wp-json/wp/v2/posts/${t.wordpress_post_id}`
+          : `${selfHostedBase}/wp-json/wp/v2/posts`
+        : isUpdate
+          ? `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/${t.wordpress_post_id}`
+          : `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/new`;
+
+    const headers: Record<string, string> =
+      mode === "self_hosted"
+        ? { Authorization: selfHostedAuth, "Content-Type": "application/json" }
+        : {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "X-Connection-Api-Key": WP_KEY!,
+            "Content-Type": "application/json",
+          };
 
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": WP_KEY,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           title: name,
           content: html,
@@ -342,11 +369,12 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
           .update({ wordpress_sync_error: msg })
           .eq("id", t.id);
       } else {
-        results.push({ id: t.id, ok: true, postId: json?.ID, updated: isUpdate });
+        const postId = json?.ID ?? json?.id;
+        results.push({ id: t.id, ok: true, postId, updated: isUpdate });
         await supabase
           .from("talent_profiles")
           .update({
-            wordpress_post_id: json?.ID ?? t.wordpress_post_id,
+            wordpress_post_id: postId ?? t.wordpress_post_id,
             wordpress_synced_at: new Date().toISOString(),
             wordpress_sync_error: null,
           })
