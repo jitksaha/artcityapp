@@ -85,7 +85,11 @@ export const saveWordPressSettings = createServerFn({ method: "POST" })
     if (!(roles ?? []).some((r: any) => r.role === "admin")) {
       throw new Error("Forbidden: admin only");
     }
-    const update: Record<string, unknown> = {};
+    const update: {
+      wordpress_site_id?: string | null;
+      wordpress_auto_sync?: boolean;
+      wordpress_default_status?: string;
+    } = {};
     if (data.site_id !== undefined) update.wordpress_site_id = data.site_id || null;
     if (data.auto_sync !== undefined) update.wordpress_auto_sync = data.auto_sync;
     if (data.default_status !== undefined) update.wordpress_default_status = data.default_status;
