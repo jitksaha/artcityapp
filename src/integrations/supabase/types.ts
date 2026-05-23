@@ -153,6 +153,33 @@ export type Database = {
           },
         ]
       }
+      embed_security_settings: {
+        Row: {
+          allowed_origins: string[]
+          id: number
+          require_token: boolean
+          signing_secret: string
+          token_ttl_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          allowed_origins?: string[]
+          id?: number
+          require_token?: boolean
+          signing_secret?: string
+          token_ttl_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          allowed_origins?: string[]
+          id?: number
+          require_token?: boolean
+          signing_secret?: string
+          token_ttl_seconds?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_uploads: {
         Row: {
           bucket: string
