@@ -194,8 +194,15 @@ function TalentsPage() {
               )}
             </div>
           </div>
-          {filtersOpen && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+          <div
+            className={`relative mt-4 overflow-hidden transition-all duration-300 ${
+              filtersOpen ? "max-h-[2000px]" : "max-h-[64px] cursor-pointer"
+            }`}
+            onClick={() => {
+              if (!filtersOpen) setFiltersOpen(true);
+            }}
+          >
+          <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 ${!filtersOpen ? "pointer-events-none select-none" : ""}`}>
           <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:col-span-2" />
           <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
             <option value="">All genders</option>
@@ -258,7 +265,19 @@ function TalentsPage() {
             Featured only
           </label>
           </div>
+          {!filtersOpen && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 top-8 bg-gradient-to-b from-transparent via-card/70 to-card backdrop-blur-[3px]" />
           )}
+          {!filtersOpen && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setFiltersOpen(true); }}
+              className="absolute inset-x-0 bottom-1 mx-auto block w-fit rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:opacity-90"
+            >
+              Show all filters
+            </button>
+          )}
+          </div>
         </div>
 
         <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" aria-live="polite">
