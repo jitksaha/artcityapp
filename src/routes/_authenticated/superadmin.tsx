@@ -37,6 +37,12 @@ import {
   getWordPressSettings,
   saveWordPressSettings,
 } from "@/lib/wordpress.functions";
+import {
+  getEmbedSecurity,
+  updateEmbedSecurity,
+  rotateEmbedSecret,
+  mintEmbedToken,
+} from "@/lib/embed-security.functions";
 import { Copy, ExternalLink, Check } from "lucide-react";
 import {
   Dialog,
@@ -253,7 +259,216 @@ curl -X POST "${origin}/api/public/signup" \\
       </Card>
 
       {isAdmin && <WordPressPushCard origin={origin} />}
+      {isAdmin && <EmbedSecurityCard origin={origin} />}
     </div>
+  );
+}
+
+function EmbedSecurityCard({ origin }: { origin: string }) {
+  const get = useServerFn(getEmbedSecurity);
+  const save = useServerFn(updateEmbedSecurity);
+  const rotate = useServerFn(rotateEmbedSecret);
+  const mint = useServerFn(mintEmbedToken);
+  const { data: settings, refetch } = useQuery({
+    queryKey: ["embed-security"],
+    queryFn: () => get(),
+  });
+
+  const [requireToken, setRequireToken] = useState(false);
+  const [originsText, setOriginsText] = useState("");
+  const [ttlHours, setTtlHours] = useState(24);
+  const [saving, setSaving] = useState(false);
+  const [tokenOrigin, setTokenOrigin] = useState("");
+  const [mintedToken, setMintedToken] = useState<string | null>(null);
+  const [minting, setMinting] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setRequireToken(!!settings.require_token);
+      setOriginsText((settings.allowed_origins ?? []).join("\n"));
+      setTtlHours(Math.max(1, Math.round((settings.token_ttl_seconds ?? 86400) / 3600)));
+    }
+  }, [settings]);
+
+  const parsedOrigins = originsText
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Embed security
+          {requireToken ? (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">Token required</Badge>
+          ) : (
+            <Badge variant="outline">Open</Badge>
+          )}
+          {parsedOrigins.length > 0 && (
+            <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+              {parsedOrigins.length} allowed origin{parsedOrigins.length === 1 ? "" : "s"}
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Lock down <code>/api/public/talents</code>, <code>/api/public/signup</code>,{" "}
+          <code>/api/public/casting-request</code> and the embed widget so only your
+          approved websites can call them. Use an origin allowlist, a signed token,
+          or both.
+        </p>
+
+        <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="emb-tok" className="text-sm font-medium">Require signed embed token</Label>
+            <p className="text-xs text-muted-foreground">
+              When on, every public embed request must include a valid <code>token</code>{" "}
+              query param or <code>X-Embed-Token</code> header you mint below.
+            </p>
+          </div>
+          <Switch id="emb-tok" checked={requireToken} onCheckedChange={setRequireToken} />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="emb-origins" className="text-sm">Allowed origins</Label>
+          <Textarea
+            id="emb-origins"
+            rows={4}
+            placeholder={"https://example.com\nhttps://www.example.com"}
+            value={originsText}
+            onChange={(e) => setOriginsText(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            One per line (scheme + host). Leave empty to allow any origin.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <Label htmlFor="emb-ttl" className="text-xs">Token lifetime (hours)</Label>
+            <Input
+              id="emb-ttl"
+              type="number"
+              min={1}
+              max={24 * 365}
+              value={ttlHours}
+              onChange={(e) => setTtlHours(parseInt(e.target.value || "1", 10))}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Signing secret</Label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate rounded bg-muted px-2 py-2 text-xs">
+                {settings?.signing_secret_masked || "—"}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!confirm("Rotate signing secret? All previously issued tokens will stop working.")) return;
+                  try {
+                    await rotate();
+                    toast.success("Signing secret rotated");
+                    refetch();
+                  } catch (e: any) {
+                    toast.error(e?.message ?? "Rotate failed");
+                  }
+                }}
+              >
+                Rotate
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await save({
+                  data: {
+                    require_token: requireToken,
+                    allowed_origins: parsedOrigins,
+                    token_ttl_seconds: Math.max(60, ttlHours * 3600),
+                  },
+                });
+                toast.success("Embed security updated");
+                refetch();
+              } catch (e: any) {
+                toast.error(e?.message ?? "Save failed");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Save settings
+          </Button>
+        </div>
+
+        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+          <Label className="text-sm font-semibold">Mint an embed token</Label>
+          <p className="text-xs text-muted-foreground">
+            Bind a token to one origin (recommended) so it can only be used from that
+            website. Use <code>*</code> for any origin.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              className="flex-1 min-w-[220px]"
+              placeholder="https://example.com"
+              value={tokenOrigin}
+              onChange={(e) => setTokenOrigin(e.target.value)}
+            />
+            <Button
+              variant="secondary"
+              disabled={minting || !tokenOrigin}
+              onClick={async () => {
+                setMinting(true);
+                setMintedToken(null);
+                try {
+                  const r = await mint({
+                    data: { origin: tokenOrigin, ttl_seconds: Math.max(60, ttlHours * 3600) },
+                  });
+                  setMintedToken(r.token);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Mint failed");
+                } finally {
+                  setMinting(false);
+                }
+              }}
+            >
+              {minting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Generate token
+            </Button>
+          </div>
+          {mintedToken && (
+            <div className="space-y-2">
+              <div>
+                <Label className="text-xs">Token</Label>
+                <CopyBlock code={mintedToken} />
+              </div>
+              <div>
+                <Label className="text-xs">Snippet (script tag)</Label>
+                <CopyBlock
+                  code={`<script async src="${origin}/api/public/embed.js"\n  data-widget="directory"\n  data-token="${mintedToken}"\n  data-columns="4" data-limit="12"></script>`}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Snippet (iframe)</Label>
+                <CopyBlock
+                  code={`<iframe src="${origin}/embed/directory?columns=4&limit=12&token=${encodeURIComponent(mintedToken)}" style="width:100%;min-height:800px;border:0" loading="lazy"></iframe>`}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { jsonResponse, preflight } from "@/lib/cors";
+import { verifyEmbedRequest, loadEmbedSecurity, corsHeadersFor } from "@/lib/embed-security.server";
 
 const PUBLIC_COLS =
   "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, showreel_link, categories, vip, featured, featured_order, published_at";
@@ -11,6 +12,20 @@ export const Route = createFileRoute("/api/public/talents")({
       OPTIONS: async () => preflight(),
       GET: async ({ request }) => {
         try {
+          const auth = await verifyEmbedRequest(request);
+          if (!auth.ok) {
+            const s = await loadEmbedSecurity();
+            return new Response(JSON.stringify({ error: auth.error }), {
+              status: auth.status,
+              headers: {
+                "Content-Type": "application/json",
+                ...corsHeadersFor(
+                  request.headers.get("origin"),
+                  s.allowed_origins,
+                ),
+              },
+            });
+          }
           const url = new URL(request.url);
           const p = url.searchParams;
           let q = supabase
