@@ -8,6 +8,13 @@ const SCRIPT = String.raw`(function(){
   function attr(n,d){ var v=current.getAttribute('data-'+n); return v==null?d:v; }
   var src = current.src || '';
   var API = src.replace(/\/api\/public\/embed\.js.*/, '');
+  // Optional signed embed token (data-token="...") — appended to every fetch
+  var EMBED_TOKEN = current.getAttribute('data-token') || '';
+  function withTok(url){
+    if (!EMBED_TOKEN) return url;
+    return url + (url.indexOf('?')>-1?'&':'?') + 'token=' + encodeURIComponent(EMBED_TOKEN);
+  }
+  function tokHeaders(h){ h = h || {}; if (EMBED_TOKEN) h['X-Embed-Token'] = EMBED_TOKEN; return h; }
 
   // mount target
   var targetId = current.getAttribute('data-target');
@@ -57,7 +64,7 @@ const SCRIPT = String.raw`(function(){
         email: form.email.value,
         password: form.password.value,
       };
-      fetch(API+'/api/public/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      fetch(withTok(API+'/api/public/signup'),{method:'POST',headers:tokHeaders({'Content-Type':'application/json'}),body:JSON.stringify(payload)})
         .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
         .then(function(res){
           btn.disabled=false; btn.textContent='Create account';
@@ -93,7 +100,7 @@ const SCRIPT = String.raw`(function(){
       e.preventDefault();
       var btn = form.querySelector('button'); btn.disabled=true; btn.textContent='Sending…';
       var data = {}; new FormData(form).forEach(function(v,k){ if(v) data[k]=v; });
-      fetch(API+'/api/public/casting-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+      fetch(withTok(API+'/api/public/casting-request'),{method:'POST',headers:tokHeaders({'Content-Type':'application/json'}),body:JSON.stringify(data)})
         .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
         .then(function(res){
           btn.disabled=false; btn.textContent='Submit Request';
@@ -152,7 +159,7 @@ const SCRIPT = String.raw`(function(){
       if (vipOnly) qs.set('vip_only','true');
       if (featuredOnly) qs.set('featured_only','true');
       if (limit) qs.set('limit',limit);
-      fetch(API+'/api/public/talents?'+qs.toString())
+      fetch(withTok(API+'/api/public/talents?'+qs.toString()),{headers:tokHeaders()})
         .then(function(r){return r.json()})
         .then(function(res){
           grid.innerHTML='';
