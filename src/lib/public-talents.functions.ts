@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin as supabase } from "@/integrations/supabase/client.server";
+import { supabase } from "@/integrations/supabase/client";
 
 const PUBLIC_COLS =
   "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, showreel_link, categories, skills, experience, vip, featured, featured_order, published_at";
