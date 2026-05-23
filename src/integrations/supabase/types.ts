@@ -54,16 +54,31 @@ export type Database = {
           casting_notification_email: string | null
           id: number
           updated_at: string
+          wordpress_auto_sync: boolean
+          wordpress_default_status: string
+          wordpress_last_run_at: string | null
+          wordpress_last_run_summary: Json | null
+          wordpress_site_id: string | null
         }
         Insert: {
           casting_notification_email?: string | null
           id?: number
           updated_at?: string
+          wordpress_auto_sync?: boolean
+          wordpress_default_status?: string
+          wordpress_last_run_at?: string | null
+          wordpress_last_run_summary?: Json | null
+          wordpress_site_id?: string | null
         }
         Update: {
           casting_notification_email?: string | null
           id?: number
           updated_at?: string
+          wordpress_auto_sync?: boolean
+          wordpress_default_status?: string
+          wordpress_last_run_at?: string | null
+          wordpress_last_run_summary?: Json | null
+          wordpress_site_id?: string | null
         }
         Relationships: []
       }
@@ -294,6 +309,9 @@ export type Database = {
           user_id: string
           vip: boolean
           visible_publicly: boolean
+          wordpress_post_id: number | null
+          wordpress_sync_error: string | null
+          wordpress_synced_at: string | null
         }
         Insert: {
           admin_feedback?: string | null
@@ -335,6 +353,9 @@ export type Database = {
           user_id: string
           vip?: boolean
           visible_publicly?: boolean
+          wordpress_post_id?: number | null
+          wordpress_sync_error?: string | null
+          wordpress_synced_at?: string | null
         }
         Update: {
           admin_feedback?: string | null
@@ -376,6 +397,9 @@ export type Database = {
           user_id?: string
           vip?: boolean
           visible_publicly?: boolean
+          wordpress_post_id?: number | null
+          wordpress_sync_error?: string | null
+          wordpress_synced_at?: string | null
         }
         Relationships: []
       }
