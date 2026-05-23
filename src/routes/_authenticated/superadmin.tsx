@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, ClientOnly } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -71,7 +71,6 @@ import {
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
-  ssr: false,
   head: () => ({ meta: [{ title: "Super Admin — Art City" }] }),
 });
 
@@ -1773,6 +1772,7 @@ function OverviewTab() {
             <p className="text-xs text-muted-foreground">New talents and casting requests per day</p>
           </CardHeader>
           <CardContent className="pt-2">
+            <ClientOnly fallback={<div className="h-[260px] w-full" />}>
             <ChartContainer
               config={{
                 talents: { label: "Talents", color: "hsl(var(--chart-1, 220 70% 50%))" },
@@ -1828,6 +1828,7 @@ function OverviewTab() {
                 />
               </AreaChart>
             </ChartContainer>
+            </ClientOnly>
           </CardContent>
         </Card>
 
@@ -1842,6 +1843,7 @@ function OverviewTab() {
             ) : (
               <>
                 <div className="h-[180px] w-full">
+                  <ClientOnly fallback={<div className="h-full w-full" />}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -1859,6 +1861,7 @@ function OverviewTab() {
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
+                  </ClientOnly>
                 </div>
                 <ul className="space-y-1.5 text-xs">
                   {statusData.map((s) => (
