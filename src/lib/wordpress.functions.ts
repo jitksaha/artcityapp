@@ -1,13 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/wordpress_com";
 
 const PushSchema = z.object({
-  siteId: z.string().min(1).max(200),
+  siteId: z.string().min(1).max(200).optional(),
   talentIds: z.array(z.string().uuid()).min(1).max(50).optional(),
-  status: z.enum(["draft", "publish"]).default("publish"),
+  status: z.enum(["draft", "publish"]).optional(),
+  onlyUnsynced: z.boolean().optional(),
 });
 
 /**
@@ -28,73 +30,12 @@ export const pushTalentsToWordPress = createServerFn({ method: "POST" })
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
     if (!isAdmin) throw new Error("Forbidden: admin only");
 
-    const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-    const WP_KEY = process.env.WORDPRESS_COM_API_KEY;
-    if (!LOVABLE_API_KEY || !WP_KEY) {
-      throw new Error(
-        "WordPress.com is not connected. Open Integrations → Connect WordPress.com to enable publishing.",
-      );
-    }
-
-    let q = supabase
-      .from("talent_profiles")
-      .select(
-        "id, slug, stage_name, full_name, bio, headshot_url, location, categories, playing_age, gender, native_language",
-      )
-      .eq("approved", true)
-      .eq("published", true)
-      .eq("visible_publicly", true);
-    if (data.talentIds?.length) q = q.in("id", data.talentIds);
-    const { data: talents, error } = await q;
-    if (error) throw new Error(error.message);
-    if (!talents?.length) return { pushed: 0, failed: 0, results: [] as any[] };
-
-    const results: Array<{ id: string; ok: boolean; postId?: number; error?: string }> = [];
-    for (const t of talents) {
-      const name = t.stage_name || t.full_name || "Untitled Talent";
-      const meta = [t.gender, t.playing_age, t.location].filter(Boolean).join(" · ");
-      const cats = Array.isArray(t.categories) ? t.categories.join(", ") : "";
-      const html = `
-<figure>${t.headshot_url ? `<img src="${t.headshot_url}" alt="${escapeHtml(name)}" />` : ""}</figure>
-<p><strong>${escapeHtml(meta)}</strong>${cats ? ` — ${escapeHtml(cats)}` : ""}</p>
-${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
-<p><a href="https://acbe.lovable.app/talents/${t.slug ?? t.id}">View full profile</a></p>`.trim();
-
-      try {
-        const res = await fetch(
-          `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(data.siteId)}/posts/new`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "X-Connection-Api-Key": WP_KEY,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: name,
-              content: html,
-              status: data.status,
-              excerpt: t.bio ? t.bio.slice(0, 200) : meta,
-              slug: t.slug ?? undefined,
-            }),
-          },
-        );
-        const json: any = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          results.push({ id: t.id, ok: false, error: json?.message || `HTTP ${res.status}` });
-        } else {
-          results.push({ id: t.id, ok: true, postId: json?.ID });
-        }
-      } catch (e: any) {
-        results.push({ id: t.id, ok: false, error: e?.message ?? "Network error" });
-      }
-    }
-
-    return {
-      pushed: results.filter((r) => r.ok).length,
-      failed: results.filter((r) => !r.ok).length,
-      results,
-    };
+    return runWordPressSync(supabase, {
+      siteIdOverride: data.siteId,
+      statusOverride: data.status,
+      talentIds: data.talentIds,
+      onlyUnsynced: data.onlyUnsynced ?? false,
+    });
   });
 
 export const checkWordPressConnection = createServerFn({ method: "GET" })
@@ -104,6 +45,219 @@ export const checkWordPressConnection = createServerFn({ method: "GET" })
       connected: !!(process.env.LOVABLE_API_KEY && process.env.WORDPRESS_COM_API_KEY),
     };
   });
+
+const SettingsSchema = z.object({
+  site_id: z.string().max(200).nullable().optional(),
+  auto_sync: z.boolean().optional(),
+  default_status: z.enum(["publish", "draft"]).optional(),
+});
+
+export const getWordPressSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data } = await supabase
+      .from("app_settings")
+      .select(
+        "wordpress_site_id, wordpress_auto_sync, wordpress_default_status, wordpress_last_run_at, wordpress_last_run_summary",
+      )
+      .eq("id", 1)
+      .maybeSingle();
+    return {
+      connected: !!(process.env.LOVABLE_API_KEY && process.env.WORDPRESS_COM_API_KEY),
+      site_id: data?.wordpress_site_id ?? "",
+      auto_sync: data?.wordpress_auto_sync ?? false,
+      default_status: (data?.wordpress_default_status as "publish" | "draft") ?? "publish",
+      last_run_at: data?.wordpress_last_run_at ?? null,
+      last_run_summary: data?.wordpress_last_run_summary ?? null,
+    };
+  });
+
+export const saveWordPressSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => SettingsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(roles ?? []).some((r: any) => r.role === "admin")) {
+      throw new Error("Forbidden: admin only");
+    }
+    const update: Record<string, unknown> = {};
+    if (data.site_id !== undefined) update.wordpress_site_id = data.site_id || null;
+    if (data.auto_sync !== undefined) update.wordpress_auto_sync = data.auto_sync;
+    if (data.default_status !== undefined) update.wordpress_default_status = data.default_status;
+    const { error } = await supabase.from("app_settings").update(update).eq("id", 1);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * Sync a single talent on demand — used by admin "Sync now" actions and by the
+ * auto-sync trigger when a talent becomes approved/published.
+ */
+export const syncOneTalent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ talentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(roles ?? []).some((r: any) => r.role === "admin")) {
+      throw new Error("Forbidden: admin only");
+    }
+    return runWordPressSync(supabase, { talentIds: [data.talentId], onlyUnsynced: false });
+  });
+
+/**
+ * Shared sync routine. Resolves site/status/credentials from settings (or
+ * overrides), fetches eligible talents, and pushes each one to WordPress.com
+ * creating a new post or updating the existing one via wordpress_post_id.
+ */
+export async function runWordPressSync(
+  supabase: SupabaseClient,
+  opts: {
+    siteIdOverride?: string;
+    statusOverride?: "publish" | "draft";
+    talentIds?: string[];
+    onlyUnsynced?: boolean;
+  },
+): Promise<{
+  pushed: number;
+  updated: number;
+  failed: number;
+  skipped: number;
+  results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }>;
+}> {
+  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+  const WP_KEY = process.env.WORDPRESS_COM_API_KEY;
+  if (!LOVABLE_API_KEY || !WP_KEY) {
+    throw new Error(
+      "WordPress.com is not connected. Ask Lovable to 'connect WordPress.com' in chat.",
+    );
+  }
+
+  const { data: settings } = await supabase
+    .from("app_settings")
+    .select("wordpress_site_id, wordpress_default_status")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const siteId = opts.siteIdOverride || settings?.wordpress_site_id || "";
+  const status: "publish" | "draft" =
+    opts.statusOverride || (settings?.wordpress_default_status as any) || "publish";
+  if (!siteId) {
+    throw new Error("No WordPress site configured. Set the site ID in Integrations first.");
+  }
+
+  let q = supabase
+    .from("talent_profiles")
+    .select(
+      "id, slug, stage_name, full_name, bio, headshot_url, location, categories, playing_age, gender, native_language, updated_at, wordpress_post_id, wordpress_synced_at",
+    )
+    .eq("approved", true)
+    .eq("published", true)
+    .eq("visible_publicly", true);
+  if (opts.talentIds?.length) q = q.in("id", opts.talentIds);
+  const { data: talents, error } = await q;
+  if (error) throw new Error(error.message);
+
+  const eligible = (talents ?? []).filter((t: any) => {
+    if (!opts.onlyUnsynced) return true;
+    if (!t.wordpress_synced_at) return true;
+    return new Date(t.updated_at).getTime() > new Date(t.wordpress_synced_at).getTime();
+  });
+
+  const results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }> = [];
+  const skipped = (talents?.length ?? 0) - eligible.length;
+
+  for (const t of eligible as any[]) {
+    const name = t.stage_name || t.full_name || "Untitled Talent";
+    const meta = [t.gender, t.playing_age, t.location].filter(Boolean).join(" · ");
+    const cats = Array.isArray(t.categories) ? t.categories.join(", ") : "";
+    const html = `
+<figure>${t.headshot_url ? `<img src="${t.headshot_url}" alt="${escapeHtml(name)}" />` : ""}</figure>
+<p><strong>${escapeHtml(meta)}</strong>${cats ? ` — ${escapeHtml(cats)}` : ""}</p>
+${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
+<p><a href="https://acbe.lovable.app/talents/${t.slug ?? t.id}">View full profile</a></p>`.trim();
+
+    const isUpdate = !!t.wordpress_post_id;
+    const url = isUpdate
+      ? `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/${t.wordpress_post_id}`
+      : `${GATEWAY_URL}/rest/v1.2/sites/${encodeURIComponent(siteId)}/posts/new`;
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": WP_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: name,
+          content: html,
+          status,
+          excerpt: t.bio ? t.bio.slice(0, 200) : meta,
+          slug: t.slug ?? undefined,
+        }),
+      });
+      const json: any = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = json?.message || `HTTP ${res.status}`;
+        results.push({ id: t.id, ok: false, error: msg });
+        await supabase
+          .from("talent_profiles")
+          .update({ wordpress_sync_error: msg })
+          .eq("id", t.id);
+      } else {
+        results.push({ id: t.id, ok: true, postId: json?.ID, updated: isUpdate });
+        await supabase
+          .from("talent_profiles")
+          .update({
+            wordpress_post_id: json?.ID ?? t.wordpress_post_id,
+            wordpress_synced_at: new Date().toISOString(),
+            wordpress_sync_error: null,
+          })
+          .eq("id", t.id);
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? "Network error";
+      results.push({ id: t.id, ok: false, error: msg });
+      await supabase
+        .from("talent_profiles")
+        .update({ wordpress_sync_error: msg })
+        .eq("id", t.id);
+    }
+  }
+
+  const summary = {
+    pushed: results.filter((r) => r.ok && !r.updated).length,
+    updated: results.filter((r) => r.ok && r.updated).length,
+    failed: results.filter((r) => !r.ok).length,
+    skipped,
+    results,
+  };
+
+  await supabase
+    .from("app_settings")
+    .update({
+      wordpress_last_run_at: new Date().toISOString(),
+      wordpress_last_run_summary: {
+        pushed: summary.pushed,
+        updated: summary.updated,
+        failed: summary.failed,
+        skipped: summary.skipped,
+      },
+    })
+    .eq("id", 1);
+
+  return summary;
+}
 
 function escapeHtml(s: string) {
   return s
