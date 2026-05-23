@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listPublicTalents } from "@/lib/public-talents.functions";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ function TalentsPage() {
   const [availability, setAvailability] = useState<string | undefined>();
   const [experience, setExperience] = useState<string | undefined>();
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const dq = useDebouncedValue(q, 300);
   const dLanguage = useDebouncedValue(language, 300);
@@ -161,7 +162,40 @@ function TalentsPage() {
           </div>
         </div>
 
-        <div className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        <div className="mb-6 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen}
+              className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent/40"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+            </button>
+            <div className="flex items-center gap-3">
+              {hasAnyFilter && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground underline"
+                  onClick={() => {
+                    setQ(""); setGender(undefined); setCategory(undefined);
+                    setLanguage(""); setLocation("");
+                    setNationality(""); setPlayingAge("");
+                    setAgeMin(""); setAgeMax("");
+                    setVipOnly(false); setFeaturedOnly(false);
+                    setSkills(""); setAvailability(undefined); setExperience(undefined);
+                    setSort("featured");
+                  }}
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+          </div>
+          {filtersOpen && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:col-span-2" />
           <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
             <option value="">All genders</option>
@@ -223,22 +257,7 @@ function TalentsPage() {
             />
             Featured only
           </label>
-          {hasAnyFilter && (
-            <button
-              type="button"
-              className="text-sm text-muted-foreground underline"
-              onClick={() => {
-                setQ(""); setGender(undefined); setCategory(undefined);
-                setLanguage(""); setLocation("");
-                setNationality(""); setPlayingAge("");
-                setAgeMin(""); setAgeMax("");
-                setVipOnly(false); setFeaturedOnly(false);
-                setSkills(""); setAvailability(undefined); setExperience(undefined);
-                setSort("featured");
-              }}
-            >
-              Clear
-            </button>
+          </div>
           )}
         </div>
 
