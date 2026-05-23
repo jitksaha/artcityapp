@@ -105,7 +105,13 @@ export const saveWordPressCredentials = createServerFn({ method: "POST" })
   .inputValidator((i) => CredsSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const update: Record<string, any> = {
+    const update: {
+      mode: "connector" | "self_hosted";
+      updated_by: string;
+      site_url?: string | null;
+      username?: string | null;
+      app_password?: string | null;
+    } = {
       mode: data.mode,
       updated_by: context.userId,
     };
