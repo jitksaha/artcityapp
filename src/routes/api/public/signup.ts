@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { jsonResponse, preflight } from "@/lib/cors";
+import { verifyEmbedRequest } from "@/lib/embed-security.server";
 
 const Schema = z.object({
   full_name: z.string().min(1).max(150),
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/api/public/signup")({
       OPTIONS: async () => preflight(),
       POST: async ({ request }) => {
         try {
+          const auth = await verifyEmbedRequest(request);
+          if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
           const body = await request.json();
           const parsed = Schema.safeParse(body);
           if (!parsed.success) {
