@@ -1,56 +1,71 @@
-## Goal
+# Data loading optimization plan
 
-In the read-only profile preview, show a snapshot label with submission date and version number, and let the user switch between two views:
+Refactor the four targeted areas to use the canonical TanStack pattern: route `loader` calls `queryClient.ensureQueryData(queryOptions)`, component reads via `useSuspenseQuery(queryOptions)`. This gives:
 
-- **Draft** — the current in-progress profile data
-- **Last submitted** — a frozen snapshot of what was sent for review
+- SSR-rendered first paint (no client loading spinner on initial visit for public pages)
+- Shared `queryOptions` across loaders + components + prefetch
+- Automatic prefetch on `Link` hover (`defaultPreload: "intent"`)
+- Background revalidation via Query, not manual `useEffect` refetches
 
-## What needs to change
+## 1. Shared query-options modules
 
-### 1. Database — store submitted snapshots
+Create co-located `*.queries.ts` files exporting `queryOptions(...)` factories so loader and component share the exact same key + fn:
 
-Currently `talent_profiles` holds only the live working row. There is no record of what the talent looked like at submission time, so "switch to last submitted" cannot be reconstructed.
+- `src/lib/queries/public-talents.queries.ts` — `talentsListQuery(filters)`, `talentBySlugQuery(slug)`
+- `src/lib/queries/admin.queries.ts` — `adminAnalyticsQuery`, `applicationsListQuery(filters)`, `castingListQuery(filters)`, `usersWithRolesQuery`, `appSettingsQuery`
+- `src/lib/queries/dashboard.queries.ts` — `myProfileQuery`, `myMediaQuery`, `myStatusLogsQuery`
 
-Add a new table `talent_submissions`:
+Each file wraps the existing server fn — no server-side changes.
 
-- `id uuid pk`
-- `talent_id uuid` (the profile)
-- `user_id uuid` (owner, for RLS)
-- `version int` (1, 2, 3… auto-incremented per talent)
-- `submitted_at timestamptz`
-- `snapshot jsonb` — full copy of the talent_profiles row at submit time
-- `media_snapshot jsonb` — array of media_uploads rows at submit time
+## 2. Public talents directory (`/talents`)
 
-RLS:
-- Owner can SELECT their own submissions
-- Staff can SELECT all
-- INSERT only via a SECURITY DEFINER function called from the submit server fn
+- Add `validateSearch` (zod) for: `q, gender, category, language, location, nationality, playing_age, age_min, age_max, vip, featured, sort` → URL becomes the source of truth, filters are shareable, browser back/forward works.
+- Add `loaderDeps` returning the validated search.
+- `loader` calls `ensureQueryData(talentsListQuery(deps))`.
+- Component reads with `useSuspenseQuery`; debounced inputs call `navigate({ search })` instead of local `useState`.
+- Keep `placeholderData: prev` for smooth filter transitions.
+- Define `errorComponent` + `notFoundComponent` (required by stack rules).
 
-Trigger / function: when the existing `submitTalent` server function flips status from `draft`/`needs_revision` → `submitted`, also insert a snapshot row with the next version number.
+## 3. Single talent (`/talents/$slug`)
 
-### 2. Server function
+- `loader` ensures `talentBySlugQuery(slug)`; throws `notFound()` if missing.
+- Component uses `useSuspenseQuery`.
+- Add `errorComponent` + `notFoundComponent`.
+- Hover on a `TalentCard` already triggers preload via router; no extra wiring needed because directory `<Link>` to this route resolves via the shared query key.
 
-- Extend `getMyTalent` (or add `getMyTalentWithSubmissions`) to also return the list of submissions (id, version, submitted_at) and the latest submission's full snapshot + media_snapshot.
+## 4. Authenticated dashboard (`/_authenticated/dashboard`)
 
-### 3. Preview UI (`src/routes/_authenticated/preview.tsx`)
+- `loader` runs parallel prefetches via `ensureQueryData` (profile) + non-blocking `prefetchQuery` (media, status logs).
+- Convert tab data reads to `useSuspenseQuery`.
+- Replace existing `useQuery({ enabled })` chains with shared `queryOptions`.
+- Add `errorComponent` + `notFoundComponent`.
 
-- Add a snapshot label badge at the top:
-  - Draft view: "Draft — last edited {updated_at}"
-  - Submitted view: "Submitted v{version} — {submitted_at}"
-- Add a toggle (segmented control: "Draft" / "Last submitted v{n}"). The submitted option is disabled with a tooltip when no submission exists yet.
-- When "Last submitted" is selected, render `TalentPublicView` and the directory card preview from the snapshot data instead of the live draft.
-- Keep the existing approval-gating rule (VIP/Featured hidden unless status is approved/published) for both views.
+## 5. Superadmin tables (`/_authenticated/superadmin`)
 
-## Technical details
+- Overview tab: loader `ensureQueryData(adminAnalyticsQuery)`.
+- Other tabs (applications, casting, users, settings): wire shared `queryOptions`; prefetch the active tab's data in a `useEffect` when `view` changes (lightweight) + on sidebar hover via `queryClient.prefetchQuery`.
+- Mutations call `queryClient.invalidateQueries` against the shared keys (already partly done) — standardize so list + detail keys invalidate together.
 
-- Migration file: `supabase/migrations/<ts>_talent_submissions.sql`
-- New SECURITY DEFINER function `record_talent_submission(_talent_id uuid)` that copies the current row + media into the new table and returns the new version number.
-- `submitTalent` server fn calls this function inside the same flow after the status update succeeds.
-- New file: `src/components/PreviewSnapshotSwitcher.tsx` — the segmented toggle + label.
-- `preview.tsx` holds local state `view: "draft" | "submitted"` and picks the data source accordingly.
+## 6. Router config
+
+In `src/router.tsx`, confirm/set:
+- `defaultPreload: "intent"`
+- `defaultPreloadDelay: 50`
+- `defaultPreloadStaleTime: 0` (let Query own freshness)
+- `defaultPendingMs: 300`, `defaultPendingMinMs: 200`
 
 ## Out of scope
 
-- Full revision history browser (only "latest submitted" is exposed in the toggle, even though all versions are stored).
-- Diffing between draft and submitted.
-- Restoring a submission back into the draft.
+- No server-side changes (server fns + RLS untouched)
+- No new tables, no schema changes
+- No virtualization for superadmin tables (mentioned in the option but adds risk; can be a follow-up if any list exceeds ~200 rows in practice)
+
+## Risk + rollout
+
+- Public routes first (talents directory + slug) — easy to verify, biggest user-visible win.
+- Then dashboard, then superadmin (behind auth, lower share-link risk).
+- After each area, smoke-check in preview: first paint has data, filter changes don't blank the grid, deep links work.
+
+## Estimated diff
+
+~6 new query-options files (~30 lines each), 4 route files edited (~150 lines diff each), 1 router config tweak. No deletions of existing server logic.
