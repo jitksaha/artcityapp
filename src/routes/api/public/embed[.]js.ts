@@ -275,9 +275,34 @@ const SCRIPT = String.raw`(function(){
   // ============ PROFILE ============
   function renderProfileInto(parent, slug, onBack){
     parent.innerHTML = '';
+    var topBar = h('div',{style:'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px'},[]);
     if (onBack) {
-      parent.appendChild(h('button',{class:'acw-back',type:'button',onclick:onBack},['← Back to directory']));
+      topBar.appendChild(h('button',{class:'acw-back',type:'button',style:'margin:0',onclick:onBack},['← Back to directory']));
     }
+    var shareBtn = h('button',{class:'acw-back',type:'button',style:'margin:0'},['🔗 Share']);
+    shareBtn.addEventListener('click', function(){
+      var shareUrl;
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.set('talent', slug);
+        shareUrl = u.toString();
+      } catch(_) { shareUrl = window.location.href; }
+      var done = function(ok){
+        var orig = '🔗 Share';
+        shareBtn.textContent = ok ? '✓ Link copied' : '⚠ Copy failed';
+        setTimeout(function(){ shareBtn.textContent = orig; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(function(){done(true);}, function(){done(false);});
+      } else {
+        try {
+          var ta = document.createElement('textarea'); ta.value = shareUrl; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(true);
+        } catch(e){ done(false); }
+      }
+    });
+    topBar.appendChild(shareBtn);
+    parent.appendChild(topBar);
     var status = h('p',{style:'color:#6b7280'},['Loading profile…']);
     parent.appendChild(status);
     fetch(withTok(API+'/api/public/talent/'+encodeURIComponent(slug)),{headers:tokHeaders()})
