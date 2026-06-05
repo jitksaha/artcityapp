@@ -220,15 +220,34 @@ const SCRIPT = String.raw`(function(){
     if (refreshSec > 0) setInterval(load, refreshSec*1000);
     load();
 
-    // Shareable URLs: ?talent=<slug> opens that profile inline.
+    // Shareable URLs.
+    // Pretty mode:  /<base-path>/<slug>     (set data-base-path="/talents")
+    // Query mode:   ?talent=<slug>          (default, works on any WP page)
     var URL_PARAM = attr('url-param','talent');
+    var BASE_PATH = (attr('base-path','') || '').replace(/\/+$/,''); // e.g. "/talents"
+    var PRETTY = !!BASE_PATH;
     function getSlugFromUrl(){
-      try { return new URLSearchParams(window.location.search).get(URL_PARAM) || ''; } catch(_){ return ''; }
+      try {
+        if (PRETTY) {
+          var path = window.location.pathname.replace(/\/+$/,'');
+          if (path === BASE_PATH) return '';
+          if (path.indexOf(BASE_PATH + '/') === 0) {
+            return decodeURIComponent(path.slice(BASE_PATH.length + 1).split('/')[0] || '');
+          }
+          return '';
+        }
+        return new URLSearchParams(window.location.search).get(URL_PARAM) || '';
+      } catch(_){ return ''; }
     }
     function setUrlSlug(slug, push){
       try {
         var u = new URL(window.location.href);
-        if (slug) u.searchParams.set(URL_PARAM, slug); else u.searchParams.delete(URL_PARAM);
+        if (PRETTY) {
+          u.pathname = slug ? (BASE_PATH + '/' + encodeURIComponent(slug)) : (BASE_PATH + '/');
+        } else {
+          if (slug) u.searchParams.set(URL_PARAM, slug);
+          else u.searchParams.delete(URL_PARAM);
+        }
         var method = push ? 'pushState' : 'replaceState';
         window.history[method]({acwSlug:slug||null}, '', u.toString());
       } catch(_){}
@@ -281,12 +300,17 @@ const SCRIPT = String.raw`(function(){
     }
     var shareBtn = h('button',{class:'acw-back',type:'button',style:'margin:0'},['🔗 Share']);
     shareBtn.addEventListener('click', function(){
-      var shareUrl;
-      try {
-        var u = new URL(window.location.href);
-        u.searchParams.set('talent', slug);
-        shareUrl = u.toString();
-      } catch(_) { shareUrl = window.location.href; }
+      // The directory widget already pushed the slug into the URL when this
+      // profile opened, so window.location.href is the canonical shareable URL.
+      // For the standalone profile widget, fall back to appending ?talent=<slug>.
+      var shareUrl = window.location.href;
+      if (shareUrl.indexOf(encodeURIComponent(slug)) === -1 && shareUrl.indexOf(slug) === -1) {
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.set('talent', slug);
+          shareUrl = u.toString();
+        } catch(_) {}
+      }
       var done = function(ok){
         var orig = '🔗 Share';
         shareBtn.textContent = ok ? '✓ Link copied' : '⚠ Copy failed';
