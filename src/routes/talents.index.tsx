@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { listPublicTalents } from "@/lib/public-talents.functions";
+import {
+  talentsListQuery,
+  type PublicTalentFilters,
+} from "@/lib/queries/public-talents.queries";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +15,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
 
+function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <h1 className="text-xl font-semibold">Couldn't load the talent directory</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <Button className="mt-6" onClick={() => reset()}>Try again</Button>
+      </main>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
+  // Prime the cache with the default (no-filter) view so first paint has data
+  // on direct visits and on Link-preload from elsewhere in the site.
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(talentsListQuery()),
+  errorComponent: TalentsErrorBoundary,
   head: () => ({
     meta: [
       { title: "Art City Casting — Talent Gallery" },
@@ -26,7 +46,6 @@ export const Route = createFileRoute("/talents/")({
 });
 
 function TalentsPage() {
-  const fn = useServerFn(listPublicTalents);
   const [q, setQ] = useState("");
   const [gender, setGender] = useState<string | undefined>();
   const [category, setCategory] = useState<string | undefined>();
@@ -57,30 +76,22 @@ function TalentsPage() {
     dNationality !== nationality || dPlayingAge !== playingAge ||
     dAgeMin !== ageMin || dAgeMax !== ageMax || dSkills !== skills;
 
+  const filters: PublicTalentFilters = {
+    q: dq || undefined,
+    gender: gender || undefined,
+    category: category || undefined,
+    language: dLanguage || undefined,
+    location: dLocation || undefined,
+    nationality: dNationality || undefined,
+    playing_age: dPlayingAge || undefined,
+    age_min: dAgeMin ? Number(dAgeMin) : undefined,
+    age_max: dAgeMax ? Number(dAgeMax) : undefined,
+    vip_only: vipOnly || undefined,
+    featured_only: featuredOnly || undefined,
+    sort,
+  };
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: [
-      "public-talents",
-      dq, gender, category, dLanguage, dLocation,
-      dNationality, dPlayingAge, dAgeMin, dAgeMax,
-      vipOnly, featuredOnly, sort,
-    ],
-    queryFn: () =>
-      fn({
-        data: {
-          q: dq || undefined,
-          gender: gender || undefined,
-          category: category || undefined,
-          language: dLanguage || undefined,
-          location: dLocation || undefined,
-          nationality: dNationality || undefined,
-          playing_age: dPlayingAge || undefined,
-          age_min: dAgeMin ? Number(dAgeMin) : undefined,
-          age_max: dAgeMax ? Number(dAgeMax) : undefined,
-          vip_only: vipOnly || undefined,
-          featured_only: featuredOnly || undefined,
-          sort,
-        },
-      }),
+    ...talentsListQuery(filters),
     placeholderData: (prev) => prev,
   });
 
