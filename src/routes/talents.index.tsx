@@ -15,6 +15,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
 
+function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <h1 className="text-xl font-semibold">Couldn't load the talent directory</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <Button className="mt-6" onClick={() => reset()}>Try again</Button>
+      </main>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
   // Prime the cache with the default (no-filter) view so first paint has data
