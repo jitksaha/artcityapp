@@ -14,14 +14,13 @@ export const adminAnalyticsQuery = () =>
     staleTime: 30_000,
   });
 
-export const applicationsListQuery = (
-  filters?: Parameters<typeof listApplications>[0] extends undefined
-    ? Record<string, unknown> | undefined
-    : Parameters<typeof listApplications>[0],
-) =>
+export const applicationsListQuery = (statusFilter?: string) =>
   queryOptions({
-    queryKey: ["admin-apps", filters ?? {}] as const,
-    queryFn: () => (filters ? (listApplications as any)(filters) : (listApplications as any)()),
+    // Match the existing inline key in superadmin.tsx so prefetches and
+    // invalidations land on the same cache slot.
+    queryKey: ["admin-applications", statusFilter] as const,
+    queryFn: () =>
+      (listApplications as any)({ data: statusFilter ? { status: statusFilter } : undefined }),
     staleTime: 15_000,
   });
 
@@ -32,10 +31,10 @@ export const castingListQuery = () =>
     staleTime: 15_000,
   });
 
-export const usersWithRolesQuery = () =>
+export const usersWithRolesQuery = (query = "") =>
   queryOptions({
-    queryKey: ["users-with-roles"] as const,
-    queryFn: () => listUsersWithRoles(),
+    queryKey: ["admin-users", query] as const,
+    queryFn: () => (listUsersWithRoles as any)({ data: { query } }),
     staleTime: 30_000,
   });
 
