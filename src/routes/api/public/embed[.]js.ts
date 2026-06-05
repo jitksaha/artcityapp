@@ -323,8 +323,8 @@ const SCRIPT = String.raw`(function(){
 
   if (widget==='signup') renderSignup();
   else if (widget==='casting' || widget==='casting-request') renderCasting();
-  else if (widget==='profile') renderProfileWidget();
-  else renderDirectory();
+  else if (widget==='profile' || widget==='talent') renderProfileWidget();
+  else renderDirectory(); // accepts 'talents' | 'directory' | default
 })();`;
 
 export const Route = createFileRoute("/api/public/embed.js")({
