@@ -25,7 +25,7 @@ const SCRIPT = String.raw`(function(){
   // styles (scoped via .acw root class)
   if (!document.getElementById('acw-styles')) {
     var st = document.createElement('style'); st.id='acw-styles';
-    st.textContent = ".acw{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;max-width:100%;box-sizing:border-box}.acw *{box-sizing:border-box}.acw h2{font-size:20px;margin:0 0 12px}.acw label{display:block;font-size:13px;font-weight:500;margin:8px 0 4px}.acw input,.acw textarea,.acw select{width:100%;padding:8px 10px;border:1px solid #d4d4d8;border-radius:6px;font-size:14px;background:#fff}.acw textarea{min-height:80px;resize:vertical}.acw button{background:#111;color:#fff;border:0;padding:10px 16px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:500}.acw button:disabled{opacity:.6;cursor:not-allowed}.acw .acw-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.acw .acw-msg{padding:10px;border-radius:6px;font-size:14px;margin-top:10px}.acw .acw-ok{background:#dcfce7;color:#14532d}.acw .acw-err{background:#fee2e2;color:#7f1d1d}.acw .acw-grid{display:grid;gap:14px}.acw .acw-card{border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;background:#fff;transition:transform .15s,box-shadow .15s}.acw .acw-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}.acw .acw-card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#f4f4f5}.acw .acw-card .acw-body{padding:8px 10px}.acw .acw-card .acw-name{font-weight:600;font-size:14px;margin:0}.acw .acw-card .acw-meta{font-size:12px;color:#6b7280;margin:2px 0 0}.acw .acw-card .acw-badges{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}.acw .acw-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.acw .acw-badge.vip{background:#fce7f3;color:#9d174d}.acw .acw-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.acw .acw-filters input,.acw .acw-filters select{flex:1;min-width:140px}@media(max-width:520px){.acw .acw-row{grid-template-columns:1fr}}";
+    st.textContent = ".acw{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;max-width:100%;box-sizing:border-box}.acw *{box-sizing:border-box}.acw h2{font-size:20px;margin:0 0 12px}.acw label{display:block;font-size:13px;font-weight:500;margin:8px 0 4px}.acw input,.acw textarea,.acw select{width:100%;padding:8px 10px;border:1px solid #d4d4d8;border-radius:6px;font-size:14px;background:#fff}.acw textarea{min-height:80px;resize:vertical}.acw button{background:#111;color:#fff;border:0;padding:10px 16px;border-radius:6px;font-size:14px;cursor:pointer;font-weight:500}.acw button:disabled{opacity:.6;cursor:not-allowed}.acw .acw-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.acw .acw-msg{padding:10px;border-radius:6px;font-size:14px;margin-top:10px}.acw .acw-ok{background:#dcfce7;color:#14532d}.acw .acw-err{background:#fee2e2;color:#7f1d1d}.acw .acw-grid{display:grid;gap:14px}.acw .acw-card{border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;background:#fff;transition:transform .15s,box-shadow .15s;cursor:pointer}.acw .acw-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}.acw .acw-card img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:#f4f4f5}.acw .acw-card .acw-body{padding:8px 10px}.acw .acw-card .acw-name{font-weight:600;font-size:14px;margin:0}.acw .acw-card .acw-meta{font-size:12px;color:#6b7280;margin:2px 0 0}.acw .acw-card .acw-badges{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}.acw .acw-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e;font-weight:600;text-transform:uppercase;letter-spacing:.04em}.acw .acw-badge.vip{background:#fce7f3;color:#9d174d}.acw .acw-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.acw .acw-filters input,.acw .acw-filters select{flex:1;min-width:140px}@media(max-width:520px){.acw .acw-row{grid-template-columns:1fr}}.acw .acw-back{background:transparent;color:#374151;border:1px solid #d4d4d8;padding:6px 12px;font-size:13px;margin-bottom:14px}.acw .acw-back:hover{background:#f4f4f5}.acw .acw-profile{display:grid;grid-template-columns:280px 1fr;gap:24px}.acw .acw-profile .acw-hero{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:#f4f4f5}.acw .acw-profile h1{font-size:28px;margin:0 0 6px;font-weight:700}.acw .acw-profile .acw-sub{color:#6b7280;font-size:14px;margin:0 0 12px}.acw .acw-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.acw .acw-chip{font-size:12px;padding:3px 8px;border-radius:12px;background:#f4f4f5;color:#374151}.acw .acw-section{margin-top:18px}.acw .acw-section h3{font-size:15px;font-weight:600;margin:0 0 8px;color:#111}.acw .acw-section p{font-size:14px;color:#374151;line-height:1.55;margin:0}.acw .acw-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}.acw .acw-gallery img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;cursor:zoom-in;background:#f4f4f5}.acw .acw-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}.acw .acw-lightbox img{max-width:100%;max-height:100%;object-fit:contain}@media(max-width:640px){.acw .acw-profile{grid-template-columns:1fr}}";
     document.head.appendChild(st);
   }
 
@@ -142,6 +142,9 @@ const SCRIPT = String.raw`(function(){
     var featuredOnly = attr('featured','') === 'true';
     var refreshSec = parseInt(attr('refresh','0'),10) || 0;
     var linkBase = attr('link-base', API);
+    // When 'true' (default), profile opens inline inside the same widget.
+    // When 'false', clicking a card opens the external app profile page.
+    var inlineProfile = attr('inline-profile','true') !== 'false';
 
     var wrap = h('div',{class:'acw'},[]);
     if (title) wrap.appendChild(h('h2',null,[title]));
@@ -187,7 +190,10 @@ const SCRIPT = String.raw`(function(){
             var badges = [];
             if (t.featured) badges.push(h('span',{class:'acw-badge'},['Featured']));
             if (t.vip) badges.push(h('span',{class:'acw-badge vip'},['VIP']));
-            var card = h('a',{class:'acw-card',href:linkBase+'/talents/'+t.slug,target:'_blank',rel:'noopener',style:'text-decoration:none;color:inherit'},[
+            var cardAttrs = inlineProfile
+              ? {class:'acw-card', role:'button', tabindex:'0', style:'text-decoration:none;color:inherit'}
+              : {class:'acw-card', href:linkBase+'/talents/'+t.slug, target:'_blank', rel:'noopener', style:'text-decoration:none;color:inherit'};
+            var card = h(inlineProfile?'div':'a', cardAttrs, [
               t.headshot_url ? h('img',{src:t.headshot_url,alt:t.stage_name||'',loading:'lazy'}) : h('div',{style:'aspect-ratio:3/4;background:#f4f4f5'}),
               h('div',{class:'acw-body'},[
                 h('p',{class:'acw-name'},[t.stage_name||t.full_name||'Untitled']),
@@ -195,6 +201,10 @@ const SCRIPT = String.raw`(function(){
                 badges.length ? h('div',{class:'acw-badges'},badges) : null,
               ]),
             ]);
+            if (inlineProfile) {
+              card.addEventListener('click', function(){ openProfile(t.slug); });
+              card.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openProfile(t.slug); } });
+            }
             grid.appendChild(card);
           });
         })
@@ -203,10 +213,111 @@ const SCRIPT = String.raw`(function(){
     if (filters) filters.addEventListener('input', function(){ clearTimeout(timer); timer=setTimeout(load,300); });
     if (refreshSec > 0) setInterval(load, refreshSec*1000);
     load();
+
+    // Inline profile navigation — preserve directory state and restore on back.
+    var directoryDom = wrap;
+    function openProfile(slug){
+      // Hide directory, render profile in its place.
+      directoryDom.style.display = 'none';
+      var profileWrap = h('div',{class:'acw','data-acw-profile':'1'},[]);
+      mount.appendChild(profileWrap);
+      // Smooth scroll to top of widget.
+      try { mount.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){}
+      renderProfileInto(profileWrap, slug, function(){
+        profileWrap.remove();
+        directoryDom.style.display = '';
+        try { mount.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){}
+      });
+    }
+  }
+
+  // ============ PROFILE ============
+  function renderProfileInto(parent, slug, onBack){
+    parent.innerHTML = '';
+    if (onBack) {
+      parent.appendChild(h('button',{class:'acw-back',type:'button',onclick:onBack},['← Back to directory']));
+    }
+    var status = h('p',{style:'color:#6b7280'},['Loading profile…']);
+    parent.appendChild(status);
+    fetch(withTok(API+'/api/public/talent/'+encodeURIComponent(slug)),{headers:tokHeaders()})
+      .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
+      .then(function(res){
+        status.remove();
+        if (!res.ok){ parent.appendChild(h('p',{class:'acw-msg acw-err'},[res.j.error||'Failed to load profile'])); return; }
+        var t = res.j.talent || {};
+        var media = res.j.media || [];
+        var heroSrc = t.headshot_url || (media[0] && media[0].url) || '';
+        var meta = [t.gender, t.playing_age, t.location, t.nationality].filter(Boolean).join(' · ');
+        var chips = [];
+        (t.categories||[]).forEach(function(c){ chips.push(h('span',{class:'acw-chip'},[String(c)])); });
+        if (t.native_language) chips.push(h('span',{class:'acw-chip'},['Speaks: '+t.native_language]));
+
+        var sections = [];
+        if (t.bio) sections.push(h('div',{class:'acw-section'},[h('h3',null,['About']), h('p',null,[t.bio])]));
+
+        function kvSection(title, obj){
+          if (!obj || typeof obj !== 'object') return null;
+          var keys = Object.keys(obj).filter(function(k){ return obj[k] != null && obj[k] !== '' && !(Array.isArray(obj[k]) && obj[k].length===0); });
+          if (!keys.length) return null;
+          var rows = keys.map(function(k){
+            var v = obj[k]; if (Array.isArray(v)) v = v.join(', '); else if (typeof v === 'object') v = JSON.stringify(v);
+            return h('div',{style:'display:flex;gap:8px;font-size:14px;padding:4px 0;border-bottom:1px solid #f4f4f5'},[
+              h('span',{style:'color:#6b7280;min-width:140px;text-transform:capitalize'},[k.replace(/_/g,' ')]),
+              h('span',{style:'color:#111'},[String(v)]),
+            ]);
+          });
+          return h('div',{class:'acw-section'},[h('h3',null,[title])].concat(rows));
+        }
+        var phys = kvSection('Physical', t.physical); if (phys) sections.push(phys);
+        var skl = kvSection('Skills', t.skills); if (skl) sections.push(skl);
+        var lang = kvSection('Languages', t.languages); if (lang) sections.push(lang);
+        var exp = kvSection('Experience', t.experience); if (exp) sections.push(exp);
+
+        if (media.length){
+          var gallery = h('div',{class:'acw-gallery'},
+            media.map(function(m){
+              var img = h('img',{src:m.url, alt:(t.stage_name||t.full_name||'Talent'), loading:'lazy'});
+              img.addEventListener('click', function(){ openLightbox(m.url); });
+              return img;
+            })
+          );
+          sections.push(h('div',{class:'acw-section'},[h('h3',null,['Gallery']), gallery]));
+        }
+
+        if (t.showreel_link){
+          sections.push(h('div',{class:'acw-section'},[h('h3',null,['Showreel']), h('p',null,[h('a',{href:t.showreel_link,target:'_blank',rel:'noopener',style:'color:#2563eb;text-decoration:underline'},[t.showreel_link])])]));
+        }
+
+        var profile = h('div',{class:'acw-profile'},[
+          h('div',null,[ heroSrc ? h('img',{class:'acw-hero',src:heroSrc,alt:(t.stage_name||t.full_name||'Talent')}) : h('div',{class:'acw-hero'}) ]),
+          h('div',null,[
+            h('h1',null,[t.stage_name||t.full_name||'Untitled']),
+            h('p',{class:'acw-sub'},[meta]),
+            chips.length ? h('div',{class:'acw-chips'},chips) : null,
+          ].concat(sections)),
+        ]);
+        parent.appendChild(profile);
+      })
+      .catch(function(err){ status.remove(); parent.appendChild(h('p',{class:'acw-msg acw-err'},[err.message])); });
+  }
+
+  function openLightbox(src){
+    var box = h('div',{class:'acw-lightbox'},[h('img',{src:src,alt:''})]);
+    box.addEventListener('click', function(){ box.remove(); });
+    document.body.appendChild(box);
+  }
+
+  // ============ PROFILE WIDGET (standalone) ============
+  function renderProfileWidget(){
+    var slug = attr('slug','');
+    if (!slug){ mount.appendChild(h('div',{class:'acw acw-msg acw-err'},['Missing data-slug attribute.'])); return; }
+    var wrap = h('div',{class:'acw'},[]); mount.appendChild(wrap);
+    renderProfileInto(wrap, slug, null);
   }
 
   if (widget==='signup') renderSignup();
   else if (widget==='casting' || widget==='casting-request') renderCasting();
+  else if (widget==='profile') renderProfileWidget();
   else renderDirectory();
 })();`;
 
