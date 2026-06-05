@@ -23,23 +23,28 @@ function acFetchTalents(params){
     .map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
   return fetch(BASE+'/api/public/talents'+(qs?'?'+qs:''))
     .then(function(r){return r.json();})
-    .then(function(res){return (res&&(res.data||res))||[];});
+    .then(function(res){
+      if(res&&Array.isArray(res.data))return res.data;
+      if(Array.isArray(res))return res;
+      if(res&&res.error)throw new Error(res.error);
+      return [];
+    });
 }
 function acCard(t,opts){
   opts=opts||{};
   var img=t.headshot_url||t.headshot_thumb_url||'';
   var name=t.stage_name||t.full_name||'Talent';
-  var ring=opts.vip?'box-shadow:0 0 0 2px #c9a14a inset;':'';
+  var ring=opts.vip?'box-shadow:0 0 0 2px #c9a14a inset !important;':'';
   var badge='';
   if(t.featured) badge='<span style="position:absolute;top:10px;left:10px;background:#111;color:#fff;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">Featured</span>';
   else if(t.vip) badge='<span style="position:absolute;top:10px;left:10px;background:#c9a14a;color:#111;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">VIP</span>';
-  return '<a href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" style="display:block;text-decoration:none;color:inherit;border:1px solid #eee;border-radius:14px;overflow:hidden;background:#fff;transition:transform .25s ease,box-shadow .25s ease;'+ring+'" onmouseover="this.style.transform=\\'translateY(-3px)\\';this.style.boxShadow=\\'0 12px 30px -12px rgba(0,0,0,.25)\\'" onmouseout="this.style.transform=\\'\\';this.style.boxShadow=\\'\\'">'
+  return '<a class="ac-card" href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" rel="noopener" style="'+ring+'">'
     +'<div style="position:relative;">'
-    +(img?'<img src="'+img+'" alt="'+name+'" style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block;" loading="lazy"/>':'<div style="aspect-ratio:3/4;background:#f4f4f5;"></div>')
+    +(img?'<img src="'+img+'" alt="'+name+'" loading="lazy" />':'<div class="ac-card-ph"></div>')
     +badge
     +'</div>'
-    +'<div style="padding:12px 14px;"><div style="font-weight:600;font-size:15px;">'+name+'</div>'
-    +'<div style="font-size:12px;color:#666;margin-top:2px;">'+(t.location||'')+(t.nationality?' &middot; '+t.nationality:'')+'</div></div></a>';
+    +'<div class="ac-card-body"><div class="ac-card-name">'+name+'</div>'
+    +'<div class="ac-card-meta">'+(t.location||'')+(t.nationality?' &middot; '+t.nationality:'')+'</div></div></a>';
 }`;
 
 /* =========================================================================
