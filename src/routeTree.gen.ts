@@ -25,6 +25,7 @@ import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
 import { Route as ApiPublicCastingRequestsRouteImport } from './routes/api/public/casting-requests'
+import { Route as ApiPublicApplicationsRouteImport } from './routes/api/public/applications'
 import { Route as ApiPublicTalentsSlugRouteImport } from './routes/api/public/talents.$slug'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -107,6 +108,11 @@ const ApiPublicCastingRequestsRoute =
     path: '/api/public/casting-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicApplicationsRoute = ApiPublicApplicationsRouteImport.update({
+  id: '/api/public/applications',
+  path: '/api/public/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTalentsSlugRoute = ApiPublicTalentsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/applications': typeof ApiPublicApplicationsRoute
   '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
+  '/api/public/applications': typeof ApiPublicApplicationsRoute
   '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/applications': typeof ApiPublicApplicationsRoute
   '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/applications'
     | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents'
+    | '/api/public/applications'
     | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/_authenticated/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/applications'
     | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
+  ApiPublicApplicationsRoute: typeof ApiPublicApplicationsRoute
   ApiPublicCastingRequestsRoute: typeof ApiPublicCastingRequestsRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRouteWithChildren
 }
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCastingRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/applications': {
+      id: '/api/public/applications'
+      path: '/api/public/applications'
+      fullPath: '/api/public/applications'
+      preLoaderRoute: typeof ApiPublicApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/talents/$slug': {
       id: '/api/public/talents/$slug'
       path: '/$slug'
@@ -406,9 +426,20 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
+  ApiPublicApplicationsRoute: ApiPublicApplicationsRoute,
   ApiPublicCastingRequestsRoute: ApiPublicCastingRequestsRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
