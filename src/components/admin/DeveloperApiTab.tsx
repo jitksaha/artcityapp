@@ -94,7 +94,7 @@ function render(){
     '<div style="font-size:11px;letter-spacing:.25em;text-transform:uppercase;opacity:.8;color:#fff;">Featured Talent</div>'
     +'<div style="font-size:32px;font-weight:700;margin-top:6px;color:#fff;line-height:1.1;">'+(t.stage_name||t.full_name||'Talent')+'</div>'
     +'<div style="opacity:.85;margin-top:4px;color:#fff;">'+(t.location||'')+'</div>'
-    +'<a href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;background:#fff;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;">View profile &rarr;</a>';
+    +'<a href="'+acProfileUrl(t.slug)+'" rel="noopener" style="display:inline-block;margin-top:14px;background:#fff;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;">View profile &rarr;</a>';
 }
 acFetchTalents({featured_only:'true',limit:8}).then(function(r){items=r.length?r:[];if(!items.length){return acFetchTalents({limit:6}).then(function(x){items=x;render();setInterval(function(){idx++;render();},5000);});}render();setInterval(function(){idx++;render();},5000);});
 })();</script>`;
@@ -314,6 +314,9 @@ export function DeveloperApiTab() {
   const detected = typeof window !== "undefined" ? window.location.origin : "";
   const isPreview = /lovableproject\.com|id-preview--/.test(detected);
   const [base, setBase] = useState(isPreview ? "https://acbe.lovable.app" : detected);
+  const [profilePattern, setProfilePattern] = useState(
+    "https://artcity.group/talents/{slug}",
+  );
 
   return (
     <div className="space-y-6">
@@ -326,32 +329,68 @@ export function DeveloperApiTab() {
             or pick individual sections.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <label className="text-xs font-medium">Your published site URL</label>
-          <Input
-            value={base}
-            onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
-            placeholder="https://acbe.lovable.app"
-            className="font-mono text-xs"
-          />
-          {isPreview && (
-            <p className="text-xs text-amber-600">
-              Preview URLs require Lovable auth. Keep this set to your live
-              domain (e.g. <code>https://acbe.lovable.app</code>).
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">
+              API base URL (where talent data is fetched from)
+            </label>
+            <Input
+              value={base}
+              onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
+              placeholder="https://acbe.lovable.app"
+              className="font-mono text-xs"
+            />
+            {isPreview && (
+              <p className="text-xs text-amber-600">
+                Preview URLs require Lovable auth. Keep this set to your
+                published domain (e.g. <code>https://acbe.lovable.app</code>).
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">
+              Talent profile link pattern (where cards link to)
+            </label>
+            <Input
+              value={profilePattern}
+              onChange={(e) => setProfilePattern(e.target.value)}
+              placeholder="https://artcity.group/talents/{slug}"
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">
+              Use <code>{"{slug}"}</code> as the placeholder. Cards and the
+              hero CTA will link to this URL on your WordPress site instead
+              of the Lovable domain.
             </p>
-          )}
+          </div>
         </CardContent>
       </Card>
 
       {SNIPPETS.map((s) => (
-        <SnippetCard key={s.id} snippet={s} base={base} />
+        <SnippetCard
+          key={s.id}
+          snippet={s}
+          base={base}
+          profilePattern={profilePattern}
+        />
       ))}
     </div>
   );
 }
 
-function SnippetCard({ snippet, base }: { snippet: Snippet; base: string }) {
-  const code = useMemo(() => snippet.build(base), [snippet, base]);
+function SnippetCard({
+  snippet,
+  base,
+  profilePattern,
+}: {
+  snippet: Snippet;
+  base: string;
+  profilePattern: string;
+}) {
+  const code = useMemo(
+    () => snippet.build(base, profilePattern),
+    [snippet, base, profilePattern],
+  );
   const copy = () => {
     navigator.clipboard.writeText(code);
     toast.success("Copied — paste into a WordPress Custom HTML block");
