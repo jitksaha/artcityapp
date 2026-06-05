@@ -29,6 +29,7 @@ import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talent
 import { Route as ApiPublicSignupRouteImport } from './routes/api/public/signup'
 import { Route as ApiPublicEmbedDotjsRouteImport } from './routes/api/public/embed[.]js'
 import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
+import { Route as ApiPublicTalentSlugRouteImport } from './routes/api/public/talent.$slug'
 import { Route as ApiPublicHooksWordpressSyncRouteImport } from './routes/api/public/hooks/wordpress-sync'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -130,6 +131,11 @@ const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
   path: '/api/public/casting-request',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTalentSlugRoute = ApiPublicTalentSlugRouteImport.update({
+  id: '/api/public/talent/$slug',
+  path: '/api/public/talent/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksWordpressSyncRoute =
   ApiPublicHooksWordpressSyncRouteImport.update({
     id: '/api/public/hooks/wordpress-sync',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
   '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
+  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
   '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
+  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/api/public/signup': typeof ApiPublicSignupRoute
   '/api/public/talents': typeof ApiPublicTalentsRoute
   '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
+  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,6 +237,7 @@ export interface FileRouteTypes {
     | '/api/public/signup'
     | '/api/public/talents'
     | '/api/public/hooks/wordpress-sync'
+    | '/api/public/talent/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/api/public/signup'
     | '/api/public/talents'
     | '/api/public/hooks/wordpress-sync'
+    | '/api/public/talent/$slug'
   id:
     | '__root__'
     | '/'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/api/public/signup'
     | '/api/public/talents'
     | '/api/public/hooks/wordpress-sync'
+    | '/api/public/talent/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   ApiPublicSignupRoute: typeof ApiPublicSignupRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
   ApiPublicHooksWordpressSyncRoute: typeof ApiPublicHooksWordpressSyncRoute
+  ApiPublicTalentSlugRoute: typeof ApiPublicTalentSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -438,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCastingRequestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/talent/$slug': {
+      id: '/api/public/talent/$slug'
+      path: '/api/public/talent/$slug'
+      fullPath: '/api/public/talent/$slug'
+      preLoaderRoute: typeof ApiPublicTalentSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/wordpress-sync': {
       id: '/api/public/hooks/wordpress-sync'
       path: '/api/public/hooks/wordpress-sync'
@@ -483,6 +503,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSignupRoute: ApiPublicSignupRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRoute,
   ApiPublicHooksWordpressSyncRoute: ApiPublicHooksWordpressSyncRoute,
+  ApiPublicTalentSlugRoute: ApiPublicTalentSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
