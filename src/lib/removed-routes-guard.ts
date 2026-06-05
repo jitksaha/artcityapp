@@ -64,6 +64,7 @@ export function installRemovedRoutesGuard() {
   if (OriginalXHR) {
     const open = OriginalXHR.prototype.open;
     OriginalXHR.prototype.open = function (
+      this: XMLHttpRequest,
       method: string,
       url: string | URL,
       ...rest: any[]
