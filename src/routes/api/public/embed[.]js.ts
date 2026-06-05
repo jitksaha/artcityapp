@@ -220,21 +220,56 @@ const SCRIPT = String.raw`(function(){
     if (refreshSec > 0) setInterval(load, refreshSec*1000);
     load();
 
+    // Shareable URLs: ?talent=<slug> opens that profile inline.
+    var URL_PARAM = attr('url-param','talent');
+    function getSlugFromUrl(){
+      try { return new URLSearchParams(window.location.search).get(URL_PARAM) || ''; } catch(_){ return ''; }
+    }
+    function setUrlSlug(slug, push){
+      try {
+        var u = new URL(window.location.href);
+        if (slug) u.searchParams.set(URL_PARAM, slug); else u.searchParams.delete(URL_PARAM);
+        var method = push ? 'pushState' : 'replaceState';
+        window.history[method]({acwSlug:slug||null}, '', u.toString());
+      } catch(_){}
+    }
+
     // Inline profile navigation — preserve directory state and restore on back.
     var directoryDom = wrap;
-    function openProfile(slug){
+    var currentProfileWrap = null;
+    function openProfile(slug, fromPopstate){
+      if (!slug) return;
+      if (currentProfileWrap) { currentProfileWrap.remove(); currentProfileWrap = null; }
       // Hide directory, render profile in its place.
       directoryDom.style.display = 'none';
       var profileWrap = h('div',{class:'acw','data-acw-profile':'1'},[]);
       mount.appendChild(profileWrap);
+      currentProfileWrap = profileWrap;
+      if (!fromPopstate) setUrlSlug(slug, true);
       // Smooth scroll to top of widget.
       try { mount.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){}
       renderProfileInto(profileWrap, slug, function(){
         profileWrap.remove();
+        currentProfileWrap = null;
         directoryDom.style.display = '';
+        // Prefer real history back so URL clears naturally; fall back to manual clear.
+        if (window.history.state && window.history.state.acwSlug) { window.history.back(); }
+        else { setUrlSlug('', false); }
         try { mount.scrollIntoView({behavior:'smooth', block:'start'}); } catch(_){}
       });
     }
+
+    // Browser back/forward + initial deep-link.
+    window.addEventListener('popstate', function(){
+      var slug = getSlugFromUrl();
+      if (slug) { openProfile(slug, true); }
+      else if (currentProfileWrap) {
+        currentProfileWrap.remove(); currentProfileWrap = null;
+        directoryDom.style.display = '';
+      }
+    });
+    var initialSlug = getSlugFromUrl();
+    if (initialSlug) openProfile(initialSlug, true);
   }
 
   // ============ PROFILE ============
