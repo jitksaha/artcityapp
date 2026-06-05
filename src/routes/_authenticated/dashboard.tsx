@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { myTalentQuery } from "@/lib/queries/dashboard.queries";
 import { toast } from "sonner";
-import { getMyTalent, submitApplication, deleteMedia, recordMediaUpload, saveDraft } from "@/lib/talents.functions";
+import { submitApplication, deleteMedia, recordMediaUpload, saveDraft } from "@/lib/talents.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
