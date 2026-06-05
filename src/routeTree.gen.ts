@@ -20,17 +20,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TalentsIndexRouteImport } from './routes/talents.index'
 import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
-import { Route as EmbedDirectoryRouteImport } from './routes/embed.directory'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
-import { Route as ApiPublicSignupRouteImport } from './routes/api/public/signup'
-import { Route as ApiPublicEmbedDotjsRouteImport } from './routes/api/public/embed[.]js'
-import { Route as ApiPublicCastingRequestRouteImport } from './routes/api/public/casting-request'
-import { Route as ApiPublicTalentSlugRouteImport } from './routes/api/public/talent.$slug'
-import { Route as ApiPublicHooksWordpressSyncRouteImport } from './routes/api/public/hooks/wordpress-sync'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -86,16 +78,6 @@ const TalentsSlugRoute = TalentsSlugRouteImport.update({
   path: '/talents/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmbedDirectoryRoute = EmbedDirectoryRouteImport.update({
-  id: '/embed/directory',
-  path: '/embed/directory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedSuperadminRoute = AuthenticatedSuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
@@ -111,37 +93,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiPublicTalentsRoute = ApiPublicTalentsRouteImport.update({
-  id: '/api/public/talents',
-  path: '/api/public/talents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSignupRoute = ApiPublicSignupRouteImport.update({
-  id: '/api/public/signup',
-  path: '/api/public/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicEmbedDotjsRoute = ApiPublicEmbedDotjsRouteImport.update({
-  id: '/api/public/embed.js',
-  path: '/api/public/embed.js',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicCastingRequestRoute = ApiPublicCastingRequestRouteImport.update({
-  id: '/api/public/casting-request',
-  path: '/api/public/casting-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTalentSlugRoute = ApiPublicTalentSlugRouteImport.update({
-  id: '/api/public/talent/$slug',
-  path: '/api/public/talent/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksWordpressSyncRoute =
-  ApiPublicHooksWordpressSyncRouteImport.update({
-    id: '/api/public/hooks/wordpress-sync',
-    path: '/api/public/hooks/wordpress-sync',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -155,16 +106,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
-  '/api/health': typeof ApiHealthRoute
-  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
-  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
-  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
-  '/api/public/signup': typeof ApiPublicSignupRoute
-  '/api/public/talents': typeof ApiPublicTalentsRoute
-  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
-  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -178,16 +121,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
-  '/api/health': typeof ApiHealthRoute
-  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
-  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
-  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
-  '/api/public/signup': typeof ApiPublicSignupRoute
-  '/api/public/talents': typeof ApiPublicTalentsRoute
-  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
-  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -203,16 +138,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
-  '/api/health': typeof ApiHealthRoute
-  '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
-  '/api/public/casting-request': typeof ApiPublicCastingRequestRoute
-  '/api/public/embed.js': typeof ApiPublicEmbedDotjsRoute
-  '/api/public/signup': typeof ApiPublicSignupRoute
-  '/api/public/talents': typeof ApiPublicTalentsRoute
-  '/api/public/hooks/wordpress-sync': typeof ApiPublicHooksWordpressSyncRoute
-  '/api/public/talent/$slug': typeof ApiPublicTalentSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,16 +155,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
-    | '/api/health'
-    | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
-    | '/api/public/casting-request'
-    | '/api/public/embed.js'
-    | '/api/public/signup'
-    | '/api/public/talents'
-    | '/api/public/hooks/wordpress-sync'
-    | '/api/public/talent/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -251,16 +170,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
-    | '/api/health'
-    | '/embed/directory'
     | '/talents/$slug'
     | '/talents'
-    | '/api/public/casting-request'
-    | '/api/public/embed.js'
-    | '/api/public/signup'
-    | '/api/public/talents'
-    | '/api/public/hooks/wordpress-sync'
-    | '/api/public/talent/$slug'
   id:
     | '__root__'
     | '/'
@@ -275,16 +186,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/preview'
     | '/_authenticated/superadmin'
-    | '/api/health'
-    | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
-    | '/api/public/casting-request'
-    | '/api/public/embed.js'
-    | '/api/public/signup'
-    | '/api/public/talents'
-    | '/api/public/hooks/wordpress-sync'
-    | '/api/public/talent/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,16 +200,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  ApiHealthRoute: typeof ApiHealthRoute
-  EmbedDirectoryRoute: typeof EmbedDirectoryRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
-  ApiPublicCastingRequestRoute: typeof ApiPublicCastingRequestRoute
-  ApiPublicEmbedDotjsRoute: typeof ApiPublicEmbedDotjsRoute
-  ApiPublicSignupRoute: typeof ApiPublicSignupRoute
-  ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
-  ApiPublicHooksWordpressSyncRoute: typeof ApiPublicHooksWordpressSyncRoute
-  ApiPublicTalentSlugRoute: typeof ApiPublicTalentSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -388,20 +283,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TalentsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/embed/directory': {
-      id: '/embed/directory'
-      path: '/embed/directory'
-      fullPath: '/embed/directory'
-      preLoaderRoute: typeof EmbedDirectoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/superadmin': {
       id: '/_authenticated/superadmin'
       path: '/superadmin'
@@ -422,48 +303,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
-    }
-    '/api/public/talents': {
-      id: '/api/public/talents'
-      path: '/api/public/talents'
-      fullPath: '/api/public/talents'
-      preLoaderRoute: typeof ApiPublicTalentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/signup': {
-      id: '/api/public/signup'
-      path: '/api/public/signup'
-      fullPath: '/api/public/signup'
-      preLoaderRoute: typeof ApiPublicSignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/embed.js': {
-      id: '/api/public/embed.js'
-      path: '/api/public/embed.js'
-      fullPath: '/api/public/embed.js'
-      preLoaderRoute: typeof ApiPublicEmbedDotjsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/casting-request': {
-      id: '/api/public/casting-request'
-      path: '/api/public/casting-request'
-      fullPath: '/api/public/casting-request'
-      preLoaderRoute: typeof ApiPublicCastingRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/talent/$slug': {
-      id: '/api/public/talent/$slug'
-      path: '/api/public/talent/$slug'
-      fullPath: '/api/public/talent/$slug'
-      preLoaderRoute: typeof ApiPublicTalentSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/wordpress-sync': {
-      id: '/api/public/hooks/wordpress-sync'
-      path: '/api/public/hooks/wordpress-sync'
-      fullPath: '/api/public/hooks/wordpress-sync'
-      preLoaderRoute: typeof ApiPublicHooksWordpressSyncRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -494,16 +333,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  ApiHealthRoute: ApiHealthRoute,
-  EmbedDirectoryRoute: EmbedDirectoryRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
-  ApiPublicCastingRequestRoute: ApiPublicCastingRequestRoute,
-  ApiPublicEmbedDotjsRoute: ApiPublicEmbedDotjsRoute,
-  ApiPublicSignupRoute: ApiPublicSignupRoute,
-  ApiPublicTalentsRoute: ApiPublicTalentsRoute,
-  ApiPublicHooksWordpressSyncRoute: ApiPublicHooksWordpressSyncRoute,
-  ApiPublicTalentSlugRoute: ApiPublicTalentSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
