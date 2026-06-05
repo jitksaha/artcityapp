@@ -745,11 +745,7 @@ function StatCard({
 }
 
 function OverviewTab() {
-  const fn = useServerFn(getAdminAnalytics);
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-analytics"],
-    queryFn: () => fn(),
-  });
+  const { data, isLoading } = useQuery(adminAnalyticsQuery());
 
   if (isLoading || !data) {
     return (
