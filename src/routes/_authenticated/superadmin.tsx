@@ -38,6 +38,8 @@ import {
   getWordPressCredentials,
   saveWordPressCredentials,
   testWordPressCredentials,
+  getWordPressSyncStatus,
+  syncOneTalent,
 } from "@/lib/wordpress.functions";
 import {
   getEmbedSecurity,
