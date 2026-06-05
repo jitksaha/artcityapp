@@ -195,16 +195,136 @@ load();
 
 function buildApplyCta(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
-<section class="ac-wrap" style="padding:48px 32px;background:linear-gradient(135deg,#fafafa,#f0e9d6);border-radius:20px;text-align:center;">
-  <div class="ac-eyebrow" style="color:#c9a14a;">&#10026; Join the roster</div>
-  <h2 style="font-size:28px!important;margin:10px 0 0!important;">Apply to Join Art City Casting</h2>
-  <p style="margin:10px auto 0!important;max-width:540px;color:#555;font-size:15px;">Actors, actresses, models, voice talents, and performers can submit their information for review. Approved applicants may be added to the Art City Casting talent database.</p>
-  <p style="margin:8px 0 0;color:#888;font-size:12px;">You must create an account or sign in before submitting the application form.</p>
-  <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-    <a href="${base}/dashboard" target="_blank" rel="noopener" style="background:#111;color:#fff!important;padding:12px 22px;border-radius:999px;text-decoration:none!important;font-weight:600;font-size:14px;display:inline-block;">Start your application</a>
-    <a href="${base}/login" target="_blank" rel="noopener" style="background:#fff;color:#111!important;padding:12px 22px;border-radius:999px;text-decoration:none!important;font-weight:600;font-size:14px;border:1px solid #111;display:inline-block;">Sign in</a>
+<style id="ac-apply-css">
+.aca-wrap{max-width:920px;margin:0 auto;}
+.aca-card{padding:48px 32px;background:linear-gradient(135deg,#fafafa,#f0e9d6);border-radius:20px;text-align:center;}
+.aca-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c9a14a;font-weight:700;}
+.aca-title{font-size:32px!important;line-height:1.15!important;margin:12px 0 0!important;font-weight:800;color:#111;}
+.aca-lede{margin:14px auto 0!important;max-width:580px;color:#555;font-size:15px;line-height:1.55;}
+.aca-note{margin:10px 0 0;color:#888;font-size:12px;}
+.aca-actions{margin-top:22px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.aca-btn{padding:13px 24px;border-radius:999px;text-decoration:none!important;font-weight:600;font-size:14px;display:inline-block;cursor:pointer;border:1px solid #111;line-height:1;}
+.aca-btn.primary{background:#111;color:#fff!important;}
+.aca-btn.secondary{background:#fff;color:#111!important;}
+.aca-form-wrap{display:none;margin-top:24px;background:#fff;border-radius:20px;padding:32px;text-align:left;box-shadow:0 30px 60px -40px rgba(0,0,0,.25);}
+.aca-form-wrap.open{display:block;}
+.aca-form-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap;}
+.aca-form-head h3{margin:0;font-size:20px;font-weight:700;color:#111;}
+.aca-close{background:transparent;border:0;color:#666;font-size:13px;cursor:pointer;text-decoration:underline;}
+.aca-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:640px){.aca-grid{grid-template-columns:1fr;}}
+.aca-field{display:flex;flex-direction:column;gap:6px;}
+.aca-field.full{grid-column:1/-1;}
+.aca-field label{font-size:12px;font-weight:600;color:#333;letter-spacing:.02em;}
+.aca-field input,.aca-field select,.aca-field textarea{width:100%;padding:11px 13px;border:1px solid #d8d3c4;border-radius:10px;font-size:14px;background:#fafaf7;color:#111;font-family:inherit;}
+.aca-field textarea{resize:vertical;min-height:90px;}
+.aca-field input:focus,.aca-field select:focus,.aca-field textarea:focus{outline:none;border-color:#111;background:#fff;}
+.aca-cats{display:flex;flex-wrap:wrap;gap:8px;}
+.aca-cats label{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #d8d3c4;border-radius:999px;font-size:13px;background:#fafaf7;cursor:pointer;font-weight:500;color:#333;}
+.aca-cats input{accent-color:#111;}
+.aca-submit{margin-top:18px;width:100%;padding:14px;background:#111;color:#fff;border:0;border-radius:999px;font-weight:700;font-size:15px;cursor:pointer;}
+.aca-submit:disabled{opacity:.6;cursor:not-allowed;}
+.aca-msg{margin:14px 0 0;font-size:14px;text-align:center;}
+.aca-success{background:#f5f2e8;border-radius:16px;padding:28px;text-align:center;}
+.aca-success h4{margin:0 0 8px;font-size:20px;color:#111;}
+.aca-success p{margin:0 0 16px;color:#555;font-size:14px;}
+</style>
+<section class="ac-wrap aca-wrap">
+  <div class="aca-card">
+    <div class="aca-eyebrow">&#10026; Join the roster</div>
+    <h2 class="aca-title">Apply to Join Art City Casting</h2>
+    <p class="aca-lede">Actors, actresses, models, voice talents, and performers can submit their information for review. Approved applicants may be added to the Art City Casting talent database.</p>
+    <p class="aca-note">You must create an account or sign in before submitting the application form.</p>
+    <div class="aca-actions">
+      <button type="button" class="aca-btn primary" id="aca-open">Start your application</button>
+      <a href="${base}/login" target="_blank" rel="noopener" class="aca-btn secondary">Sign in</a>
+    </div>
   </div>
-</section>`;
+
+  <div class="aca-form-wrap" id="aca-form-wrap">
+    <div class="aca-form-head">
+      <h3>Create your account &amp; application</h3>
+      <button type="button" class="aca-close" id="aca-close">Cancel</button>
+    </div>
+    <form id="aca-form" novalidate>
+      <div class="aca-grid">
+        <div class="aca-field"><label>Full name *</label><input name="full_name" required maxlength="150" /></div>
+        <div class="aca-field"><label>Stage name</label><input name="stage_name" maxlength="150" /></div>
+        <div class="aca-field"><label>Email *</label><input name="email" type="email" required maxlength="255" /></div>
+        <div class="aca-field"><label>Password * (min 8 chars)</label><input name="password" type="password" required minlength="8" maxlength="128" /></div>
+        <div class="aca-field"><label>Gender</label>
+          <select name="gender"><option value="">Select…</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="other">Other</option></select>
+        </div>
+        <div class="aca-field"><label>Age</label><input name="age" type="number" min="0" max="120" /></div>
+        <div class="aca-field"><label>Playing age</label><input name="playing_age" maxlength="40" placeholder="e.g. 25–35" /></div>
+        <div class="aca-field"><label>Nationality</label><input name="nationality" maxlength="80" /></div>
+        <div class="aca-field"><label>Location</label><input name="location" maxlength="200" /></div>
+        <div class="aca-field"><label>Native language</label><input name="native_language" maxlength="80" /></div>
+        <div class="aca-field full"><label>Short bio</label><textarea name="bio" maxlength="5000" rows="4"></textarea></div>
+        <div class="aca-field full"><label>Categories (select all that apply)</label>
+          <div class="aca-cats">
+            <label><input type="checkbox" name="categories" value="actor" />Actor</label>
+            <label><input type="checkbox" name="categories" value="actress" />Actress</label>
+            <label><input type="checkbox" name="categories" value="model" />Model</label>
+            <label><input type="checkbox" name="categories" value="performer" />Performer</label>
+            <label><input type="checkbox" name="categories" value="voice_talent" />Voice talent</label>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="aca-submit" id="aca-submit">Create account &amp; submit application</button>
+      <p class="aca-msg" id="aca-msg"></p>
+    </form>
+  </div>
+</section>
+<script>(function(){
+  var BASE=${JSON.stringify(base)};
+  var openBtn=document.getElementById('aca-open');
+  var closeBtn=document.getElementById('aca-close');
+  var wrap=document.getElementById('aca-form-wrap');
+  var form=document.getElementById('aca-form');
+  var msg=document.getElementById('aca-msg');
+  var submit=document.getElementById('aca-submit');
+  openBtn.addEventListener('click',function(){wrap.classList.add('open');wrap.scrollIntoView({behavior:'smooth',block:'start'});});
+  closeBtn.addEventListener('click',function(){wrap.classList.remove('open');});
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    msg.textContent='';msg.style.color='#666';
+    var fd=new FormData(form);
+    var cats=fd.getAll('categories');
+    var data={
+      full_name:(fd.get('full_name')||'').toString().trim(),
+      stage_name:(fd.get('stage_name')||'').toString().trim()||undefined,
+      email:(fd.get('email')||'').toString().trim(),
+      password:(fd.get('password')||'').toString(),
+      gender:(fd.get('gender')||'').toString()||undefined,
+      playing_age:(fd.get('playing_age')||'').toString().trim()||undefined,
+      nationality:(fd.get('nationality')||'').toString().trim()||undefined,
+      location:(fd.get('location')||'').toString().trim()||undefined,
+      native_language:(fd.get('native_language')||'').toString().trim()||undefined,
+      bio:(fd.get('bio')||'').toString().trim()||undefined,
+      categories:cats.length?cats:undefined,
+      submit:true
+    };
+    var ageRaw=(fd.get('age')||'').toString().trim();
+    if(ageRaw)data.age=parseInt(ageRaw,10);
+    if(!data.full_name||!data.email||!data.password||data.password.length<8){
+      msg.textContent='Please fill name, email and a password of at least 8 characters.';msg.style.color='#c00';return;
+    }
+    submit.disabled=true;submit.textContent='Submitting…';msg.textContent='Creating your account…';
+    fetch(BASE+'/api/public/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+      .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j};});})
+      .then(function(x){
+        submit.disabled=false;submit.textContent='Create account & submit application';
+        if(x.ok){
+          wrap.innerHTML='<div class="aca-success"><h4>Application submitted &#10003;</h4><p>Your account has been created and your application is in review. You can sign in to track its status.</p><a href="'+BASE+'/login" target="_blank" rel="noopener" class="aca-btn primary">Sign in to your dashboard</a></div>';
+        }else{
+          var err=(x.j&&x.j.error)||'Could not submit application';
+          msg.textContent=err;msg.style.color='#c00';
+        }
+      })
+      .catch(function(e){submit.disabled=false;submit.textContent='Create account & submit application';msg.textContent=e.message||'Network error';msg.style.color='#c00';});
+  });
+})();</script>`;
 }
 
 function buildCastingForm(base: string, profilePattern: string) {
