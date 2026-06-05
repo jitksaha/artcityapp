@@ -298,6 +298,7 @@ curl -X POST "${origin}/api/public/signup" \\
       </Card>
 
       {isAdmin && <WordPressPushCard origin={origin} />}
+      {isAdmin && <WordPressSyncStatusCard />}
       {isAdmin && <WordPressConnectionCard />}
       {isAdmin && <EmbedSecurityCard origin={origin} />}
     </div>
