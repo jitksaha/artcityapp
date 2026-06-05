@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type EmbedSecuritySettings = {
   require_token: boolean;
@@ -14,19 +13,27 @@ const CACHE_MS = 15_000;
 
 export async function loadEmbedSecurity(force = false): Promise<EmbedSecuritySettings> {
   if (!force && cache && Date.now() - cache.at < CACHE_MS) return cache.value;
-  const { data, error } = await supabaseAdmin
-    .from("embed_security_settings")
-    .select("require_token, signing_secret, allowed_origins, token_ttl_seconds, updated_at")
-    .eq("id", 1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const value = (data ?? {
+  const defaults: EmbedSecuritySettings = {
     require_token: false,
     signing_secret: "",
     allowed_origins: [],
     token_ttl_seconds: 86400,
     updated_at: new Date().toISOString(),
-  }) as EmbedSecuritySettings;
+  };
+  let value: EmbedSecuritySettings = defaults;
+  try {
+    // Lazy-load admin client so missing SUPABASE_SERVICE_ROLE_KEY (e.g. in dev)
+    // doesn't crash public endpoints — fall back to open defaults instead.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("embed_security_settings")
+      .select("require_token, signing_secret, allowed_origins, token_ttl_seconds, updated_at")
+      .eq("id", 1)
+      .maybeSingle();
+    if (!error && data) value = data as EmbedSecuritySettings;
+  } catch (e) {
+    console.warn("[embed-security] using defaults (admin client unavailable):", (e as Error).message);
+  }
   cache = { value, at: Date.now() };
   return value;
 }
