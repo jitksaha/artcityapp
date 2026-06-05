@@ -220,15 +220,34 @@ const SCRIPT = String.raw`(function(){
     if (refreshSec > 0) setInterval(load, refreshSec*1000);
     load();
 
-    // Shareable URLs: ?talent=<slug> opens that profile inline.
+    // Shareable URLs.
+    // Pretty mode:  /<base-path>/<slug>     (set data-base-path="/talents")
+    // Query mode:   ?talent=<slug>          (default, works on any WP page)
     var URL_PARAM = attr('url-param','talent');
+    var BASE_PATH = (attr('base-path','') || '').replace(/\/+$/,''); // e.g. "/talents"
+    var PRETTY = !!BASE_PATH;
     function getSlugFromUrl(){
-      try { return new URLSearchParams(window.location.search).get(URL_PARAM) || ''; } catch(_){ return ''; }
+      try {
+        if (PRETTY) {
+          var path = window.location.pathname.replace(/\/+$/,'');
+          if (path === BASE_PATH) return '';
+          if (path.indexOf(BASE_PATH + '/') === 0) {
+            return decodeURIComponent(path.slice(BASE_PATH.length + 1).split('/')[0] || '');
+          }
+          return '';
+        }
+        return new URLSearchParams(window.location.search).get(URL_PARAM) || '';
+      } catch(_){ return ''; }
     }
     function setUrlSlug(slug, push){
       try {
         var u = new URL(window.location.href);
-        if (slug) u.searchParams.set(URL_PARAM, slug); else u.searchParams.delete(URL_PARAM);
+        if (PRETTY) {
+          u.pathname = slug ? (BASE_PATH + '/' + encodeURIComponent(slug)) : (BASE_PATH + '/');
+        } else {
+          if (slug) u.searchParams.set(URL_PARAM, slug);
+          else u.searchParams.delete(URL_PARAM);
+        }
         var method = push ? 'pushState' : 'replaceState';
         window.history[method]({acwSlug:slug||null}, '', u.toString());
       } catch(_){}
