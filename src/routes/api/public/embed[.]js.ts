@@ -49,12 +49,18 @@ const SCRIPT = String.raw`(function(){
 
   // ============ SIGNUP ============
   function renderSignup(){
+    var registerUrl = attr('register-url', API + '/register');
+    var loginUrl = attr('login-url', API + '/login');
     var form = h('form',{class:'acw'},[
       h('h2',null,['Apply as Talent']),
       field('Full name','full_name',{required:'true'}),
       field('Email','email',{type:'email',required:'true'}),
       field('Password','password',{type:'password',required:'true','minlength':'6'}),
-      h('div',{style:'margin-top:12px'},[h('button',{type:'submit'},['Create account'])]),
+      h('div',{style:'margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap'},[
+        h('button',{type:'submit'},['Create account & continue']),
+        h('a',{href:loginUrl,style:'font-size:13px;color:#6b7280;text-decoration:underline'},['Already have an account? Sign in']),
+      ]),
+      h('p',{style:'font-size:12px;color:#6b7280;margin-top:8px'},['After creating your account you will continue to the full talent application (photos, skills, experience, agreements).']),
     ]);
     form.addEventListener('submit', function(e){
       e.preventDefault();
@@ -63,15 +69,26 @@ const SCRIPT = String.raw`(function(){
         full_name: form.full_name.value,
         email: form.email.value,
         password: form.password.value,
+        redirect_to: registerUrl,
       };
       fetch(withTok(API+'/api/public/signup'),{method:'POST',headers:tokHeaders({'Content-Type':'application/json'}),body:JSON.stringify(payload)})
         .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})
         .then(function(res){
-          btn.disabled=false; btn.textContent='Create account';
-          if(res.ok){ msg(form,'Account created. Check your email to verify.',true); form.reset(); }
-          else msg(form, res.j.error || 'Failed to sign up', false);
+          if(res.ok){
+            msg(form,'Account created. Redirecting you to complete your talent profile…',true);
+            // Hand off to the app's full multi-step register flow.
+            // The app's /register route uses the active Supabase session; the user
+            // will be prompted to log in there if email confirmation is required.
+            var email = encodeURIComponent(payload.email);
+            setTimeout(function(){
+              window.location.href = registerUrl + (registerUrl.indexOf('?')>-1?'&':'?') + 'email=' + email;
+            }, 900);
+          } else {
+            btn.disabled=false; btn.textContent='Create account & continue';
+            msg(form, res.j.error || 'Failed to sign up', false);
+          }
         })
-        .catch(function(err){ btn.disabled=false; btn.textContent='Create account'; msg(form, err.message, false); });
+        .catch(function(err){ btn.disabled=false; btn.textContent='Create account & continue'; msg(form, err.message, false); });
     });
     mount.appendChild(form);
   }
