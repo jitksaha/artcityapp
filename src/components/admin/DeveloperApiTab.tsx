@@ -76,14 +76,14 @@ const AC_RESET_CSS = `<style id="ac-reset">
 @keyframes acFade{from{opacity:0}to{opacity:1}}
 </style>`;
 
-function buildHero(base: string) {
+function buildHero(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><div id="ac-hero" style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:21/9;background:#111;">
   <div id="ac-hero-slides" style="position:absolute;inset:0;"></div>
   <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.7));"></div>
   <div id="ac-hero-meta" style="position:absolute;left:0;right:0;bottom:0;padding:32px;color:#fff;"></div>
 </div></div>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var idx=0,items=[];
 function render(){
   if(!items.length) return;
@@ -100,7 +100,7 @@ acFetchTalents({featured_only:'true',limit:8}).then(function(r){items=r.length?r
 })();</script>`;
 }
 
-function buildVip(base: string) {
+function buildVip(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap ac-section" id="ac-vip">
   <div style="margin-bottom:20px;">
@@ -110,7 +110,7 @@ function buildVip(base: string) {
   </div>
   <div id="ac-vip-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var el=document.getElementById('ac-vip-grid');
 acFetchTalents({vip_only:'true',limit:8}).then(function(items){
   if(!items.length){el.innerHTML='<p style="color:#666;">No VIP talents yet.</p>';return;}
@@ -119,7 +119,7 @@ acFetchTalents({vip_only:'true',limit:8}).then(function(items){
 })();</script>`;
 }
 
-function buildFeatured(base: string) {
+function buildFeatured(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap ac-section" id="ac-featured">
   <div style="margin-bottom:20px;">
@@ -128,7 +128,7 @@ function buildFeatured(base: string) {
   </div>
   <div id="ac-featured-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var el=document.getElementById('ac-featured-grid');
 acFetchTalents({featured_only:'true',limit:8}).then(function(items){
   if(!items.length){el.innerHTML='<p style="color:#666;">No featured talents yet.</p>';return;}
@@ -137,7 +137,7 @@ acFetchTalents({featured_only:'true',limit:8}).then(function(items){
 })();</script>`;
 }
 
-function buildDirectory(base: string) {
+function buildDirectory(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <style>
 .ac-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
@@ -173,7 +173,7 @@ function buildDirectory(base: string) {
   <div id="ac-dir-meta" style="font-size:13px;color:#666;margin-bottom:10px;"></div>
   <div id="ac-dir-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var ids=['ac-q','ac-gender','ac-cat','ac-loc','ac-lang','ac-sort'];
 var grid=document.getElementById('ac-dir-grid'),meta=document.getElementById('ac-dir-meta'),t;
 var activeFilter='all',reqId=0;
@@ -193,7 +193,7 @@ load();
 })();</script>`;
 }
 
-function buildApplyCta(base: string) {
+function buildApplyCta(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap" style="padding:48px 32px;background:linear-gradient(135deg,#fafafa,#f0e9d6);border-radius:20px;text-align:center;">
   <div class="ac-eyebrow" style="color:#c9a14a;">&#10026; Join the roster</div>
@@ -207,7 +207,7 @@ function buildApplyCta(base: string) {
 </section>`;
 }
 
-function buildCastingForm(base: string) {
+function buildCastingForm(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><form id="ac-casting" style="max-width:600px;margin:0 auto;display:grid;gap:10px;">
   <input name="company_name" class="ac-input" placeholder="Company / Production *" required />
@@ -232,14 +232,14 @@ function buildCastingForm(base: string) {
 })();</script>`;
 }
 
-function buildAllInOne(base: string) {
+function buildAllInOne(base: string, profilePattern: string) {
   return `<!-- Art City — Full Talents experience -->
 <div class="ac-wrap" style="padding:24px 0;display:grid;gap:32px;">
-${buildHero(base)}
-${buildVip(base)}
-${buildFeatured(base)}
-${buildDirectory(base)}
-${buildApplyCta(base)}
+${buildHero(base, profilePattern)}
+${buildVip(base, profilePattern)}
+${buildFeatured(base, profilePattern)}
+${buildDirectory(base, profilePattern)}
+${buildApplyCta(base, profilePattern)}
 </div>`;
 }
 
