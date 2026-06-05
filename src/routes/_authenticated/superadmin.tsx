@@ -15,7 +15,6 @@ import {
   importDemoTalents,
   getAppSettings,
   updateAppSettings,
-  getAdminAnalytics,
   listUsersWithRoles,
   setUserRole,
 } from "@/lib/admin.functions";
