@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown } from "lucide-react";
