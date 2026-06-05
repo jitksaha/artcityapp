@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/public/applications")({
           }
           const userId = created.user.id;
 
-          const { categories, submit, password: _pw, ...profileFields } = input;
+          const { categories, submit, password: _pw, email: _em, ...profileFields } = input;
           const { data: profile, error: profileErr } = await supabaseAdmin
             .from("talent_profiles")
             .insert({
