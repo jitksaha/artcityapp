@@ -5,8 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 function create() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  // Try runtime env first, then fall back to Vite build-time inlined values so
+  // this works even if SUPABASE_* runtime env vars are not injected.
+  const url =
+    process.env.SUPABASE_URL ||
+    (import.meta as any).env?.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) {
     const missing = [
       ...(!url ? ["SUPABASE_URL"] : []),
