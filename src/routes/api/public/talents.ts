@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabasePublic } from "@/integrations/supabase/client.public.server";
 import { jsonResponse, optionsResponse } from "@/lib/api-cors";
 
 const PUBLIC_COLS =
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/talents")({
           const params = Object.fromEntries(url.searchParams.entries());
           const data = QuerySchema.parse(params);
 
-          let q = supabaseAdmin
+          let q = supabasePublic
             .from("talent_profiles")
             .select(PUBLIC_COLS)
             .eq("approved", true)
