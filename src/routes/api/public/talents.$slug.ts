@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabasePublic } from "@/integrations/supabase/client.public.server";
 import { jsonResponse, optionsResponse } from "@/lib/api-cors";
 
 const PUBLIC_COLS =
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/talents/$slug")({
       GET: async ({ params }) => {
         try {
           const slug = z.string().min(1).max(160).parse(params.slug);
-          const { data: talent, error } = await supabaseAdmin
+          const { data: talent, error } = await supabasePublic
             .from("talent_profiles")
             .select(PUBLIC_COLS)
             .eq("slug", slug)
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/talents/$slug")({
           if (error) return jsonResponse({ error: error.message }, { status: 500 });
           if (!talent) return jsonResponse({ error: "Not found" }, { status: 404 });
 
-          const { data: media } = await supabaseAdmin
+          const { data: media } = await supabasePublic
             .from("media_uploads")
             .select("id, kind, bucket, path, thumbnail_path, width, height, position")
             .eq("talent_id", talent.id)
