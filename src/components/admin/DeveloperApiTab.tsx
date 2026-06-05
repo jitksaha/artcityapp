@@ -264,24 +264,24 @@ el.innerHTML='<p style="color:#999;padding:40px;text-align:center;">Loading prof
 fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
  .then(function(r){return r.json();})
  .then(function(res){
-    var t=(res&&res.data)?res.data:res;
+    var payload=(res&&res.data)?res.data:res;
+    var t=(payload&&payload.talent)?payload.talent:payload;
     if(!t||t.error||!t.slug){el.innerHTML='<h2>Talent not found</h2><p>We couldn\\'t find a talent matching this URL.</p>';
       try{document.title='Talent not found';}catch(e){}
       return;}
     try{document.title=(t.stage_name||t.full_name||'Talent')+' — Art City';}catch(e){}
     var img=t.headshot_url||t.headshot_thumb_url||'';
-    var name=t.stage_name||t.full_name||'Talent';
-    var meta=[t.location,t.nationality,t.gender].filter(Boolean).join(' · ');
+    var name=acText(t.stage_name||t.full_name||'Talent');
+    var meta=acText([t.location,t.nationality,t.gender].filter(Boolean).join(' · '));
     var badges='';
     if(t.vip) badges+='<span style="background:#c9a14a;color:#111;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;margin-right:6px;">VIP</span>';
     if(t.featured) badges+='<span style="background:#111;color:#fff;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;">Featured</span>';
     var stats=[];
-    if(t.height_cm) stats.push(['Height',t.height_cm+' cm']);
-    if(t.weight_kg) stats.push(['Weight',t.weight_kg+' kg']);
-    if(t.eye_color) stats.push(['Eyes',t.eye_color]);
-    if(t.hair_color) stats.push(['Hair',t.hair_color]);
-    if(t.languages&&t.languages.length) stats.push(['Languages',[].concat(t.languages).join(', ')]);
-    if(t.skills&&t.skills.length) stats.push(['Skills',[].concat(t.skills).join(', ')]);
+    if(t.age) stats.push(['Age',acText(t.age)]);
+    if(t.playing_age) stats.push(['Playing age',acText(t.playing_age)]);
+    if(t.native_language) stats.push(['Language',acText(t.native_language)]);
+    if(t.categories&&t.categories.length) stats.push(['Categories',acList(t.categories)]);
+    if(t.skills) stats.push(['Skills',acList(t.skills)]);
     var statsHtml=stats.map(function(s){return '<div style="padding:10px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:12px;"><span style="color:#666;font-size:13px;">'+s[0]+'</span><span style="color:#111;font-size:13px;font-weight:500;text-align:right;">'+s[1]+'</span></div>';}).join('');
     var gallery='';
     if(t.gallery_urls&&t.gallery_urls.length){
