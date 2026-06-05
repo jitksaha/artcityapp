@@ -701,15 +701,65 @@ function CastingTab() {
     onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["admin-casting"] }); },
   });
 
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const STATUS_TONE: Record<string, string> = {
+    new: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    reviewed: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    contacted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+    closed: "bg-muted text-muted-foreground border-border",
+  };
+  const filtered = (data ?? []).filter((r: any) => {
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return [r.production_title, r.contact_person, r.email, r.company_name, r.requested_talent_name]
+      .filter(Boolean)
+      .some((v: string) => v.toLowerCase().includes(q));
+  });
+
   if (isLoading) return <ListSkeleton rows={4} />;
   return (
     <div className="space-y-3">
-      {(data ?? []).map((r: any) => (
+      <Card>
+        <CardContent className="py-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            placeholder="Search by production, company, contact, email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:max-w-sm"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {["all", "new", "reviewed", "contacted", "closed"].map((s) => (
+              <Button
+                key={s}
+                variant={statusFilter === s ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2.5 text-xs capitalize"
+                onClick={() => setStatusFilter(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+          <div className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
+            {filtered.length} {filtered.length === 1 ? "request" : "requests"}
+          </div>
+        </CardContent>
+      </Card>
+      {filtered.map((r: any) => (
         <Card key={r.id}>
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
-              <span>{r.production_title}</span>
-              <Badge variant="outline">{r.status}</Badge>
+              <span className="flex items-center gap-2">
+                {r.production_title}
+                {r.created_at && (
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    · {new Date(r.created_at).toLocaleDateString()}
+                  </span>
+                )}
+              </span>
+              <Badge variant="outline" className={STATUS_TONE[r.status] ?? ""}>{r.status}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -733,7 +783,15 @@ function CastingTab() {
           </CardContent>
         </Card>
       ))}
-      {(data ?? []).length === 0 && <p className="text-muted-foreground">No casting requests yet.</p>}
+      {filtered.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            {(data ?? []).length === 0
+              ? "No casting requests yet."
+              : "No casting requests match your filters."}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
