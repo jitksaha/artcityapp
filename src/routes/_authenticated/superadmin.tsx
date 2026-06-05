@@ -46,6 +46,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, type AdminView } from "@/components/admin/AdminSidebar";
+import { DeveloperApiTab } from "@/components/admin/DeveloperApiTab";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   Area,
@@ -91,6 +92,7 @@ function AdminPage() {
     casting: "Casting Requests",
     users: "Users & Roles",
     settings: "Settings",
+    developer_api: "Developer · API",
   };
   return (
     <SidebarProvider
@@ -123,6 +125,7 @@ function AdminPage() {
           {view === "casting" && <CastingTab />}
           {view === "users" && isAdmin && <UsersTab />}
           {view === "settings" && isAdmin && <SettingsTab />}
+          {view === "developer_api" && isAdmin && <DeveloperApiTab />}
         </div>
       </SidebarInset>
     </SidebarProvider>
