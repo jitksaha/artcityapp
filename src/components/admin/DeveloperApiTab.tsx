@@ -295,7 +295,7 @@ fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
  .then(function(res){
     var payload=(res&&res.data)?res.data:res;
     var t=(payload&&payload.talent)?payload.talent:payload;
-    if(!t||t.error||!t.slug){el.innerHTML='<div style="text-align:center;padding:80px 20px;"><h2 style="font-size:32px;font-weight:800;margin:0 0 8px;">Talent not found</h2><p style="color:#666;">We couldn\'t find a talent matching this URL.</p></div>';try{document.title='Talent not found';}catch(e){}return;}
+    if(!t||t.error||!t.slug){el.innerHTML='<div style="text-align:center;padding:80px 20px;"><h2 style="font-size:32px;font-weight:800;margin:0 0 8px;">Talent not found</h2><p style="color:#666;">We could not find a talent matching this URL.</p></div>';try{document.title='Talent not found';}catch(e){}return;}
     try{document.title=(t.stage_name||t.full_name||'Talent')+' \u2014 Art City';}catch(e){}
     var img=t.headshot_url||t.headshot_thumb_url||'';
     var name=acText(t.stage_name||t.full_name||'Talent');
