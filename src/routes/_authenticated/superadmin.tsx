@@ -367,44 +367,100 @@ function ImportDemoTalentsCard() {
 function ApplicationsTab() {
   const fn = useServerFn(listApplications);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [search, setSearch] = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["admin-applications", statusFilter],
     queryFn: () => fn({ data: statusFilter ? { status: statusFilter } : undefined }),
   });
   const [openId, setOpenId] = useState<string | null>(null);
 
+  const STATUS_LABELS: Record<string, string> = {
+    all: "All",
+    submitted: "New",
+    under_review: "Reviewing",
+    needs_revision: "Needs Revision",
+    approved: "Approved",
+    published: "Published",
+    rejected: "Rejected",
+  };
+  const STATUS_TONE: Record<string, string> = {
+    submitted: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    under_review: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    needs_revision: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
+    approved: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+    published: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30",
+    rejected: "bg-destructive/15 text-destructive border-destructive/30",
+    draft: "bg-muted text-muted-foreground border-border",
+  };
+
+  const filtered = (data ?? []).filter((t: any) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return [t.stage_name, t.full_name, t.location, t.nationality, t.gender]
+      .filter(Boolean)
+      .some((v: string) => v.toLowerCase().includes(q));
+  });
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {["all", "submitted", "under_review", "needs_revision", "approved", "published", "rejected"].map((s) => (
-          <Button
-            key={s}
-            variant={(statusFilter ?? "all") === s ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatusFilter(s === "all" ? undefined : s)}
-          >
-            {s}
-          </Button>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="py-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            placeholder="Search by name, location, nationality…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:max-w-xs"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {Object.keys(STATUS_LABELS).map((s) => (
+              <Button
+                key={s}
+                variant={(statusFilter ?? "all") === s ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setStatusFilter(s === "all" ? undefined : s)}
+              >
+                {STATUS_LABELS[s]}
+              </Button>
+            ))}
+          </div>
+          <div className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
+            {filtered.length} {filtered.length === 1 ? "result" : "results"}
+          </div>
+        </CardContent>
+      </Card>
       {isLoading && <ListSkeleton rows={5} />}
       <div className="grid gap-3">
-        {(data ?? []).map((t: any) => (
+        {filtered.map((t: any) => (
           <Card key={t.id}>
             <CardContent className="flex items-center justify-between py-4">
               <div>
                 <p className="font-medium">{t.stage_name || t.full_name || "Untitled"}</p>
-                <p className="text-xs text-muted-foreground">{t.gender ?? "—"} · {t.location ?? "—"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.gender ?? "—"} · {t.location ?? "—"}
+                  {t.updated_at && (
+                    <> · updated {new Date(t.updated_at).toLocaleDateString()}</>
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 {t.vip && <Badge>VIP</Badge>}
                 {t.featured && <Badge variant="secondary">Featured</Badge>}
-                <Badge variant="outline">{t.status}</Badge>
+                <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
+                  {STATUS_LABELS[t.status] ?? t.status}
+                </Badge>
                 <Button size="sm" variant="outline" onClick={() => setOpenId(t.id)}>Review</Button>
               </div>
             </CardContent>
           </Card>
         ))}
+        {!isLoading && filtered.length === 0 && (
+          <Card>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              No applications match your filters.
+            </CardContent>
+          </Card>
+        )}
       </div>
       {openId && <ReviewDialog id={openId} onClose={() => setOpenId(null)} />}
     </div>
@@ -645,15 +701,65 @@ function CastingTab() {
     onSuccess: () => { toast.success("Updated"); qc.invalidateQueries({ queryKey: ["admin-casting"] }); },
   });
 
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const STATUS_TONE: Record<string, string> = {
+    new: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    reviewed: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    contacted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+    closed: "bg-muted text-muted-foreground border-border",
+  };
+  const filtered = (data ?? []).filter((r: any) => {
+    if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return [r.production_title, r.contact_person, r.email, r.company_name, r.requested_talent_name]
+      .filter(Boolean)
+      .some((v: string) => v.toLowerCase().includes(q));
+  });
+
   if (isLoading) return <ListSkeleton rows={4} />;
   return (
     <div className="space-y-3">
-      {(data ?? []).map((r: any) => (
+      <Card>
+        <CardContent className="py-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            placeholder="Search by production, company, contact, email…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sm:max-w-sm"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {["all", "new", "reviewed", "contacted", "closed"].map((s) => (
+              <Button
+                key={s}
+                variant={statusFilter === s ? "default" : "outline"}
+                size="sm"
+                className="h-7 px-2.5 text-xs capitalize"
+                onClick={() => setStatusFilter(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+          <div className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
+            {filtered.length} {filtered.length === 1 ? "request" : "requests"}
+          </div>
+        </CardContent>
+      </Card>
+      {filtered.map((r: any) => (
         <Card key={r.id}>
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
-              <span>{r.production_title}</span>
-              <Badge variant="outline">{r.status}</Badge>
+              <span className="flex items-center gap-2">
+                {r.production_title}
+                {r.created_at && (
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    · {new Date(r.created_at).toLocaleDateString()}
+                  </span>
+                )}
+              </span>
+              <Badge variant="outline" className={STATUS_TONE[r.status] ?? ""}>{r.status}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -677,7 +783,15 @@ function CastingTab() {
           </CardContent>
         </Card>
       ))}
-      {(data ?? []).length === 0 && <p className="text-muted-foreground">No casting requests yet.</p>}
+      {filtered.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            {(data ?? []).length === 0
+              ? "No casting requests yet."
+              : "No casting requests match your filters."}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
