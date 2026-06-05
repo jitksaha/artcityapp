@@ -300,12 +300,17 @@ const SCRIPT = String.raw`(function(){
     }
     var shareBtn = h('button',{class:'acw-back',type:'button',style:'margin:0'},['🔗 Share']);
     shareBtn.addEventListener('click', function(){
-      var shareUrl;
-      try {
-        var u = new URL(window.location.href);
-        u.searchParams.set('talent', slug);
-        shareUrl = u.toString();
-      } catch(_) { shareUrl = window.location.href; }
+      // The directory widget already pushed the slug into the URL when this
+      // profile opened, so window.location.href is the canonical shareable URL.
+      // For the standalone profile widget, fall back to appending ?talent=<slug>.
+      var shareUrl = window.location.href;
+      if (shareUrl.indexOf(encodeURIComponent(slug)) === -1 && shareUrl.indexOf(slug) === -1) {
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.set('talent', slug);
+          shareUrl = u.toString();
+        } catch(_) {}
+      }
       var done = function(ok){
         var orig = '🔗 Share';
         shareBtn.textContent = ok ? '✓ Link copied' : '⚠ Copy failed';
