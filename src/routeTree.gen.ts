@@ -24,6 +24,7 @@ import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
+import { Route as ApiPublicCastingRequestsRouteImport } from './routes/api/public/casting-requests'
 import { Route as ApiPublicTalentsSlugRouteImport } from './routes/api/public/talents.$slug'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -100,6 +101,12 @@ const ApiPublicTalentsRoute = ApiPublicTalentsRouteImport.update({
   path: '/api/public/talents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCastingRequestsRoute =
+  ApiPublicCastingRequestsRouteImport.update({
+    id: '/api/public/casting-requests',
+    path: '/api/public/casting-requests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTalentsSlugRoute = ApiPublicTalentsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
 }
@@ -137,6 +145,7 @@ export interface FileRoutesByTo {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
+  '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
 }
@@ -156,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/casting-requests': typeof ApiPublicCastingRequestsRoute
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
 }
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents'
+    | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
   id:
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
     | '/_authenticated/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/casting-requests'
     | '/api/public/talents'
     | '/api/public/talents/$slug'
   fileRoutesById: FileRoutesById
@@ -226,6 +239,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
+  ApiPublicCastingRequestsRoute: typeof ApiPublicCastingRequestsRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRouteWithChildren
 }
 
@@ -336,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTalentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/casting-requests': {
+      id: '/api/public/casting-requests'
+      path: '/api/public/casting-requests'
+      fullPath: '/api/public/casting-requests'
+      preLoaderRoute: typeof ApiPublicCastingRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/talents/$slug': {
       id: '/api/public/talents/$slug'
       path: '/$slug'
@@ -385,6 +406,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
+  ApiPublicCastingRequestsRoute: ApiPublicCastingRequestsRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
