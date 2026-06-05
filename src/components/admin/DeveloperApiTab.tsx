@@ -118,7 +118,10 @@ const ENDPOINTS: Endpoint[] = [
 ];
 
 export function DeveloperApiTab() {
-  const base = typeof window !== "undefined" ? window.location.origin : "";
+  const detected = typeof window !== "undefined" ? window.location.origin : "";
+  const isPreview = /lovableproject\.com|id-preview--/.test(detected);
+  const defaultBase = isPreview ? "https://acbe.lovable.app" : detected;
+  const [base, setBase] = useState(defaultBase);
 
   return (
     <div className="space-y-6">
@@ -127,9 +130,23 @@ export function DeveloperApiTab() {
           <CardTitle className="text-base">Public API</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            Base URL: <code className="text-foreground">{base}</code>
-          </p>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">
+              Base URL (used in embed snippets & test requests)
+            </label>
+            <Input
+              value={base}
+              onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
+              placeholder="https://acbe.lovable.app"
+              className="font-mono text-xs"
+            />
+            {isPreview && (
+              <p className="text-xs text-amber-600">
+                Preview URLs require Lovable auth and won't work from WordPress.
+                Use your published domain (e.g. <code>https://acbe.lovable.app</code>).
+              </p>
+            )}
+          </div>
           <p>
             All endpoints live under <code>/api/public/*</code>, return JSON,
             and allow cross-origin requests (CORS <code>*</code>).
