@@ -241,6 +241,71 @@ export const syncOneTalent = createServerFn({ method: "POST" })
   });
 
 /**
+ * Dashboard data: recent sync run summary + every talent that currently has a
+ * WordPress sync error, plus counts of synced vs unsynced eligible talents.
+ */
+export const getWordPressSyncStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (!(roles ?? []).some((r: any) => r.role === "admin")) {
+      throw new Error("Forbidden: admin only");
+    }
+
+    const { data: settings } = await supabase
+      .from("app_settings")
+      .select("wordpress_last_run_at, wordpress_last_run_summary, wordpress_auto_sync, wordpress_site_id, wordpress_default_status")
+      .eq("id", 1)
+      .maybeSingle();
+
+    const { data: eligible } = await supabase
+      .from("talent_profiles")
+      .select("id, wordpress_post_id, wordpress_synced_at, updated_at")
+      .eq("approved", true)
+      .eq("published", true)
+      .eq("visible_publicly", true);
+
+    const rows = eligible ?? [];
+    const synced = rows.filter((t: any) => !!t.wordpress_post_id).length;
+    const pending = rows.filter((t: any) => {
+      if (!t.wordpress_synced_at) return true;
+      return new Date(t.updated_at).getTime() > new Date(t.wordpress_synced_at).getTime();
+    }).length;
+
+    const { data: errored } = await supabase
+      .from("talent_profiles")
+      .select("id, slug, stage_name, full_name, wordpress_sync_error, wordpress_synced_at, wordpress_post_id, updated_at")
+      .not("wordpress_sync_error", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(100);
+
+    return {
+      last_run_at: settings?.wordpress_last_run_at ?? null,
+      last_run_summary: (settings?.wordpress_last_run_summary as
+        | { pushed: number; updated: number; failed: number; skipped: number }
+        | null) ?? null,
+      auto_sync: !!settings?.wordpress_auto_sync,
+      site_id: settings?.wordpress_site_id ?? null,
+      default_status: (settings?.wordpress_default_status as "publish" | "draft") ?? "publish",
+      eligible_total: rows.length,
+      synced_total: synced,
+      pending_total: pending,
+      errors: (errored ?? []).map((t: any) => ({
+        id: t.id,
+        slug: t.slug,
+        name: t.stage_name || t.full_name || "Untitled",
+        error: t.wordpress_sync_error as string,
+        last_synced_at: t.wordpress_synced_at,
+        post_id: t.wordpress_post_id,
+      })),
+    };
+  });
+
+/**
  * Shared sync routine. Resolves site/status/credentials from settings (or
  * overrides), fetches eligible talents, and pushes each one to WordPress.com
  * creating a new post or updating the existing one via wordpress_post_id.
