@@ -120,26 +120,6 @@ export const reviewApplication = createServerFn({ method: "POST" })
         visible_to_applicant: true,
       });
     }
-    // Auto-sync to WordPress.com when this profile becomes approved/published
-    if (data.action === "approve" || data.action === "publish") {
-      try {
-        const { data: settings } = await context.supabase
-          .from("app_settings")
-          .select("wordpress_auto_sync")
-          .eq("id", 1)
-          .maybeSingle();
-        if (settings?.wordpress_auto_sync) {
-          const { runWordPressSync } = await import("@/lib/wordpress.functions");
-          await runWordPressSync(context.supabase as any, {
-            talentIds: [data.id],
-            onlyUnsynced: false,
-          });
-        }
-      } catch (e) {
-        // Sync failure should not block the admin action — error is recorded on the talent row.
-        console.error("WordPress auto-sync failed:", e);
-      }
-    }
     return { ok: true };
   });
 

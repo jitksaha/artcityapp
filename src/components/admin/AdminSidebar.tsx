@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   Users,
   Megaphone,
-  Plug,
-  Code2,
   UserCog,
   Settings,
   Sparkles,
@@ -29,8 +27,6 @@ export type AdminView =
   | "overview"
   | "applications"
   | "casting"
-  | "integrations"
-  | "snippets"
   | "users"
   | "settings";
 
@@ -38,11 +34,6 @@ const PRIMARY: Array<{ key: AdminView; label: string; icon: any }> = [
   { key: "overview", label: "Dashboard", icon: LayoutDashboard },
   { key: "applications", label: "Applications", icon: Users },
   { key: "casting", label: "Casting Requests", icon: Megaphone },
-];
-
-const DEV: Array<{ key: AdminView; label: string; icon: any }> = [
-  { key: "integrations", label: "Integrations", icon: Plug },
-  { key: "snippets", label: "Snippets / Dev", icon: Code2 },
 ];
 
 const ADMIN_ONLY: Array<{ key: AdminView; label: string; icon: any }> = [
@@ -94,12 +85,6 @@ export function AdminSidebar({
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{PRIMARY.map((i) => itemBtn(i.key, i.label, i.icon))}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Developer</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>{DEV.map((i) => itemBtn(i.key, i.label, i.icon))}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
         {isAdmin && (
