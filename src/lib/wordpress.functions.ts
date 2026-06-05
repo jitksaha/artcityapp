@@ -278,7 +278,7 @@ export const getWordPressSyncStatus = createServerFn({ method: "GET" })
 
     const { data: errored } = await supabase
       .from("talent_profiles")
-      .select("id, slug, stage_name, full_name, wordpress_sync_error, wordpress_synced_at, wordpress_post_id, updated_at")
+      .select("id, slug, stage_name, full_name, wordpress_sync_error, wordpress_synced_at, wordpress_post_id, wordpress_retry_count, wordpress_next_retry_at, updated_at")
       .not("wordpress_sync_error", "is", null)
       .order("updated_at", { ascending: false })
       .limit(100);
@@ -301,6 +301,9 @@ export const getWordPressSyncStatus = createServerFn({ method: "GET" })
         error: t.wordpress_sync_error as string,
         last_synced_at: t.wordpress_synced_at,
         post_id: t.wordpress_post_id,
+        retry_count: t.wordpress_retry_count ?? 0,
+        next_retry_at: t.wordpress_next_retry_at,
+        max_retries: MAX_WP_RETRY_ATTEMPTS,
       })),
     };
   });
