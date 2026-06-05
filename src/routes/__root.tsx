@@ -6,21 +6,33 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { RouterProgress } from "@/components/RouterProgress";
 import { AppErrorFallback } from "@/components/AppErrorFallback";
+import { installRemovedRoutesGuard } from "@/lib/removed-routes-guard";
 
 function NotFoundComponent() {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  const isRemovedEndpoint =
+    pathname.startsWith("/api/") || pathname.startsWith("/embed/");
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h1 className="text-7xl font-bold text-foreground">
+          {isRemovedEndpoint ? "410" : "404"}
+        </h1>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          {isRemovedEndpoint ? "Endpoint no longer available" : "Page not found"}
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          {isRemovedEndpoint
+            ? "This API or embed endpoint has been removed. Please use the web app instead."
+            : "The page you're looking for doesn't exist or has been moved."}
         </p>
         <div className="mt-6">
           <Link
@@ -93,6 +105,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    installRemovedRoutesGuard();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
