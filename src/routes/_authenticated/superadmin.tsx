@@ -30,25 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  pushTalentsToWordPress,
-  checkWordPressConnection,
-  getWordPressSettings,
-  saveWordPressSettings,
-  getWordPressCredentials,
-  saveWordPressCredentials,
-  testWordPressCredentials,
-  getWordPressSyncStatus,
-  syncOneTalent,
-  listTalentSyncAttempts,
-} from "@/lib/wordpress.functions";
-import {
-  getEmbedSecurity,
-  updateEmbedSecurity,
-  rotateEmbedSecret,
-  mintEmbedToken,
-} from "@/lib/embed-security.functions";
-import { Copy, ExternalLink, Check, TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles, Clock } from "lucide-react";
+import { Check, TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -86,8 +68,6 @@ function AdminPage() {
     overview: "Dashboard",
     applications: "Talent Applications",
     casting: "Casting Requests",
-    integrations: "Integrations",
-    snippets: "Snippets & Dev Mode",
     users: "Users & Roles",
     settings: "Settings",
   };
@@ -120,8 +100,6 @@ function AdminPage() {
             </>
           )}
           {view === "casting" && <CastingTab />}
-          {view === "integrations" && <IntegrationsTab isAdmin={isAdmin} />}
-          {view === "snippets" && <SnippetsTab />}
           {view === "users" && isAdmin && <UsersTab />}
           {view === "settings" && isAdmin && <SettingsTab />}
         </div>
