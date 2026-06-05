@@ -18,6 +18,7 @@ type Endpoint = {
   auth: "none" | "admin";
   query?: string;
   body?: string;
+  embed?: (base: string) => string;
 };
 
 const ENDPOINTS: Endpoint[] = [
@@ -31,6 +32,7 @@ const ENDPOINTS: Endpoint[] = [
     auth: "none",
     query:
       "?q=&gender=&category=&language=&location=&nationality=&playing_age=&age_min=&age_max=&vip_only=true&featured_only=true&sort=featured&limit=50",
+    embed: (base) => buildTalentsListEmbed(base),
   },
   {
     id: "talents-get",
@@ -39,6 +41,7 @@ const ENDPOINTS: Endpoint[] = [
     path: "/api/public/talents/{slug}",
     description: "Returns a single talent (with media) by slug.",
     auth: "none",
+    embed: (base) => buildTalentBySlugEmbed(base),
   },
   {
     id: "casting",
@@ -66,6 +69,7 @@ const ENDPOINTS: Endpoint[] = [
       null,
       2,
     ),
+    embed: (base) => buildCastingFormEmbed(base),
   },
   {
     id: "applications",
@@ -94,6 +98,7 @@ const ENDPOINTS: Endpoint[] = [
       null,
       2,
     ),
+    embed: (base) => buildApplicationFormEmbed(base),
   },
   {
     id: "login",
@@ -108,6 +113,7 @@ const ENDPOINTS: Endpoint[] = [
       null,
       2,
     ),
+    embed: (base) => buildLoginFormEmbed(base),
   },
 ];
 
