@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TalentsIndexRouteImport } from './routes/talents.index'
 import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
 import { Route as EmbedDirectoryRouteImport } from './routes/embed.directory'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -89,6 +90,11 @@ const EmbedDirectoryRoute = EmbedDirectoryRouteImport.update({
   path: '/embed/directory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSuperadminRoute = AuthenticatedSuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
+  '/api/health': typeof ApiHealthRoute
   '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/preview': typeof AuthenticatedPreviewRoute
   '/superadmin': typeof AuthenticatedSuperadminRoute
+  '/api/health': typeof ApiHealthRoute
   '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/preview': typeof AuthenticatedPreviewRoute
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
+  '/api/health': typeof ApiHealthRoute
   '/embed/directory': typeof EmbedDirectoryRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
+    | '/api/health'
     | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/preview'
     | '/superadmin'
+    | '/api/health'
     | '/embed/directory'
     | '/talents/$slug'
     | '/talents'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/preview'
     | '/_authenticated/superadmin'
+    | '/api/health'
     | '/embed/directory'
     | '/talents/$slug'
     | '/talents/'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   EmbedDirectoryRoute: typeof EmbedDirectoryRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
@@ -369,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbedDirectoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/superadmin': {
       id: '/_authenticated/superadmin'
       path: '/superadmin'
@@ -454,6 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  ApiHealthRoute: ApiHealthRoute,
   EmbedDirectoryRoute: EmbedDirectoryRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
