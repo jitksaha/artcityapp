@@ -296,7 +296,7 @@ fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
           '<div>'+badges+'</div>'+
           '<h2 style="font-size:34px!important;margin-top:10px!important;">'+name+'</h2>'+
           '<p style="font-size:15px!important;">'+meta+'</p>'+
-          (t.bio?'<p style="margin-top:18px!important;color:#333!important;font-size:15px!important;line-height:1.6!important;white-space:pre-line;">'+t.bio+'</p>':'')+
+          (t.bio?'<p style="margin-top:18px!important;color:#333!important;font-size:15px!important;line-height:1.6!important;white-space:pre-line;">'+acText(t.bio)+'</p>':'')+
           '<div style="margin-top:20px;">'+statsHtml+'</div>'+
           '<a href="javascript:history.back()" style="display:inline-block;margin-top:24px;border:1px solid #111;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;">← Back to talents</a>'+
         '</div>'+
@@ -305,7 +305,7 @@ fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
     s.textContent='@media(max-width:720px){#ac-profile > div > div{grid-template-columns:1fr!important;}}';
     document.head.appendChild(s);
  })
- .catch(function(e){el.innerHTML='<h2>Profile unavailable</h2><p>'+e.message+'</p>';});
+ .catch(function(e){el.innerHTML='<h2>Profile unavailable</h2><p>'+acText(e.message)+'</p>';});
 })();</script>`;
 }
 
