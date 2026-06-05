@@ -10,14 +10,16 @@ type Snippet = {
   id: string;
   title: string;
   description: string;
-  build: (base: string) => string;
+  build: (base: string, profilePattern: string) => string;
 };
 
 /* =========================================================================
    Reusable JS fragments (string-built so we can drop them into <script>)
    ========================================================================= */
 
-const FETCH_HELPER = (base: string) => `var BASE=${JSON.stringify(base)};
+const FETCH_HELPER = (base: string, profilePattern: string) => `var BASE=${JSON.stringify(base)};
+var PROFILE_PATTERN=${JSON.stringify(profilePattern)};
+function acProfileUrl(slug){return PROFILE_PATTERN.replace('{slug}',encodeURIComponent(slug||''));}
 function acFetchTalents(params){
   var qs=Object.keys(params||{}).filter(function(k){return params[k]!==''&&params[k]!=null;})
     .map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
@@ -38,7 +40,7 @@ function acCard(t,opts){
   var badge='';
   if(t.featured) badge='<span style="position:absolute;top:10px;left:10px;background:#111;color:#fff;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">Featured</span>';
   else if(t.vip) badge='<span style="position:absolute;top:10px;left:10px;background:#c9a14a;color:#111;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">VIP</span>';
-  return '<a class="ac-card" href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" rel="noopener" style="'+ring+'">'
+  return '<a class="ac-card" href="'+acProfileUrl(t.slug)+'" rel="noopener" style="'+ring+'">'
     +'<div style="position:relative;">'
     +(img?'<img src="'+img+'" alt="'+name+'" loading="lazy" />':'<div class="ac-card-ph"></div>')
     +badge
