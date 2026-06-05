@@ -320,6 +320,13 @@ const SNIPPETS: Snippet[] = [
     build: buildAllInOne,
   },
   {
+    id: "profile",
+    title: "👤 Single Talent profile page (fixes /talents/{slug} 404)",
+    description:
+      "Paste into ONE WordPress page (e.g. /talent-profile/). It reads ?slug= from the URL (or the last path segment) and renders the full profile. Then set the link pattern above to https://artcity.group/talent-profile/?slug={slug}.",
+    build: buildSingleProfile,
+  },
+  {
     id: "hero",
     title: "Hero slideshow",
     description: "Rotating featured talents with name, location, and CTA.",
