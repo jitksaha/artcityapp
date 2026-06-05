@@ -137,10 +137,22 @@ acFetchTalents({featured_only:'true',limit:8}).then(function(items){
 
 function buildDirectory(base: string) {
   return `${AC_RESET_CSS}
+<style>
+.ac-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.ac-chip{cursor:pointer;padding:6px 14px;border:1px solid #ddd;border-radius:999px;background:#fff;color:#111;font-size:13px;font-weight:500;user-select:none;transition:all .15s ease;}
+.ac-chip:hover{border-color:#111;}
+.ac-chip[aria-pressed="true"]{background:#111;color:#fff;border-color:#111;}
+.ac-chip.vip[aria-pressed="true"]{background:#c9a14a;border-color:#c9a14a;color:#111;}
+</style>
 <section class="ac-wrap ac-section" id="ac-dir">
   <div style="margin-bottom:20px;">
     <div class="ac-eyebrow">Directory</div>
     <h2>All represented talents</h2>
+  </div>
+  <div class="ac-chips" role="group" aria-label="Quick filters">
+    <button type="button" class="ac-chip" data-filter="all" aria-pressed="true">All</button>
+    <button type="button" class="ac-chip vip" data-filter="vip" aria-pressed="false">&#9819; VIP</button>
+    <button type="button" class="ac-chip" data-filter="featured" aria-pressed="false">&#10026; Featured</button>
   </div>
   <div class="ac-filters">
     <input id="ac-q" class="ac-input" placeholder="Search name…" />
@@ -162,13 +174,19 @@ function buildDirectory(base: string) {
 <script>(function(){${FETCH_HELPER(base)}
 var ids=['ac-q','ac-gender','ac-cat','ac-loc','ac-lang','ac-sort'];
 var grid=document.getElementById('ac-dir-grid'),meta=document.getElementById('ac-dir-meta'),t;
+var activeFilter='all',reqId=0;
 function load(){
+  var myReq=++reqId;
   meta.textContent='Loading…';
-  acFetchTalents({q:document.getElementById('ac-q').value,gender:document.getElementById('ac-gender').value,category:document.getElementById('ac-cat').value,location:document.getElementById('ac-loc').value,language:document.getElementById('ac-lang').value,sort:document.getElementById('ac-sort').value,limit:100})
-    .then(function(items){meta.textContent=items.length+' '+(items.length===1?'result':'results');grid.innerHTML=items.length?items.map(function(x){return acCard(x);}).join(''):'<p style="color:#666;">No talents found.</p>';})
-    .catch(function(e){meta.textContent='';grid.innerHTML='<p style="color:#c00;">'+e.message+'</p>';});
+  var params={q:document.getElementById('ac-q').value,gender:document.getElementById('ac-gender').value,category:document.getElementById('ac-cat').value,location:document.getElementById('ac-loc').value,language:document.getElementById('ac-lang').value,sort:document.getElementById('ac-sort').value,limit:100};
+  if(activeFilter==='vip')params.vip_only='true';
+  if(activeFilter==='featured')params.featured_only='true';
+  acFetchTalents(params)
+    .then(function(items){if(myReq!==reqId)return;meta.textContent=items.length+' '+(items.length===1?'result':'results');grid.innerHTML=items.length?items.map(function(x){return acCard(x,{vip:activeFilter==='vip'});}).join(''):'<p style="color:#666;">No talents found.</p>';})
+    .catch(function(e){if(myReq!==reqId)return;meta.textContent='';grid.innerHTML='<p style="color:#c00;">'+e.message+'</p>';});
 }
-ids.forEach(function(id){var el=document.getElementById(id);el.addEventListener('input',function(){clearTimeout(t);t=setTimeout(load,300);});el.addEventListener('change',load);});
+ids.forEach(function(id){var el=document.getElementById(id);if(el.tagName==='SELECT'){el.addEventListener('change',load);}else{el.addEventListener('input',function(){clearTimeout(t);t=setTimeout(load,250);});}});
+Array.prototype.forEach.call(document.querySelectorAll('.ac-chip'),function(b){b.addEventListener('click',function(){activeFilter=b.getAttribute('data-filter');Array.prototype.forEach.call(document.querySelectorAll('.ac-chip'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});load();});});
 load();
 })();</script>`;
 }
