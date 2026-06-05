@@ -31,7 +31,9 @@ export const Route = createFileRoute("/api/public/hooks/wordpress-sync")({
         try {
           const summary = await runWordPressSync(supabaseAdmin as any, {
             talentIds: body?.talentId ? [String(body.talentId)] : undefined,
-            onlyUnsynced: body?.talentId ? false : (body?.onlyUnsynced ?? true),
+            onlyUnsynced: body?.talentId || body?.dueRetries ? false : (body?.onlyUnsynced ?? true),
+            dueRetriesOnly: !!body?.dueRetries,
+            trigger: body?.dueRetries ? "cron-retry" : "webhook",
             statusOverride: body?.status === "draft" ? "draft" : body?.status === "publish" ? "publish" : undefined,
           });
           return jsonResponse({ ok: true, ...summary });

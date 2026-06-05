@@ -336,7 +336,9 @@ export type Database = {
           user_id: string
           vip: boolean
           visible_publicly: boolean
+          wordpress_next_retry_at: string | null
           wordpress_post_id: number | null
+          wordpress_retry_count: number
           wordpress_sync_error: string | null
           wordpress_synced_at: string | null
         }
@@ -380,7 +382,9 @@ export type Database = {
           user_id: string
           vip?: boolean
           visible_publicly?: boolean
+          wordpress_next_retry_at?: string | null
           wordpress_post_id?: number | null
+          wordpress_retry_count?: number
           wordpress_sync_error?: string | null
           wordpress_synced_at?: string | null
         }
@@ -424,7 +428,9 @@ export type Database = {
           user_id?: string
           vip?: boolean
           visible_publicly?: boolean
+          wordpress_next_retry_at?: string | null
           wordpress_post_id?: number | null
+          wordpress_retry_count?: number
           wordpress_sync_error?: string | null
           wordpress_synced_at?: string | null
         }
@@ -513,6 +519,50 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      wordpress_sync_attempts: {
+        Row: {
+          attempt_number: number
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          post_id: number | null
+          success: boolean
+          talent_id: string
+          trigger: string | null
+        }
+        Insert: {
+          attempt_number: number
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          post_id?: number | null
+          success: boolean
+          talent_id: string
+          trigger?: string | null
+        }
+        Update: {
+          attempt_number?: number
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          post_id?: number | null
+          success?: boolean
+          talent_id?: string
+          trigger?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wordpress_sync_attempts_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talent_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

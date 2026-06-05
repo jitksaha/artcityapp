@@ -278,7 +278,7 @@ export const getWordPressSyncStatus = createServerFn({ method: "GET" })
 
     const { data: errored } = await supabase
       .from("talent_profiles")
-      .select("id, slug, stage_name, full_name, wordpress_sync_error, wordpress_synced_at, wordpress_post_id, updated_at")
+      .select("id, slug, stage_name, full_name, wordpress_sync_error, wordpress_synced_at, wordpress_post_id, wordpress_retry_count, wordpress_next_retry_at, updated_at")
       .not("wordpress_sync_error", "is", null)
       .order("updated_at", { ascending: false })
       .limit(100);
@@ -301,6 +301,9 @@ export const getWordPressSyncStatus = createServerFn({ method: "GET" })
         error: t.wordpress_sync_error as string,
         last_synced_at: t.wordpress_synced_at,
         post_id: t.wordpress_post_id,
+        retry_count: t.wordpress_retry_count ?? 0,
+        next_retry_at: t.wordpress_next_retry_at,
+        max_retries: MAX_WP_RETRY_ATTEMPTS,
       })),
     };
   });
@@ -317,13 +320,25 @@ export async function runWordPressSync(
     statusOverride?: "publish" | "draft";
     talentIds?: string[];
     onlyUnsynced?: boolean;
+    dueRetriesOnly?: boolean;
+    trigger?: "manual" | "auto" | "webhook" | "cron-retry";
   },
 ): Promise<{
   pushed: number;
   updated: number;
   failed: number;
   skipped: number;
-  results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }>;
+  retried: number;
+  gaveUp: number;
+  results: Array<{
+    id: string;
+    ok: boolean;
+    postId?: number;
+    updated?: boolean;
+    error?: string;
+    attempt?: number;
+    nextRetryAt?: string | null;
+  }>;
 }> {
   const { data: creds } = await supabaseAdmin
     .from("wordpress_credentials")
@@ -366,23 +381,36 @@ export async function runWordPressSync(
   let q = supabase
     .from("talent_profiles")
     .select(
-      "id, slug, stage_name, full_name, bio, headshot_url, location, categories, playing_age, gender, native_language, updated_at, wordpress_post_id, wordpress_synced_at",
+      "id, slug, stage_name, full_name, bio, headshot_url, location, categories, playing_age, gender, native_language, updated_at, wordpress_post_id, wordpress_synced_at, wordpress_retry_count, wordpress_next_retry_at",
     )
     .eq("approved", true)
     .eq("published", true)
     .eq("visible_publicly", true);
   if (opts.talentIds?.length) q = q.in("id", opts.talentIds);
+  if (opts.dueRetriesOnly) {
+    q = q.not("wordpress_next_retry_at", "is", null).lte("wordpress_next_retry_at", new Date().toISOString());
+  }
   const { data: talents, error } = await q;
   if (error) throw new Error(error.message);
 
   const eligible = (talents ?? []).filter((t: any) => {
+    if (opts.dueRetriesOnly) return true;
     if (!opts.onlyUnsynced) return true;
     if (!t.wordpress_synced_at) return true;
     return new Date(t.updated_at).getTime() > new Date(t.wordpress_synced_at).getTime();
   });
 
-  const results: Array<{ id: string; ok: boolean; postId?: number; updated?: boolean; error?: string }> = [];
+  const results: Array<{
+    id: string;
+    ok: boolean;
+    postId?: number;
+    updated?: boolean;
+    error?: string;
+    attempt?: number;
+    nextRetryAt?: string | null;
+  }> = [];
   const skipped = (talents?.length ?? 0) - eligible.length;
+  const trigger = opts.trigger ?? "manual";
 
   for (const t of eligible as any[]) {
     const name = t.stage_name || t.full_name || "Untitled Talent";
@@ -413,6 +441,13 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
             "Content-Type": "application/json",
           };
 
+    const attemptNumber = (t.wordpress_retry_count ?? 0) + 1;
+    const startedAt = Date.now();
+    let attemptOk = false;
+    let attemptError: string | null = null;
+    let attemptPostId: number | null = null;
+    let nextRetryAt: string | null = null;
+
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -427,31 +462,69 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
       });
       const json: any = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = json?.message || `HTTP ${res.status}`;
-        results.push({ id: t.id, ok: false, error: msg });
-        await supabase
-          .from("talent_profiles")
-          .update({ wordpress_sync_error: msg })
-          .eq("id", t.id);
+        attemptError = json?.message || `HTTP ${res.status}`;
       } else {
-        const postId = json?.ID ?? json?.id;
-        results.push({ id: t.id, ok: true, postId, updated: isUpdate });
-        await supabase
-          .from("talent_profiles")
-          .update({
-            wordpress_post_id: postId ?? t.wordpress_post_id,
-            wordpress_synced_at: new Date().toISOString(),
-            wordpress_sync_error: null,
-          })
-          .eq("id", t.id);
+        attemptOk = true;
+        attemptPostId = json?.ID ?? json?.id ?? t.wordpress_post_id ?? null;
       }
     } catch (e: any) {
-      const msg = e?.message ?? "Network error";
-      results.push({ id: t.id, ok: false, error: msg });
+      attemptError = e?.message ?? "Network error";
+    }
+
+    const duration = Date.now() - startedAt;
+
+    if (attemptOk) {
       await supabase
         .from("talent_profiles")
-        .update({ wordpress_sync_error: msg })
+        .update({
+          wordpress_post_id: attemptPostId ?? t.wordpress_post_id,
+          wordpress_synced_at: new Date().toISOString(),
+          wordpress_sync_error: null,
+          wordpress_retry_count: 0,
+          wordpress_next_retry_at: null,
+        })
         .eq("id", t.id);
+      results.push({
+        id: t.id,
+        ok: true,
+        postId: attemptPostId ?? undefined,
+        updated: isUpdate,
+        attempt: attemptNumber,
+        nextRetryAt: null,
+      });
+    } else {
+      const delayMs = nextRetryDelayMs(attemptNumber);
+      nextRetryAt = delayMs == null ? null : new Date(Date.now() + delayMs).toISOString();
+      await supabase
+        .from("talent_profiles")
+        .update({
+          wordpress_sync_error: attemptError,
+          wordpress_retry_count: attemptNumber,
+          wordpress_next_retry_at: nextRetryAt,
+        })
+        .eq("id", t.id);
+      results.push({
+        id: t.id,
+        ok: false,
+        error: attemptError ?? "Unknown error",
+        attempt: attemptNumber,
+        nextRetryAt,
+      });
+    }
+
+    // Record the attempt (admin client to avoid RLS gaps when called from webhooks).
+    try {
+      await supabaseAdmin.from("wordpress_sync_attempts").insert({
+        talent_id: t.id,
+        attempt_number: attemptNumber,
+        success: attemptOk,
+        post_id: attemptPostId,
+        error: attemptError,
+        duration_ms: duration,
+        trigger,
+      });
+    } catch {
+      // best-effort; never let logging take down a sync
     }
   }
 
@@ -459,6 +532,8 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
     pushed: results.filter((r) => r.ok && !r.updated).length,
     updated: results.filter((r) => r.ok && r.updated).length,
     failed: results.filter((r) => !r.ok).length,
+    retried: results.filter((r) => r.ok && (r.attempt ?? 1) > 1).length,
+    gaveUp: results.filter((r) => !r.ok && r.nextRetryAt === null).length,
     skipped,
     results,
   };
@@ -472,12 +547,59 @@ ${t.bio ? `<p>${escapeHtml(t.bio)}</p>` : ""}
         updated: summary.updated,
         failed: summary.failed,
         skipped: summary.skipped,
+        retried: summary.retried,
+        gaveUp: summary.gaveUp,
+        trigger,
       },
     })
     .eq("id", 1);
 
   return summary;
 }
+
+/**
+ * Exponential backoff schedule (in ms) for sync attempts. Returns null after
+ * the cap so the talent stops being retried automatically; admins can still
+ * trigger a manual sync which resets the counter on success.
+ */
+const RETRY_DELAYS_MS = [
+  60_000, // 1 min after attempt 1
+  2 * 60_000, // 2 min after attempt 2
+  5 * 60_000, // 5 min after attempt 3
+  15 * 60_000, // 15 min after attempt 4
+  30 * 60_000, // 30 min after attempt 5
+  60 * 60_000, // 1 hr after attempt 6
+];
+export const MAX_WP_RETRY_ATTEMPTS = RETRY_DELAYS_MS.length;
+
+function nextRetryDelayMs(attemptNumber: number): number | null {
+  // attemptNumber is the attempt we just made (1-indexed). Use the matching
+  // entry to schedule the *next* attempt.
+  const idx = attemptNumber - 1;
+  if (idx < 0 || idx >= RETRY_DELAYS_MS.length) return null;
+  return RETRY_DELAYS_MS[idx];
+}
+
+/**
+ * Admin server fn: list recent sync attempts for one talent. Powers the
+ * "attempt history" expander in the WordPress sync dashboard.
+ */
+export const listTalentSyncAttempts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ talentId: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { data: rows, error } = await supabaseAdmin
+      .from("wordpress_sync_attempts")
+      .select("id, attempt_number, success, post_id, error, duration_ms, trigger, created_at")
+      .eq("talent_id", data.talentId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 20);
+    if (error) throw new Error(error.message);
+    return { attempts: rows ?? [] };
+  });
 
 function escapeHtml(s: string) {
   return s

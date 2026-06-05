@@ -40,6 +40,7 @@ import {
   testWordPressCredentials,
   getWordPressSyncStatus,
   syncOneTalent,
+  listTalentSyncAttempts,
 } from "@/lib/wordpress.functions";
 import {
   getEmbedSecurity,
@@ -912,6 +913,7 @@ function WordPressSyncStatusCard() {
     refetchInterval: 30000,
   });
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [historyFor, setHistoryFor] = useState<{ id: string; name: string } | null>(null);
 
   const summary = data?.last_run_summary ?? null;
   const errors = data?.errors ?? [];
@@ -970,7 +972,8 @@ function WordPressSyncStatusCard() {
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Talent</th>
                     <th className="px-3 py-2 text-left font-medium">Error</th>
-                    <th className="px-3 py-2 text-left font-medium">Last synced</th>
+                    <th className="px-3 py-2 text-left font-medium">Retries</th>
+                    <th className="px-3 py-2 text-left font-medium">Next attempt</th>
                     <th className="px-3 py-2"></th>
                   </tr>
                 </thead>
@@ -988,11 +991,33 @@ function WordPressSyncStatusCard() {
                           {e.error}
                         </code>
                       </td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {e.last_synced_at ? new Date(e.last_synced_at).toLocaleString() : "—"}
-                        {e.post_id ? <div>post #{e.post_id}</div> : null}
+                      <td className="px-3 py-2 text-xs">
+                        <Badge
+                          variant="outline"
+                          className={
+                            (e.retry_count ?? 0) >= (e.max_retries ?? 6)
+                              ? "border-destructive text-destructive"
+                              : ""
+                          }
+                        >
+                          {e.retry_count ?? 0} / {e.max_retries ?? 6}
+                        </Badge>
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
+                        {e.next_retry_at
+                          ? new Date(e.next_retry_at).toLocaleString()
+                          : (e.retry_count ?? 0) >= (e.max_retries ?? 6)
+                            ? <span className="text-destructive">Gave up</span>
+                            : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right space-x-1 whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHistoryFor({ id: e.id, name: e.name })}
+                        >
+                          History
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1028,8 +1053,89 @@ function WordPressSyncStatusCard() {
             </div>
           )}
         </div>
+        {historyFor && (
+          <SyncAttemptsDialog
+            talentId={historyFor.id}
+            talentName={historyFor.name}
+            onClose={() => setHistoryFor(null)}
+          />
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function SyncAttemptsDialog({
+  talentId,
+  talentName,
+  onClose,
+}: {
+  talentId: string;
+  talentName: string;
+  onClose: () => void;
+}) {
+  const listAttempts = useServerFn(listTalentSyncAttempts);
+  const { data, isLoading } = useQuery({
+    queryKey: ["wp-sync-attempts", talentId],
+    queryFn: () => listAttempts({ data: { talentId, limit: 30 } }),
+  });
+  const attempts = data?.attempts ?? [];
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Sync attempts — {talentName}</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </div>
+        ) : attempts.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">No attempts recorded yet.</p>
+        ) : (
+          <div className="max-h-[60vh] overflow-y-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">#</th>
+                  <th className="px-3 py-2 text-left font-medium">When</th>
+                  <th className="px-3 py-2 text-left font-medium">Trigger</th>
+                  <th className="px-3 py-2 text-left font-medium">Result</th>
+                  <th className="px-3 py-2 text-left font-medium">Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attempts.map((a: any) => (
+                  <tr key={a.id} className="border-t align-top">
+                    <td className="px-3 py-2 font-mono text-xs">{a.attempt_number}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {new Date(a.created_at).toLocaleString()}
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      <Badge variant="outline">{a.trigger ?? "manual"}</Badge>
+                    </td>
+                    <td className="px-3 py-2">
+                      {a.success ? (
+                        <span className="text-xs text-green-700">
+                          ✅ ok{a.post_id ? ` · post #${a.post_id}` : ""}
+                        </span>
+                      ) : (
+                        <code className="block max-w-sm whitespace-pre-wrap break-words rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">
+                          {a.error ?? "Unknown error"}
+                        </code>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {a.duration_ms != null ? `${a.duration_ms} ms` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
