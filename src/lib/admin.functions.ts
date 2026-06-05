@@ -125,15 +125,10 @@ export const reviewApplication = createServerFn({ method: "POST" })
       try {
         const { data: settings } = await context.supabase
           .from("app_settings")
-          .select("wordpress_auto_sync, wordpress_site_id")
+          .select("wordpress_auto_sync")
           .eq("id", 1)
           .maybeSingle();
-        if (
-          settings?.wordpress_auto_sync &&
-          settings?.wordpress_site_id &&
-          process.env.LOVABLE_API_KEY &&
-          process.env.WORDPRESS_COM_API_KEY
-        ) {
+        if (settings?.wordpress_auto_sync) {
           const { runWordPressSync } = await import("@/lib/wordpress.functions");
           await runWordPressSync(context.supabase as any, {
             talentIds: [data.id],

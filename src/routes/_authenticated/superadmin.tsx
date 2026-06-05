@@ -819,7 +819,7 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
             Save settings
           </Button>
           <Button
-            disabled={!status?.connected || !siteId || pushing}
+            disabled={!status?.connected || pushing || (status?.mode === "connector" && !siteId)}
             onClick={async () => {
               setPushing(true);
               setResult(null);
