@@ -245,67 +245,91 @@ ${buildApplyCta(base, profilePattern)}
 
 function buildSingleProfile(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
-<div class="ac-wrap"><div id="ac-profile" style="min-height:300px;"></div></div>
+<style id="ac-profile-css">
+.acp-root{max-width:1200px;margin:0 auto;padding:32px 20px 72px;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;}
+.acp-root *{box-sizing:border-box;}
+.acp-back{display:inline-flex;align-items:center;gap:6px;color:#666;font-size:13px;margin-bottom:24px;text-decoration:none;}
+.acp-back:hover{color:#111;}
+.acp-hero{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:56px;align-items:start;}
+.acp-photo{position:relative;border-radius:22px;overflow:hidden;background:#0e0e0e;box-shadow:0 30px 60px -30px rgba(0,0,0,.4);}
+.acp-photo img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;}
+.acp-badges{position:absolute;top:16px;left:16px;display:flex;gap:6px;flex-wrap:wrap;z-index:2;}
+.acp-badge{font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:7px 12px;border-radius:999px;font-weight:700;}
+.acp-badge.vip{background:linear-gradient(135deg,#f0cf6a,#b8862a);color:#111;}
+.acp-badge.feat{background:rgba(17,17,17,.88);color:#fff;backdrop-filter:blur(8px);}
+.acp-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#999;font-weight:600;}
+.acp-name{font-size:clamp(34px,4.6vw,56px);line-height:1.02;font-weight:800;letter-spacing:-.025em;margin:12px 0 16px;color:#0a0a0a;}
+.acp-meta{font-size:14px;color:#555;display:flex;flex-wrap:wrap;align-items:center;}
+.acp-meta>span{display:inline-flex;align-items:center;}
+.acp-meta>span+span:before{content:"";width:3px;height:3px;border-radius:50%;background:#bbb;margin:0 12px;}
+.acp-bio{margin-top:22px;font-size:16px;line-height:1.7;color:#2a2a2a;white-space:pre-line;max-width:62ch;}
+.acp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;margin-top:32px;background:#ececec;border:1px solid #ececec;border-radius:16px;overflow:hidden;}
+.acp-stat{background:#fff;padding:16px 18px;}
+.acp-stat-label{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#999;font-weight:600;}
+.acp-stat-val{margin-top:6px;font-size:17px;font-weight:700;color:#111;line-height:1.3;}
+.acp-section{margin-top:52px;}
+.acp-h{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#111;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:14px;}
+.acp-h:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#222,transparent);}
+.acp-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.acp-chip{font-size:13px;padding:8px 14px;border-radius:999px;background:#f4f4f5;color:#222;border:1px solid #eaeaea;font-weight:500;}
+.acp-chip.dark{background:#111;color:#fff;border-color:#111;}
+.acp-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.acp-gallery img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;cursor:zoom-in;transition:transform .4s ease;display:block;}
+.acp-gallery img:hover{transform:scale(1.02);}
+.acp-lightbox{position:fixed;inset:0;background:rgba(8,8,8,.94);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;cursor:zoom-out;}
+.acp-lightbox img{max-width:96vw;max-height:92vh;border-radius:8px;}
+@media(max-width:820px){.acp-hero{grid-template-columns:1fr;gap:28px;}.acp-root{padding:20px 16px 48px;}}
+</style>
+<div class="ac-wrap"><div id="ac-profile" class="acp-root" style="min-height:300px;"></div></div>
 <script>(function(){${FETCH_HELPER(base, profilePattern)}
 function acText(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function acList(v){if(!v)return'';if(Array.isArray(v))return v.map(acText).join(', ');if(typeof v==='object')return Object.keys(v).map(function(k){return acList(v[k]);}).filter(Boolean).join(', ');return acText(v);}
-function getSlug(){
-  // 1) ?slug=xxx  2) ?talent=xxx  3) last non-empty path segment
-  var u=new URL(window.location.href);
-  var s=u.searchParams.get('slug')||u.searchParams.get('talent');
-  if(s) return s;
-  var parts=u.pathname.split('/').filter(Boolean);
-  return parts.length?decodeURIComponent(parts[parts.length-1]):'';
-}
+function acFlat(v){var out=[];function w(x){if(x==null||x==='')return;if(Array.isArray(x)){x.forEach(w);return;}if(typeof x==='object'){Object.keys(x).forEach(function(k){w(x[k]);});return;}out.push(String(x));}w(v);var seen={};return out.filter(function(s){if(seen[s])return false;seen[s]=1;return true;});}
+function acChips(v,dark){var arr=acFlat(v);if(!arr.length)return'';return '<div class="acp-chips">'+arr.map(function(s){return '<span class="acp-chip'+(dark?' dark':'')+'">'+acText(s)+'</span>';}).join('')+'</div>';}
+function getSlug(){var u=new URL(window.location.href);var s=u.searchParams.get('slug')||u.searchParams.get('talent');if(s)return s;var parts=u.pathname.split('/').filter(Boolean);return parts.length?decodeURIComponent(parts[parts.length-1]):'';}
 var slug=getSlug();
 var el=document.getElementById('ac-profile');
-if(!slug){el.innerHTML='<p style="color:#c00">No talent slug in URL.</p>';return;}
-el.innerHTML='<p style="color:#999;padding:40px;text-align:center;">Loading profile…</p>';
+if(!slug){el.innerHTML='<p style="color:#c00;text-align:center;padding:60px;">No talent slug in URL.</p>';return;}
+el.innerHTML='<div style="text-align:center;padding:80px 20px;color:#999;font-size:12px;letter-spacing:.25em;text-transform:uppercase;">Loading profile…</div>';
 fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
  .then(function(r){return r.json();})
  .then(function(res){
     var payload=(res&&res.data)?res.data:res;
     var t=(payload&&payload.talent)?payload.talent:payload;
-    if(!t||t.error||!t.slug){el.innerHTML='<h2>Talent not found</h2><p>We couldn\\'t find a talent matching this URL.</p>';
-      try{document.title='Talent not found';}catch(e){}
-      return;}
-    try{document.title=(t.stage_name||t.full_name||'Talent')+' — Art City';}catch(e){}
+    if(!t||t.error||!t.slug){el.innerHTML='<div style="text-align:center;padding:80px 20px;"><h2 style="font-size:32px;font-weight:800;margin:0 0 8px;">Talent not found</h2><p style="color:#666;">We couldn\'t find a talent matching this URL.</p></div>';try{document.title='Talent not found';}catch(e){}return;}
+    try{document.title=(t.stage_name||t.full_name||'Talent')+' \u2014 Art City';}catch(e){}
     var img=t.headshot_url||t.headshot_thumb_url||'';
     var name=acText(t.stage_name||t.full_name||'Talent');
-    var meta=acText([t.location,t.nationality,t.gender].filter(Boolean).join(' · '));
+    var metaBits=[t.location,t.nationality,t.gender].filter(Boolean).map(function(x){return '<span>'+acText(x)+'</span>';}).join('');
     var badges='';
-    if(t.vip) badges+='<span style="background:#c9a14a;color:#111;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;margin-right:6px;">VIP</span>';
-    if(t.featured) badges+='<span style="background:#111;color:#fff;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;">Featured</span>';
+    if(t.vip)badges+='<span class="acp-badge vip">\u2605 VIP</span>';
+    if(t.featured)badges+='<span class="acp-badge feat">Featured</span>';
     var stats=[];
-    if(t.age) stats.push(['Age',acText(t.age)]);
-    if(t.playing_age) stats.push(['Playing age',acText(t.playing_age)]);
-    if(t.native_language) stats.push(['Language',acText(t.native_language)]);
-    if(t.categories&&t.categories.length) stats.push(['Categories',acList(t.categories)]);
-    if(t.skills) stats.push(['Skills',acList(t.skills)]);
-    var statsHtml=stats.map(function(s){return '<div style="padding:10px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:12px;"><span style="color:#666;font-size:13px;">'+s[0]+'</span><span style="color:#111;font-size:13px;font-weight:500;text-align:right;">'+s[1]+'</span></div>';}).join('');
-    var gallery='';
-    if(t.gallery_urls&&t.gallery_urls.length){
-      gallery='<div style="margin-top:32px;"><div class="ac-eyebrow">Gallery</div><div class="ac-grid" style="margin-top:14px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">'+
-        t.gallery_urls.map(function(g){return '<img src="'+g+'" loading="lazy" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;"/>';}).join('')+
-        '</div></div>';
-    }
+    if(t.age)stats.push(['Age',acText(t.age)]);
+    if(t.playing_age)stats.push(['Playing age',acText(t.playing_age)]);
+    if(t.native_language)stats.push(['Language',acText(t.native_language)]);
+    if(t.nationality)stats.push(['Nationality',acText(t.nationality)]);
+    var statsHtml=stats.length?'<div class="acp-stats">'+stats.map(function(s){return '<div class="acp-stat"><div class="acp-stat-label">'+s[0]+'</div><div class="acp-stat-val">'+s[1]+'</div></div>';}).join('')+'</div>':'';
+    var catChips=(t.categories&&t.categories.length)?'<div class="acp-section"><div class="acp-h">Categories</div>'+acChips(t.categories,true)+'</div>':'';
+    var skillChips=t.skills?'<div class="acp-section"><div class="acp-h">Skills</div>'+acChips(t.skills,false)+'</div>':'';
+    var gal=(t.gallery_urls&&t.gallery_urls.length)?t.gallery_urls:[];
+    var galleryHtml=gal.length?'<div class="acp-section"><div class="acp-h">Gallery</div><div class="acp-gallery">'+gal.map(function(g){return '<img src="'+g+'" loading="lazy" alt="'+name+'"/>';}).join('')+'</div></div>':'';
+    var showreel=t.showreel_link?'<div class="acp-section"><div class="acp-h">Showreel</div><a href="'+acText(t.showreel_link)+'" target="_blank" rel="noopener" style="color:#111;text-decoration:underline;word-break:break-all;font-size:14px;">'+acText(t.showreel_link)+'</a></div>':'';
     el.innerHTML=
-      '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:32px;align-items:start;">'+
-        '<div>'+(img?'<img src="'+img+'" alt="'+name+'" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:16px;"/>':'<div style="aspect-ratio:3/4;background:#f4f4f5;border-radius:16px;"></div>')+'</div>'+
+      '<a href="javascript:history.back()" class="acp-back">\u2190 Back to talents</a>'+
+      '<div class="acp-hero">'+
+        '<div class="acp-photo">'+(badges?'<div class="acp-badges">'+badges+'</div>':'')+(img?'<img src="'+img+'" alt="'+name+'"/>':'<div style="aspect-ratio:3/4;background:#f4f4f5;"></div>')+'</div>'+
         '<div>'+
-          '<div>'+badges+'</div>'+
-          '<h2 style="font-size:34px!important;margin-top:10px!important;">'+name+'</h2>'+
-          '<p style="font-size:15px!important;">'+meta+'</p>'+
-          (t.bio?'<p style="margin-top:18px!important;color:#333!important;font-size:15px!important;line-height:1.6!important;white-space:pre-line;">'+acText(t.bio)+'</p>':'')+
-          '<div style="margin-top:20px;">'+statsHtml+'</div>'+
-          '<a href="javascript:history.back()" style="display:inline-block;margin-top:24px;border:1px solid #111;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;">← Back to talents</a>'+
+          '<div class="acp-eyebrow">Art City Talent</div>'+
+          '<h1 class="acp-name">'+name+'</h1>'+
+          (metaBits?'<div class="acp-meta">'+metaBits+'</div>':'')+
+          (t.bio?'<div class="acp-bio">'+acText(t.bio)+'</div>':'')+
+          statsHtml+
         '</div>'+
-      '</div>'+gallery;
-    var s=document.createElement('style');
-    s.textContent='@media(max-width:720px){#ac-profile > div > div{grid-template-columns:1fr!important;}}';
-    document.head.appendChild(s);
+      '</div>'+
+      catChips+skillChips+galleryHtml+showreel;
+    el.querySelectorAll('.acp-gallery img').forEach(function(im){im.addEventListener('click',function(){var lb=document.createElement('div');lb.className='acp-lightbox';lb.innerHTML='<img src="'+im.src+'"/>';lb.addEventListener('click',function(){lb.remove();});document.body.appendChild(lb);});});
  })
- .catch(function(e){el.innerHTML='<h2>Profile unavailable</h2><p>'+acText(e.message)+'</p>';});
+ .catch(function(e){el.innerHTML='<div style="text-align:center;padding:80px 20px;"><h2 style="font-size:28px;font-weight:800;">Profile unavailable</h2><p style="color:#666;">'+acText(e.message)+'</p></div>';});
 })();</script>`;
 }
 
