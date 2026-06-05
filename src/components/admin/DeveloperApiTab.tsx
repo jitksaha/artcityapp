@@ -386,7 +386,7 @@ export function DeveloperApiTab() {
   const isPreview = /lovableproject\.com|id-preview--/.test(detected);
   const [base, setBase] = useState(isPreview ? "https://acbe.lovable.app" : detected);
   const [profilePattern, setProfilePattern] = useState(
-    "https://artcity.group/talents/{slug}",
+    "https://artcity.group/talent-profile/?slug={slug}",
   );
 
   return (
@@ -433,6 +433,23 @@ export function DeveloperApiTab() {
               hero CTA will link to this URL on your WordPress site instead
               of the Lovable domain.
             </p>
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 space-y-1">
+              <p className="font-semibold">Fix "Page can't be found" on WordPress</p>
+              <p>
+                WordPress doesn't have a page for every talent slug — that's
+                why <code>/talents/aisha-ahmed-100</code> shows a 404. Do this once:
+              </p>
+              <ol className="list-decimal pl-4 space-y-0.5">
+                <li>Create a new WordPress page titled <strong>Talent Profile</strong> with URL <code>/talent-profile/</code>.</li>
+                <li>Paste the <strong>Single Talent profile page</strong> snippet below into a Custom HTML block on that page.</li>
+                <li>Keep the link pattern above set to <code>{"https://artcity.group/talent-profile/?slug={slug}"}</code>.</li>
+              </ol>
+              <p>
+                Now every card across your site opens the same WordPress page,
+                which dynamically loads the right talent. Clean, professional,
+                no 404s.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
