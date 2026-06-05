@@ -247,6 +247,8 @@ function buildSingleProfile(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><div id="ac-profile" style="min-height:300px;"></div></div>
 <script>(function(){${FETCH_HELPER(base, profilePattern)}
+function acText(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function acList(v){if(!v)return'';if(Array.isArray(v))return v.map(acText).join(', ');if(typeof v==='object')return Object.keys(v).map(function(k){return acList(v[k]);}).filter(Boolean).join(', ');return acText(v);}
 function getSlug(){
   // 1) ?slug=xxx  2) ?talent=xxx  3) last non-empty path segment
   var u=new URL(window.location.href);
