@@ -900,6 +900,165 @@ function WordPressPushCard({ origin: _origin }: { origin: string }) {
   );
 }
 function SnippetsTab() {
+  return <SnippetsTabImpl />;
+}
+
+function WordPressSyncStatusCard() {
+  const getStatus = useServerFn(getWordPressSyncStatus);
+  const syncOne = useServerFn(syncOneTalent);
+  const { data, refetch, isFetching } = useQuery({
+    queryKey: ["wp-sync-status"],
+    queryFn: () => getStatus(),
+    refetchInterval: 30000,
+  });
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+
+  const summary = data?.last_run_summary ?? null;
+  const errors = data?.errors ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          WordPress sync status
+          {data?.auto_sync && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">Auto-sync on</Badge>
+          )}
+          {isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <StatTile label="Eligible" value={data?.eligible_total ?? 0} />
+          <StatTile label="Synced" value={data?.synced_total ?? 0} tone="success" />
+          <StatTile label="Pending" value={data?.pending_total ?? 0} tone="warn" />
+          <StatTile label="Last failed" value={summary?.failed ?? 0} tone={summary?.failed ? "danger" : undefined} />
+          <StatTile label="With errors" value={errors.length} tone={errors.length ? "danger" : undefined} />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Last run:</span>
+            <span className="font-medium">
+              {data?.last_run_at ? new Date(data.last_run_at).toLocaleString() : "Never"}
+            </span>
+            {summary && (
+              <span className="text-muted-foreground">
+                — {summary.pushed} new · {summary.updated} updated · {summary.skipped} unchanged · {summary.failed} failed
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            Refresh
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold">Per-talent errors</Label>
+            <span className="text-xs text-muted-foreground">Showing latest {errors.length}</span>
+          </div>
+          {errors.length === 0 ? (
+            <p className="rounded-md border bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
+              No sync errors. 🎉
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Talent</th>
+                    <th className="px-3 py-2 text-left font-medium">Error</th>
+                    <th className="px-3 py-2 text-left font-medium">Last synced</th>
+                    <th className="px-3 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errors.map((e) => (
+                    <tr key={e.id} className="border-t align-top">
+                      <td className="px-3 py-2">
+                        <div className="font-medium">{e.name}</div>
+                        {e.slug && (
+                          <div className="text-xs text-muted-foreground">/{e.slug}</div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <code className="block max-w-md whitespace-pre-wrap break-words rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">
+                          {e.error}
+                        </code>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
+                        {e.last_synced_at ? new Date(e.last_synced_at).toLocaleString() : "—"}
+                        {e.post_id ? <div>post #{e.post_id}</div> : null}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={retryingId === e.id}
+                          onClick={async () => {
+                            setRetryingId(e.id);
+                            try {
+                              const r = await syncOne({ data: { talentId: e.id } });
+                              if (r.failed) {
+                                toast.error(`Retry failed: ${r.results[0]?.error ?? "unknown"}`);
+                              } else {
+                                toast.success("Synced");
+                              }
+                              refetch();
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Retry failed");
+                            } finally {
+                              setRetryingId(null);
+                            }
+                          }}
+                        >
+                          {retryingId === e.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            "Retry"
+                          )}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "success" | "warn" | "danger";
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-green-700"
+      : tone === "warn"
+        ? "text-amber-700"
+        : tone === "danger"
+          ? "text-destructive"
+          : "text-foreground";
+  return (
+    <div className="rounded-md border bg-card px-3 py-2">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-2xl font-semibold ${toneClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function SnippetsTabImpl() {
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://acbe.lovable.app";
 
