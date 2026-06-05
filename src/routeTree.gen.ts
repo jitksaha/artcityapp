@@ -23,6 +23,7 @@ import { Route as TalentsSlugRouteImport } from './routes/talents.$slug'
 import { Route as AuthenticatedSuperadminRouteImport } from './routes/_authenticated/superadmin'
 import { Route as AuthenticatedPreviewRouteImport } from './routes/_authenticated/preview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiPublicTalentsRouteImport } from './routes/api/public/talents'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -93,6 +94,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiPublicTalentsRoute = ApiPublicTalentsRouteImport.update({
+  id: '/api/public/talents',
+  path: '/api/public/talents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents': typeof TalentsIndexRoute
+  '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated/superadmin': typeof AuthenticatedSuperadminRoute
   '/talents/$slug': typeof TalentsSlugRoute
   '/talents/': typeof TalentsIndexRoute
+  '/api/public/talents': typeof ApiPublicTalentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/talents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/superadmin'
     | '/talents/$slug'
     | '/talents'
+    | '/api/public/talents'
   id:
     | '__root__'
     | '/'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/_authenticated/superadmin'
     | '/talents/$slug'
     | '/talents/'
+    | '/api/public/talents'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   VerifyEmailRoute: typeof VerifyEmailRoute
   TalentsSlugRoute: typeof TalentsSlugRoute
   TalentsIndexRoute: typeof TalentsIndexRoute
+  ApiPublicTalentsRoute: typeof ApiPublicTalentsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/talents': {
+      id: '/api/public/talents'
+      path: '/api/public/talents'
+      fullPath: '/api/public/talents'
+      preLoaderRoute: typeof ApiPublicTalentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -335,7 +355,18 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   TalentsSlugRoute: TalentsSlugRoute,
   TalentsIndexRoute: TalentsIndexRoute,
+  ApiPublicTalentsRoute: ApiPublicTalentsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
