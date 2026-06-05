@@ -6,7 +6,8 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 export interface UploadProgressOptions {
   bucket: string;
   path: string;
-  file: File;
+  file: Blob | File;
+  contentType?: string;
   upsert?: boolean;
   signal?: AbortSignal;
   onProgress?: (pct: number) => void;
@@ -17,7 +18,7 @@ export interface UploadProgressOptions {
  * Mirrors `supabase.storage.from(bucket).upload(path, file, { upsert })`.
  */
 export async function uploadWithProgress(opts: UploadProgressOptions): Promise<void> {
-  const { bucket, path, file, upsert = true, signal, onProgress } = opts;
+  const { bucket, path, file, upsert = true, signal, onProgress, contentType } = opts;
 
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
@@ -35,7 +36,8 @@ export async function uploadWithProgress(opts: UploadProgressOptions): Promise<v
     xhr.setRequestHeader("apikey", SUPABASE_KEY);
     xhr.setRequestHeader("x-upsert", upsert ? "true" : "false");
     xhr.setRequestHeader("cache-control", "3600");
-    if (file.type) xhr.setRequestHeader("content-type", file.type);
+    const ct = contentType || (file as Blob).type;
+    if (ct) xhr.setRequestHeader("content-type", ct);
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
