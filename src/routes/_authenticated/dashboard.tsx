@@ -2,6 +2,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { myTalentQuery } from "@/lib/queries/dashboard.queries";
 import { toast } from "sonner";
 import { getMyTalent, submitApplication, deleteMedia, recordMediaUpload, saveDraft } from "@/lib/talents.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +31,11 @@ import {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
+  // Loader runs client-only under the `_authenticated` layout (ssr:false), so
+  // the auth bearer is already attached. Prime the cache so the first paint
+  // shows the profile instead of the skeleton on every visit.
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(myTalentQuery()).catch(() => null),
   head: () => ({ meta: [{ title: "Talent Portal — Art City" }] }),
 });
 
@@ -58,17 +64,12 @@ const STATUS_HINT: Record<
 
 function Dashboard() {
   const { isStaff, loading: authLoading } = useAuth();
-  const fn = useServerFn(getMyTalent);
   const submitFn = useServerFn(submitApplication);
   const deleteFn = useServerFn(deleteMedia);
   const recordMediaFn = useServerFn(recordMediaUpload);
   const saveDraftFn = useServerFn(saveDraft);
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["my-talent"],
-    queryFn: () => fn(),
-    staleTime: 60_000,
-  });
+  const { data, isLoading } = useQuery(myTalentQuery());
   const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
 
