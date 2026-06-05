@@ -243,6 +243,70 @@ ${buildApplyCta(base, profilePattern)}
 </div>`;
 }
 
+function buildSingleProfile(base: string, profilePattern: string) {
+  return `${AC_RESET_CSS}
+<div class="ac-wrap"><div id="ac-profile" style="min-height:300px;"></div></div>
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
+function getSlug(){
+  // 1) ?slug=xxx  2) ?talent=xxx  3) last non-empty path segment
+  var u=new URL(window.location.href);
+  var s=u.searchParams.get('slug')||u.searchParams.get('talent');
+  if(s) return s;
+  var parts=u.pathname.split('/').filter(Boolean);
+  return parts.length?decodeURIComponent(parts[parts.length-1]):'';
+}
+var slug=getSlug();
+var el=document.getElementById('ac-profile');
+if(!slug){el.innerHTML='<p style="color:#c00">No talent slug in URL.</p>';return;}
+el.innerHTML='<p style="color:#999;padding:40px;text-align:center;">Loading profile…</p>';
+fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
+ .then(function(r){return r.json();})
+ .then(function(res){
+    var t=(res&&res.data)?res.data:res;
+    if(!t||t.error||!t.slug){el.innerHTML='<h2>Talent not found</h2><p>We couldn\\'t find a talent matching this URL.</p>';
+      try{document.title='Talent not found';}catch(e){}
+      return;}
+    try{document.title=(t.stage_name||t.full_name||'Talent')+' — Art City';}catch(e){}
+    var img=t.headshot_url||t.headshot_thumb_url||'';
+    var name=t.stage_name||t.full_name||'Talent';
+    var meta=[t.location,t.nationality,t.gender].filter(Boolean).join(' · ');
+    var badges='';
+    if(t.vip) badges+='<span style="background:#c9a14a;color:#111;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;margin-right:6px;">VIP</span>';
+    if(t.featured) badges+='<span style="background:#111;color:#fff;font-size:11px;letter-spacing:.15em;padding:5px 10px;border-radius:999px;text-transform:uppercase;">Featured</span>';
+    var stats=[];
+    if(t.height_cm) stats.push(['Height',t.height_cm+' cm']);
+    if(t.weight_kg) stats.push(['Weight',t.weight_kg+' kg']);
+    if(t.eye_color) stats.push(['Eyes',t.eye_color]);
+    if(t.hair_color) stats.push(['Hair',t.hair_color]);
+    if(t.languages&&t.languages.length) stats.push(['Languages',[].concat(t.languages).join(', ')]);
+    if(t.skills&&t.skills.length) stats.push(['Skills',[].concat(t.skills).join(', ')]);
+    var statsHtml=stats.map(function(s){return '<div style="padding:10px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:12px;"><span style="color:#666;font-size:13px;">'+s[0]+'</span><span style="color:#111;font-size:13px;font-weight:500;text-align:right;">'+s[1]+'</span></div>';}).join('');
+    var gallery='';
+    if(t.gallery_urls&&t.gallery_urls.length){
+      gallery='<div style="margin-top:32px;"><div class="ac-eyebrow">Gallery</div><div class="ac-grid" style="margin-top:14px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">'+
+        t.gallery_urls.map(function(g){return '<img src="'+g+'" loading="lazy" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;"/>';}).join('')+
+        '</div></div>';
+    }
+    el.innerHTML=
+      '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:32px;align-items:start;">'+
+        '<div>'+(img?'<img src="'+img+'" alt="'+name+'" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:16px;"/>':'<div style="aspect-ratio:3/4;background:#f4f4f5;border-radius:16px;"></div>')+'</div>'+
+        '<div>'+
+          '<div>'+badges+'</div>'+
+          '<h2 style="font-size:34px!important;margin-top:10px!important;">'+name+'</h2>'+
+          '<p style="font-size:15px!important;">'+meta+'</p>'+
+          (t.bio?'<p style="margin-top:18px!important;color:#333!important;font-size:15px!important;line-height:1.6!important;white-space:pre-line;">'+t.bio+'</p>':'')+
+          '<div style="margin-top:20px;">'+statsHtml+'</div>'+
+          '<a href="javascript:history.back()" style="display:inline-block;margin-top:24px;border:1px solid #111;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:13px;">← Back to talents</a>'+
+        '</div>'+
+      '</div>'+gallery;
+    var s=document.createElement('style');
+    s.textContent='@media(max-width:720px){#ac-profile > div > div{grid-template-columns:1fr!important;}}';
+    document.head.appendChild(s);
+ })
+ .catch(function(e){el.innerHTML='<h2>Profile unavailable</h2><p>'+e.message+'</p>';});
+})();</script>`;
+}
+
 /* =========================================================================
    Snippet list
    ========================================================================= */
