@@ -40,6 +40,7 @@ import {
   testWordPressCredentials,
   getWordPressSyncStatus,
   syncOneTalent,
+  listTalentSyncAttempts,
 } from "@/lib/wordpress.functions";
 import {
   getEmbedSecurity,
