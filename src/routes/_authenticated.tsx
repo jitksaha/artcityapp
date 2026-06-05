@@ -8,7 +8,12 @@ export const Route = createFileRoute("/_authenticated")({
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
-      throw redirect({ to: "/login", search: { redirect: location.href } as any });
+      // Admin areas bounce to the staff portal; everything else to standard login.
+      const isAdminArea = location.pathname.startsWith("/superadmin");
+      throw redirect({
+        to: isAdminArea ? "/admin-login" : "/login",
+        search: { redirect: location.href } as any,
+      });
     }
   },
   component: Layout,
