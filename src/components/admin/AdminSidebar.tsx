@@ -7,6 +7,7 @@ import {
   Settings,
   Sparkles,
   LogOut,
+  Code2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +29,8 @@ export type AdminView =
   | "applications"
   | "casting"
   | "users"
-  | "settings";
+  | "settings"
+  | "developer_api";
 
 const PRIMARY: Array<{ key: AdminView; label: string; icon: any }> = [
   { key: "overview", label: "Dashboard", icon: LayoutDashboard },
@@ -39,6 +41,10 @@ const PRIMARY: Array<{ key: AdminView; label: string; icon: any }> = [
 const ADMIN_ONLY: Array<{ key: AdminView; label: string; icon: any }> = [
   { key: "users", label: "Users & Roles", icon: UserCog },
   { key: "settings", label: "Settings", icon: Settings },
+];
+
+const DEVELOPER: Array<{ key: AdminView; label: string; icon: any }> = [
+  { key: "developer_api", label: "API", icon: Code2 },
 ];
 
 export function AdminSidebar({
@@ -92,6 +98,14 @@ export function AdminSidebar({
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{ADMIN_ONLY.map((i) => itemBtn(i.key, i.label, i.icon))}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Developer</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{DEVELOPER.map((i) => itemBtn(i.key, i.label, i.icon))}</SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
