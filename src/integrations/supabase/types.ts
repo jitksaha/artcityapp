@@ -184,6 +184,7 @@ export type Database = {
         Row: {
           bucket: string
           created_at: string
+          height: number | null
           id: string
           kind: string
           mime_type: string | null
@@ -191,11 +192,14 @@ export type Database = {
           position: number | null
           size_bytes: number | null
           talent_id: string
+          thumbnail_path: string | null
           user_id: string
+          width: number | null
         }
         Insert: {
           bucket: string
           created_at?: string
+          height?: number | null
           id?: string
           kind: string
           mime_type?: string | null
@@ -203,11 +207,14 @@ export type Database = {
           position?: number | null
           size_bytes?: number | null
           talent_id: string
+          thumbnail_path?: string | null
           user_id: string
+          width?: number | null
         }
         Update: {
           bucket?: string
           created_at?: string
+          height?: number | null
           id?: string
           kind?: string
           mime_type?: string | null
@@ -215,7 +222,9 @@ export type Database = {
           position?: number | null
           size_bytes?: number | null
           talent_id?: string
+          thumbnail_path?: string | null
           user_id?: string
+          width?: number | null
         }
         Relationships: [
           {
@@ -314,6 +323,7 @@ export type Database = {
           featured_order: number | null
           full_name: string | null
           gender: string | null
+          headshot_thumb_url: string | null
           headshot_url: string | null
           id: string
           languages: Json
@@ -360,6 +370,7 @@ export type Database = {
           featured_order?: number | null
           full_name?: string | null
           gender?: string | null
+          headshot_thumb_url?: string | null
           headshot_url?: string | null
           id?: string
           languages?: Json
@@ -406,6 +417,7 @@ export type Database = {
           featured_order?: number | null
           full_name?: string | null
           gender?: string | null
+          headshot_thumb_url?: string | null
           headshot_url?: string | null
           id?: string
           languages?: Json

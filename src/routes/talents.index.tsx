@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
+import { LazyImage } from "@/components/LazyImage";
 
 export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
@@ -338,16 +339,14 @@ function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
     <Card className={`group overflow-hidden border-border/60 bg-card/60 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-elegant)] ${variant === "vip" ? "ring-1 ring-primary/30" : ""}`}>
       <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }} className="block">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-          {t.headshot_url ? (
-            <img
-              src={t.headshot_url}
-              alt={displayName}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No photo</div>
-          )}
+          <LazyImage
+            src={t.headshot_url ?? null}
+            thumbSrc={t.headshot_thumb_url ?? null}
+            alt={displayName}
+            ratioClassName="absolute inset-0 h-full w-full"
+            className="transition-transform duration-700 group-hover:scale-105"
+            fallback="No photo"
+          />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
           <div className="absolute left-3 top-3 flex gap-1.5">
             {t.featured && <Badge className="bg-primary text-primary-foreground">Featured</Badge>}
@@ -463,11 +462,13 @@ function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
             )}
             {!loading && current && (
               <Link to="/talents/$slug" params={{ slug: current.slug ?? current.id }}>
-                <img
+                <LazyImage
                   key={current.id}
                   src={current.headshot_url}
+                  thumbSrc={current.headshot_thumb_url ?? null}
                   alt={current.stage_name ?? "Featured talent"}
-                  className="h-full w-full animate-in fade-in object-cover duration-700"
+                  ratioClassName="absolute inset-0 h-full w-full"
+                  loading="eager"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
                 <div className="absolute inset-x-5 bottom-5 text-white">

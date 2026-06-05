@@ -15,6 +15,7 @@ const profilePayload = z.object({
   native_language: z.string().max(40).nullable().optional(),
   bio: z.string().max(4000).nullable().optional(),
   headshot_url: z.string().max(500).nullable().optional(),
+  headshot_thumb_url: z.string().max(500).nullable().optional(),
   showreel_link: z.string().max(500).nullable().optional(),
   basic_info: z.record(z.string(), z.any()).optional(),
   physical: z.record(z.string(), z.any()).optional(),
@@ -141,6 +142,9 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
         mime_type: z.string().max(120).optional(),
         size_bytes: z.number().int().optional(),
         position: z.number().int().optional(),
+        thumbnail_path: z.string().max(500).optional(),
+        width: z.number().int().positive().max(20000).optional(),
+        height: z.number().int().positive().max(20000).optional(),
       })
       .parse(i),
   )
@@ -204,6 +208,38 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
       });
     }
     return { ok: true };
+  });
+
+/**
+ * Returns a short-lived signed URL for a private media object. The caller
+ * must own the talent profile OR be staff — RLS on `media_uploads` enforces
+ * this when we look the row up via the authenticated client.
+ */
+export const getSignedMediaUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        media_id: z.string().uuid(),
+        expires_in: z.number().int().min(30).max(60 * 60 * 24).optional(),
+        thumbnail: z.boolean().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: m, error } = await supabase
+      .from("media_uploads")
+      .select("bucket, path, thumbnail_path")
+      .eq("id", data.media_id)
+      .maybeSingle();
+    if (error || !m) throw new Error("Media not found or access denied");
+    const objectPath = data.thumbnail && m.thumbnail_path ? m.thumbnail_path : m.path;
+    const { data: signed, error: sErr } = await supabase.storage
+      .from(m.bucket)
+      .createSignedUrl(objectPath, data.expires_in ?? 60 * 10);
+    if (sErr || !signed) throw new Error(sErr?.message ?? "Could not sign URL");
+    return { url: signed.signedUrl, expires_in: data.expires_in ?? 600 };
   });
 
 export const deleteMedia = createServerFn({ method: "POST" })

@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { compressImage, makeThumbnail, extForMime } from "@/lib/image-compression";
 import { useAuth } from "@/hooks/use-auth";
 import {
   AlertDialog,
@@ -124,27 +125,57 @@ function Dashboard() {
     try {
       setUploadingKind(kind);
       setUploadPct(0);
-      const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-      const path = `${userId}/${kind}-${Date.now()}.${ext}`;
+      const isImage = /^image\//i.test(file.type);
+      const compressed = isImage ? await compressImage(file, { maxDimension: 2000, quality: 0.85 }) : null;
+      const uploadBlob: Blob = compressed ? compressed.blob : file;
+      const uploadType = compressed ? compressed.type : file.type;
+      const ext = compressed ? extForMime(uploadType) : (file.name.split(".").pop()?.toLowerCase() || "bin");
+      const stamp = Date.now();
+      const path = `${userId}/${kind}-${stamp}.${ext}`;
       await uploadWithProgress({
         bucket: rule.bucket,
         path,
-        file,
+        file: uploadBlob as File,
+        contentType: uploadType,
         upsert: true,
         onProgress: setUploadPct,
       });
+      let thumbnail_path: string | undefined;
+      let thumbPublicUrl: string | null = null;
+      let width: number | undefined;
+      let height: number | undefined;
+      if (isImage) {
+        const thumb = await makeThumbnail(uploadBlob, 480, 0.72);
+        if (thumb) {
+          width = compressed?.width;
+          height = compressed?.height;
+          const tp = `${userId}/thumbs/${kind}-${stamp}.${extForMime(thumb.type)}`;
+          const { error: tErr } = await supabase.storage
+            .from(rule.bucket)
+            .upload(tp, thumb.blob, { contentType: thumb.type, upsert: true });
+          if (!tErr) {
+            thumbnail_path = tp;
+            if (rule.bucket === "talent-media") {
+              thumbPublicUrl = supabase.storage.from("talent-media").getPublicUrl(tp).data.publicUrl;
+            }
+          }
+        }
+      }
       await recordMediaFn({
         data: {
           kind,
           bucket: rule.bucket,
           path,
-          mime_type: file.type,
-          size_bytes: file.size,
+          mime_type: uploadType,
+          size_bytes: (uploadBlob as Blob).size,
+          thumbnail_path,
+          width,
+          height,
         },
       });
       if (kind === "headshot") {
         const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
-        await saveDraftFn({ data: { headshot_url: url } });
+        await saveDraftFn({ data: { headshot_url: url, headshot_thumb_url: thumbPublicUrl ?? undefined } });
       }
       toast.success(`${rule.label} updated`);
       qc.invalidateQueries({ queryKey: ["my-talent"] });
