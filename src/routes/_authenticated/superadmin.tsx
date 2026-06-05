@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles } from "lucide-react";
+import { TrendingUp, TrendingDown, Users as UsersIcon, Megaphone, Sparkles, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
