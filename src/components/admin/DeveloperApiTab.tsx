@@ -10,14 +10,16 @@ type Snippet = {
   id: string;
   title: string;
   description: string;
-  build: (base: string) => string;
+  build: (base: string, profilePattern: string) => string;
 };
 
 /* =========================================================================
    Reusable JS fragments (string-built so we can drop them into <script>)
    ========================================================================= */
 
-const FETCH_HELPER = (base: string) => `var BASE=${JSON.stringify(base)};
+const FETCH_HELPER = (base: string, profilePattern: string) => `var BASE=${JSON.stringify(base)};
+var PROFILE_PATTERN=${JSON.stringify(profilePattern)};
+function acProfileUrl(slug){return PROFILE_PATTERN.replace('{slug}',encodeURIComponent(slug||''));}
 function acFetchTalents(params){
   var qs=Object.keys(params||{}).filter(function(k){return params[k]!==''&&params[k]!=null;})
     .map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
@@ -38,7 +40,7 @@ function acCard(t,opts){
   var badge='';
   if(t.featured) badge='<span style="position:absolute;top:10px;left:10px;background:#111;color:#fff;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">Featured</span>';
   else if(t.vip) badge='<span style="position:absolute;top:10px;left:10px;background:#c9a14a;color:#111;font-size:10px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;text-transform:uppercase;">VIP</span>';
-  return '<a class="ac-card" href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" rel="noopener" style="'+ring+'">'
+  return '<a class="ac-card" href="'+acProfileUrl(t.slug)+'" rel="noopener" style="'+ring+'">'
     +'<div style="position:relative;">'
     +(img?'<img src="'+img+'" alt="'+name+'" loading="lazy" />':'<div class="ac-card-ph"></div>')
     +badge
@@ -74,14 +76,14 @@ const AC_RESET_CSS = `<style id="ac-reset">
 @keyframes acFade{from{opacity:0}to{opacity:1}}
 </style>`;
 
-function buildHero(base: string) {
+function buildHero(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><div id="ac-hero" style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:21/9;background:#111;">
   <div id="ac-hero-slides" style="position:absolute;inset:0;"></div>
   <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1),rgba(0,0,0,.7));"></div>
   <div id="ac-hero-meta" style="position:absolute;left:0;right:0;bottom:0;padding:32px;color:#fff;"></div>
 </div></div>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var idx=0,items=[];
 function render(){
   if(!items.length) return;
@@ -92,13 +94,13 @@ function render(){
     '<div style="font-size:11px;letter-spacing:.25em;text-transform:uppercase;opacity:.8;color:#fff;">Featured Talent</div>'
     +'<div style="font-size:32px;font-weight:700;margin-top:6px;color:#fff;line-height:1.1;">'+(t.stage_name||t.full_name||'Talent')+'</div>'
     +'<div style="opacity:.85;margin-top:4px;color:#fff;">'+(t.location||'')+'</div>'
-    +'<a href="'+BASE+'/talents/'+(t.slug||'')+'" target="_blank" rel="noopener" style="display:inline-block;margin-top:14px;background:#fff;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;">View profile &rarr;</a>';
+    +'<a href="'+acProfileUrl(t.slug)+'" rel="noopener" style="display:inline-block;margin-top:14px;background:#fff;color:#111;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;">View profile &rarr;</a>';
 }
 acFetchTalents({featured_only:'true',limit:8}).then(function(r){items=r.length?r:[];if(!items.length){return acFetchTalents({limit:6}).then(function(x){items=x;render();setInterval(function(){idx++;render();},5000);});}render();setInterval(function(){idx++;render();},5000);});
 })();</script>`;
 }
 
-function buildVip(base: string) {
+function buildVip(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap ac-section" id="ac-vip">
   <div style="margin-bottom:20px;">
@@ -108,7 +110,7 @@ function buildVip(base: string) {
   </div>
   <div id="ac-vip-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var el=document.getElementById('ac-vip-grid');
 acFetchTalents({vip_only:'true',limit:8}).then(function(items){
   if(!items.length){el.innerHTML='<p style="color:#666;">No VIP talents yet.</p>';return;}
@@ -117,7 +119,7 @@ acFetchTalents({vip_only:'true',limit:8}).then(function(items){
 })();</script>`;
 }
 
-function buildFeatured(base: string) {
+function buildFeatured(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap ac-section" id="ac-featured">
   <div style="margin-bottom:20px;">
@@ -126,7 +128,7 @@ function buildFeatured(base: string) {
   </div>
   <div id="ac-featured-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var el=document.getElementById('ac-featured-grid');
 acFetchTalents({featured_only:'true',limit:8}).then(function(items){
   if(!items.length){el.innerHTML='<p style="color:#666;">No featured talents yet.</p>';return;}
@@ -135,7 +137,7 @@ acFetchTalents({featured_only:'true',limit:8}).then(function(items){
 })();</script>`;
 }
 
-function buildDirectory(base: string) {
+function buildDirectory(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <style>
 .ac-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
@@ -171,7 +173,7 @@ function buildDirectory(base: string) {
   <div id="ac-dir-meta" style="font-size:13px;color:#666;margin-bottom:10px;"></div>
   <div id="ac-dir-grid" class="ac-grid"></div>
 </section>
-<script>(function(){${FETCH_HELPER(base)}
+<script>(function(){${FETCH_HELPER(base, profilePattern)}
 var ids=['ac-q','ac-gender','ac-cat','ac-loc','ac-lang','ac-sort'];
 var grid=document.getElementById('ac-dir-grid'),meta=document.getElementById('ac-dir-meta'),t;
 var activeFilter='all',reqId=0;
@@ -191,7 +193,7 @@ load();
 })();</script>`;
 }
 
-function buildApplyCta(base: string) {
+function buildApplyCta(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <section class="ac-wrap" style="padding:48px 32px;background:linear-gradient(135deg,#fafafa,#f0e9d6);border-radius:20px;text-align:center;">
   <div class="ac-eyebrow" style="color:#c9a14a;">&#10026; Join the roster</div>
@@ -205,7 +207,7 @@ function buildApplyCta(base: string) {
 </section>`;
 }
 
-function buildCastingForm(base: string) {
+function buildCastingForm(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><form id="ac-casting" style="max-width:600px;margin:0 auto;display:grid;gap:10px;">
   <input name="company_name" class="ac-input" placeholder="Company / Production *" required />
@@ -230,14 +232,14 @@ function buildCastingForm(base: string) {
 })();</script>`;
 }
 
-function buildAllInOne(base: string) {
+function buildAllInOne(base: string, profilePattern: string) {
   return `<!-- Art City — Full Talents experience -->
 <div class="ac-wrap" style="padding:24px 0;display:grid;gap:32px;">
-${buildHero(base)}
-${buildVip(base)}
-${buildFeatured(base)}
-${buildDirectory(base)}
-${buildApplyCta(base)}
+${buildHero(base, profilePattern)}
+${buildVip(base, profilePattern)}
+${buildFeatured(base, profilePattern)}
+${buildDirectory(base, profilePattern)}
+${buildApplyCta(base, profilePattern)}
 </div>`;
 }
 
@@ -312,6 +314,9 @@ export function DeveloperApiTab() {
   const detected = typeof window !== "undefined" ? window.location.origin : "";
   const isPreview = /lovableproject\.com|id-preview--/.test(detected);
   const [base, setBase] = useState(isPreview ? "https://acbe.lovable.app" : detected);
+  const [profilePattern, setProfilePattern] = useState(
+    "https://artcity.group/talents/{slug}",
+  );
 
   return (
     <div className="space-y-6">
@@ -324,32 +329,68 @@ export function DeveloperApiTab() {
             or pick individual sections.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <label className="text-xs font-medium">Your published site URL</label>
-          <Input
-            value={base}
-            onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
-            placeholder="https://acbe.lovable.app"
-            className="font-mono text-xs"
-          />
-          {isPreview && (
-            <p className="text-xs text-amber-600">
-              Preview URLs require Lovable auth. Keep this set to your live
-              domain (e.g. <code>https://acbe.lovable.app</code>).
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">
+              API base URL (where talent data is fetched from)
+            </label>
+            <Input
+              value={base}
+              onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
+              placeholder="https://acbe.lovable.app"
+              className="font-mono text-xs"
+            />
+            {isPreview && (
+              <p className="text-xs text-amber-600">
+                Preview URLs require Lovable auth. Keep this set to your
+                published domain (e.g. <code>https://acbe.lovable.app</code>).
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">
+              Talent profile link pattern (where cards link to)
+            </label>
+            <Input
+              value={profilePattern}
+              onChange={(e) => setProfilePattern(e.target.value)}
+              placeholder="https://artcity.group/talents/{slug}"
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">
+              Use <code>{"{slug}"}</code> as the placeholder. Cards and the
+              hero CTA will link to this URL on your WordPress site instead
+              of the Lovable domain.
             </p>
-          )}
+          </div>
         </CardContent>
       </Card>
 
       {SNIPPETS.map((s) => (
-        <SnippetCard key={s.id} snippet={s} base={base} />
+        <SnippetCard
+          key={s.id}
+          snippet={s}
+          base={base}
+          profilePattern={profilePattern}
+        />
       ))}
     </div>
   );
 }
 
-function SnippetCard({ snippet, base }: { snippet: Snippet; base: string }) {
-  const code = useMemo(() => snippet.build(base), [snippet, base]);
+function SnippetCard({
+  snippet,
+  base,
+  profilePattern,
+}: {
+  snippet: Snippet;
+  base: string;
+  profilePattern: string;
+}) {
+  const code = useMemo(
+    () => snippet.build(base, profilePattern),
+    [snippet, base, profilePattern],
+  );
   const copy = () => {
     navigator.clipboard.writeText(code);
     toast.success("Copied — paste into a WordPress Custom HTML block");
