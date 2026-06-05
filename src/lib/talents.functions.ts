@@ -15,6 +15,7 @@ const profilePayload = z.object({
   native_language: z.string().max(40).nullable().optional(),
   bio: z.string().max(4000).nullable().optional(),
   headshot_url: z.string().max(500).nullable().optional(),
+  headshot_thumb_url: z.string().max(500).nullable().optional(),
   showreel_link: z.string().max(500).nullable().optional(),
   basic_info: z.record(z.string(), z.any()).optional(),
   physical: z.record(z.string(), z.any()).optional(),
