@@ -64,6 +64,12 @@ function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <Link
+        to="/admin-login"
+        className="absolute bottom-4 right-4 text-[11px] text-muted-foreground/70 hover:text-foreground"
+      >
+        Staff portal →
+      </Link>
     </main>
   );
 }
