@@ -19,6 +19,12 @@ import {
   listUsersWithRoles,
   setUserRole,
 } from "@/lib/admin.functions";
+import {
+  adminAnalyticsQuery,
+  castingListQuery,
+  usersWithRolesQuery,
+  appSettingsQuery,
+} from "@/lib/queries/admin.queries";
 import { DEMO_TALENTS_SAMPLE_CSV, DEMO_TALENTS_CSV_HEADERS } from "@/lib/demo-talents-csv";
 import { Download, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,12 +62,28 @@ import {
 
 export const Route = createFileRoute("/_authenticated/superadmin")({
   component: AdminPage,
+  // Prime the default (overview) tab so first paint shows charts, not skeletons.
+  // Best-effort: non-admin users will see a 403 here; swallow and let the
+  // component's existing auth gate redirect them.
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(adminAnalyticsQuery()).catch(() => null),
   head: () => ({ meta: [{ title: "Super Admin — Art City" }] }),
 });
 
 function AdminPage() {
   const { isStaff, isAdmin, loading } = useAuth();
   const [view, setView] = useState<AdminView>("overview");
+  const qc = useQueryClient();
+  // Warm the cache for whatever tab the user just switched into so the
+  // mounted tab finds fresh data already in cache instead of fetching cold.
+  useEffect(() => {
+    if (!isStaff) return;
+    if (view === "overview") qc.prefetchQuery(adminAnalyticsQuery());
+    else if (view === "casting") qc.prefetchQuery(castingListQuery());
+    else if (view === "users") qc.prefetchQuery(usersWithRolesQuery());
+    else if (view === "settings") qc.prefetchQuery(appSettingsQuery());
+    // "applications" is filter-driven; its own useQuery handles that key.
+  }, [view, isStaff, qc]);
   if (loading) return <AdminSkeleton />;
   if (!isStaff) return <Navigate to="/dashboard" replace />;
   const titles: Record<AdminView, string> = {
