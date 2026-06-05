@@ -15,6 +15,7 @@ import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.f
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
+import { compressImage, makeThumbnail, extForMime } from "@/lib/image-compression";
 import { SiteHeader } from "@/components/SiteHeader";
 import { UploadContext, type UploadContextValue } from "@/components/register/upload-context";
 
@@ -210,23 +211,58 @@ function RegisterPage() {
       throw new Error(preflight);
     }
     patchUpload(item.key, { status: "uploading", progress: 0, error: undefined });
-    const ext = item.file.name.split(".").pop();
-    const path = `${userId}/${item.kind}-${Date.now()}.${ext}`;
     try {
+      const isImage = /^image\//i.test(item.file.type);
+      // Compress images client-side; pass other files through untouched.
+      const compressed = isImage ? await compressImage(item.file, { maxDimension: 2000, quality: 0.85 }) : null;
+      const uploadBlob: Blob = compressed ? compressed.blob : item.file;
+      const uploadType = compressed ? compressed.type : item.file.type;
+      const ext = compressed ? extForMime(uploadType) : (item.file.name.split(".").pop() || "bin").toLowerCase();
+      const stamp = Date.now();
+      const path = `${userId}/${item.kind}-${stamp}.${ext}`;
       await uploadWithProgress({
         bucket: item.bucket,
         path,
-        file: item.file,
+        file: uploadBlob as File,
+        contentType: uploadType,
         upsert: true,
         onProgress: (pct) => patchUpload(item.key, { progress: pct }),
       });
+
+      // Generate + upload a small thumbnail for images so directory grids load fast.
+      let thumbnail_path: string | undefined;
+      let width: number | undefined;
+      let height: number | undefined;
+      if (isImage) {
+        const thumb = await makeThumbnail(uploadBlob, 480, 0.72);
+        if (thumb) {
+          width = compressed?.width;
+          height = compressed?.height;
+          const thumbPath = `${userId}/thumbs/${item.kind}-${stamp}.${extForMime(thumb.type)}`;
+          const { error: tErr } = await supabase.storage
+            .from(item.bucket)
+            .upload(thumbPath, thumb.blob, { contentType: thumb.type, upsert: true });
+          if (!tErr) thumbnail_path = thumbPath;
+        }
+      }
+
       await recordMediaFn({
         data: {
-          kind: item.kind, bucket: item.bucket, path,
-          mime_type: item.file.type, size_bytes: item.file.size, position: item.position,
+          kind: item.kind,
+          bucket: item.bucket,
+          path,
+          mime_type: uploadType,
+          size_bytes: (uploadBlob as Blob).size,
+          position: item.position,
+          thumbnail_path,
+          width,
+          height,
         },
       });
       patchUpload(item.key, { status: "success", progress: 100 });
+      // Stash the thumbnail path on the item so the caller can derive the
+      // headshot thumbnail URL when needed.
+      (item as any)._thumbnail_path = thumbnail_path;
       return path;
     } catch (e: any) {
       const msg = e?.message ?? "Upload failed";
@@ -238,16 +274,21 @@ function RegisterPage() {
   const uploadMedia = async (
     userId: string,
     items: UploadItem[],
-  ): Promise<{ headshotUrl: string | null }> => {
+  ): Promise<{ headshotUrl: string | null; headshotThumbUrl: string | null }> => {
     let headshotUrl: string | null = null;
+    let headshotThumbUrl: string | null = null;
     for (const item of items) {
       if (item.status === "success") continue;
       const path = await runUpload(userId, item);
       if (path && item.kind === "headshot") {
         headshotUrl = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
+        const tp = (item as any)._thumbnail_path as string | undefined;
+        if (tp) {
+          headshotThumbUrl = supabase.storage.from("talent-media").getPublicUrl(tp).data.publicUrl;
+        }
       }
     }
-    return { headshotUrl };
+    return { headshotUrl, headshotThumbUrl };
   };
 
   const retryUpload = async (key: string) => {
@@ -324,9 +365,11 @@ function RegisterPage() {
       setUploads(queue);
       const payload: any = buildDraftPayload(values);
       const saved: any = await saveDraftFn({ data: payload });
-      const { headshotUrl } = await uploadMedia(userId, queue);
+      const { headshotUrl, headshotThumbUrl } = await uploadMedia(userId, queue);
       if (headshotUrl) {
-        await saveDraftFn({ data: { ...payload, headshot_url: headshotUrl } });
+        await saveDraftFn({
+          data: { ...payload, headshot_url: headshotUrl, headshot_thumb_url: headshotThumbUrl ?? undefined },
+        });
       }
       if (doSubmit) {
         await submitFn();
