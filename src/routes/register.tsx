@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,6 +64,8 @@ function RegisterPage() {
   const recordMediaFn = useServerFn(recordMediaUpload);
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const patchUpload = (key: string, patch: Partial<UploadItem>) =>
     setUploads((prev) => prev.map((u) => (u.key === key ? { ...u, ...patch } : u)));
@@ -394,6 +396,47 @@ function RegisterPage() {
   const onSubmit = (values: RegisterFormValues) => persistDraft(values, true);
   const onSaveDraft = () => persistDraft(form.getValues(), false);
 
+  // Real-time autosave: silently persist non-file fields as the user types.
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSerialized = useRef<string>("");
+  useEffect(() => {
+    const sub = form.watch((values) => {
+      if (busy) return;
+      // Skip until at least a name is present, to avoid empty initial save.
+      const v = values as RegisterFormValues;
+      if (!v?.firstName && !v?.lastName && !v?.email) return;
+      const serialized = JSON.stringify(buildDraftPayload(v));
+      if (serialized === lastSerialized.current) return;
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = setTimeout(async () => {
+        try {
+          setAutoSaveState("saving");
+          const payload = JSON.parse(serialized);
+          await saveDraftFn({ data: payload });
+          lastSerialized.current = serialized;
+          setLastSavedAt(new Date());
+          setAutoSaveState("saved");
+        } catch {
+          setAutoSaveState("error");
+        }
+      }, 1200);
+    });
+    return () => {
+      sub.unsubscribe();
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, busy]);
+
+  const autoSaveLabel =
+    autoSaveState === "saving"
+      ? "Saving…"
+      : autoSaveState === "saved" && lastSavedAt
+        ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+        : autoSaveState === "error"
+          ? "Auto-save failed"
+          : "";
+
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
@@ -504,6 +547,22 @@ function RegisterPage() {
                       <ArrowLeft className="mr-2 h-4 w-4" /> Back
                     </Button>
                     <div className="flex gap-2">
+                      {autoSaveLabel && (
+                        <span
+                          className={[
+                            "self-center text-xs",
+                            autoSaveState === "error" ? "text-destructive" : "text-muted-foreground",
+                          ].join(" ")}
+                        >
+                          {autoSaveState === "saving" && (
+                            <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
+                          )}
+                          {autoSaveState === "saved" && (
+                            <CheckCircle2 className="mr-1 inline h-3 w-3 text-primary" />
+                          )}
+                          {autoSaveLabel}
+                        </span>
+                      )}
                       <Button type="button" variant="secondary" onClick={onSaveDraft} disabled={busy}>
                         Save Draft
                       </Button>
