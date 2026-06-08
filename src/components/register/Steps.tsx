@@ -760,6 +760,8 @@ export function Step3() {
             ku="مۆڵەتی شۆفێری"
             accept="image/*,application/pdf"
             hint="Optional · Image or PDF, max 5MB"
+            uploadKind="driving_license"
+            uploadBucket="talent-docs"
           />
         )}
       </div>
