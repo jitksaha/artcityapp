@@ -459,6 +459,7 @@ function MultiFileField({
   uploadPositionStart?: number;
 }) {
   const { control } = useFormContext<RegisterFormValues>();
+  const uploads = useUploads();
   return (
     <FormField
       control={control}
@@ -475,8 +476,25 @@ function MultiFileField({
                 multiple
                 onChange={(e) => {
                   const incoming = Array.from(e.target.files ?? []);
-                  const merged = [...files, ...incoming].slice(0, max);
+                  const accepted: File[] = [];
+                  for (const f of incoming) {
+                    if (uploadKind) {
+                      const err = validateUpload(uploadKind, f);
+                      if (err) { toast.error(err); continue; }
+                    }
+                    accepted.push(f);
+                  }
+                  const merged = [...files, ...accepted].slice(0, max);
+                  if (merged.length < files.length + accepted.length) {
+                    toast.error(`Only ${max} files allowed. Extra files were ignored.`);
+                  }
                   onChange(merged);
+                  if (uploadKind && uploadBucket && uploads) {
+                    accepted.forEach((f, idx) => {
+                      const pos = uploadPositionStart + files.length + idx;
+                      uploads.uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: pos }).catch(() => {});
+                    });
+                  }
                   e.target.value = "";
                 }}
               />
