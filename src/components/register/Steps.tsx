@@ -384,6 +384,9 @@ function FileField({
   uploadPosition?: number;
 }) {
   const { control } = useFormContext<RegisterFormValues>();
+  const uploads = useUploads();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const rule = uploadKind ? UPLOAD_RULES[uploadKind] : null;
   return (
     <FormField
       control={control}
@@ -395,7 +398,27 @@ function FileField({
             <Input
               type="file"
               accept={accept}
-              onChange={(e) => onChange(e.target.files?.[0])}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setLocalError(null);
+                if (!f) { onChange(undefined); return; }
+                if (uploadKind) {
+                  const err = validateUpload(uploadKind, f);
+                  if (err) {
+                    setLocalError(err);
+                    toast.error(err);
+                    onChange(undefined);
+                    e.target.value = "";
+                    return;
+                  }
+                }
+                onChange(f);
+                if (uploadKind && uploadBucket && uploads) {
+                  uploads
+                    .uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: uploadPosition })
+                    .catch(() => {});
+                }
+              }}
               {...rest}
             />
           </FormControl>
@@ -412,9 +435,13 @@ function FileField({
               )}
             </>
           )}
-          {hint && (
+          {localError ? (
+            <p className="text-xs text-destructive">{localError}</p>
+          ) : hint ? (
             <p className="text-xs text-muted-foreground">{hint}</p>
-          )}
+          ) : rule ? (
+            <p className="text-xs text-muted-foreground">{rule.accept}</p>
+          ) : null}
           <FormMessage />
         </FormItem>
       )}
