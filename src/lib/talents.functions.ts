@@ -181,20 +181,47 @@ export const recordMediaUpload = createServerFn({ method: "POST" })
       await supabase.storage.from(data.bucket).remove([data.path]);
       throw new Error(`${rule.label}: file exceeds the ${Math.round(rule.maxBytes / 1024 / 1024)}MB limit.`);
     }
+    if (actualSize <= 0) {
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error(`${rule.label}: uploaded file is empty.`);
+    }
+    // Verify the storage object's real content-type matches the rule, so a
+    // tampered client cannot lie about `mime_type` in the RPC payload.
+    const actualMime =
+      (obj.metadata as { mimetype?: string } | null)?.mimetype ?? "";
+    if (!rule.mimes.test(actualMime)) {
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error(
+        `${rule.label}: unsupported file type "${actualMime || "unknown"}". Allowed: ${rule.accept}.`,
+      );
+    }
+    if (data.mime_type && data.mime_type !== actualMime) {
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error(
+        `${rule.label}: reported mime type does not match uploaded file.`,
+      );
+    }
 
     const { data: talent } = await supabase
       .from("talent_profiles")
       .select("id, status, revision_count")
       .eq("user_id", userId)
       .maybeSingle();
-    if (!talent) throw new Error("Create draft first");
+    if (!talent) {
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error("Create draft first");
+    }
     const { error } = await supabase.from("media_uploads").insert({
       talent_id: talent.id,
       user_id: userId,
       ...data,
+      mime_type: actualMime,
       size_bytes: actualSize || data.size_bytes,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      await supabase.storage.from(data.bucket).remove([data.path]);
+      throw new Error(error.message);
+    }
 
     // When uploading during a revision request, append a status log entry so
     // admins can see exactly which assets were refreshed before resubmission.
