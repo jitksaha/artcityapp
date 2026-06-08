@@ -1,7 +1,6 @@
 // Render the first page of a PDF File into a data URL.
 // Uses pdfjs-dist with a Vite-bundled worker.
 import * as pdfjs from "pdfjs-dist";
-// @ts-expect-error - Vite resolves the worker via ?url
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker as string;
@@ -25,6 +24,6 @@ export async function renderPdfThumbnail(
     await page.render({ canvasContext: ctx, viewport: scaled, canvas }).promise;
     return canvas.toDataURL("image/png");
   } finally {
-    await doc.destroy();
+    doc.cleanup();
   }
 }
