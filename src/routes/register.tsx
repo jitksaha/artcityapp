@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Check, RotateCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -57,6 +58,7 @@ type UploadItem = {
 
 function RegisterPage() {
   const [step, setStep] = useState(0);
+  const navigate = useNavigate();
   const saveDraftFn = useServerFn(saveDraft);
   const submitFn = useServerFn(submitApplication);
   const recordMediaFn = useServerFn(recordMediaUpload);
@@ -374,6 +376,9 @@ function RegisterPage() {
       if (doSubmit) {
         await submitFn();
         toast.success("Application submitted", { description: "Admin will review your profile." });
+        setTimeout(() => {
+          navigate({ to: "/dashboard" });
+        }, 900);
       } else {
         toast.success("Draft saved");
       }
