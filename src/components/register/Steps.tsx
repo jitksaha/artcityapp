@@ -262,17 +262,94 @@ function formatBytes(bytes: number) {
 
 function ImagePreview({ file, className }: { file: File; className?: string }) {
   const [url, setUrl] = useState<string>("");
+  const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     const u = URL.createObjectURL(file);
     setUrl(u);
+    setErr(null);
     return () => URL.revokeObjectURL(u);
   }, [file]);
+  if (err) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[10px] text-destructive",
+          className,
+        )}
+        role="alert"
+      >
+        Preview failed
+      </div>
+    );
+  }
   if (!url) return null;
   return (
     <img
       src={url}
       alt={file.name}
       className={cn("rounded-md border border-border object-cover", className)}
+      onError={() => {
+        const msg = `Couldn't generate a preview for ${file.name}.`;
+        setErr(msg);
+        toast.error(msg);
+      }}
+    />
+  );
+}
+
+function PdfThumbnail({ file, className }: { file: File; className?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setUrl(null);
+    setErr(null);
+    (async () => {
+      try {
+        const { renderPdfThumbnail } = await import("@/lib/pdf-thumbnail");
+        const data = await renderPdfThumbnail(file);
+        if (!cancelled) setUrl(data);
+      } catch (e) {
+        if (cancelled) return;
+        const msg = `Couldn't generate a PDF preview for ${file.name}.`;
+        setErr(msg);
+        toast.error(msg);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+  if (err) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[10px] text-destructive",
+          className,
+        )}
+        role="alert"
+      >
+        Preview failed
+      </div>
+    );
+  }
+  if (!url) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-md border border-border bg-muted/40",
+          className,
+        )}
+      >
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt={`Preview of ${file.name}`}
+      className={cn("rounded-md border border-border bg-white object-contain", className)}
     />
   );
 }
@@ -291,10 +368,22 @@ function AudioPreview({ file }: { file: File }) {
 function FilePreview({ file }: { file: File }) {
   const isImage = file.type.startsWith("image/");
   const isAudio = file.type.startsWith("audio/");
+  const isPdf = file.type === "application/pdf";
   if (isImage) {
     return (
       <div className="mt-2 flex items-center gap-3">
         <ImagePreview file={file} className="h-24 w-24" />
+        <div className="text-xs text-muted-foreground">
+          <p className="font-medium text-foreground truncate max-w-[200px]">{file.name}</p>
+          <p>{formatBytes(file.size)}</p>
+        </div>
+      </div>
+    );
+  }
+  if (isPdf) {
+    return (
+      <div className="mt-2 flex items-center gap-3">
+        <PdfThumbnail file={file} className="h-24 w-24" />
         <div className="text-xs text-muted-foreground">
           <p className="font-medium text-foreground truncate max-w-[200px]">{file.name}</p>
           <p>{formatBytes(file.size)}</p>
@@ -505,6 +594,7 @@ function MultiFileField({
               <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {files.map((f, i) => {
                   const isImage = f.type.startsWith("image/");
+                  const isPdf = f.type === "application/pdf";
                   return (
                     <li
                       key={`${f.name}-${i}`}
@@ -512,6 +602,8 @@ function MultiFileField({
                     >
                       {isImage ? (
                         <ImagePreview file={f} className="h-24 w-full" />
+                      ) : isPdf ? (
+                        <PdfThumbnail file={f} className="h-24 w-full" />
                       ) : (
                         <div className="flex h-24 items-center justify-center">
                           <FileText className="h-6 w-6 text-muted-foreground" />
