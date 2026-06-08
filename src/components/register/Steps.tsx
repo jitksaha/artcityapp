@@ -50,6 +50,7 @@ function TextField({
   name: any; en: string; ku?: string; required?: boolean; type?: string; placeholder?: string;
 }) {
   const { control } = useFormContext<RegisterFormValues>();
+  const ph = placeholder ?? `Enter ${en.toLowerCase()}`;
   return (
     <FormField
       control={control}
@@ -58,7 +59,7 @@ function TextField({
         <FormItem>
           <FieldLabel en={en} ku={ku} required={required} />
           <FormControl>
-            <Input type={type} placeholder={placeholder} {...field} value={field.value ?? ""} />
+            <Input type={type} placeholder={ph} {...field} value={field.value ?? ""} />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -69,6 +70,7 @@ function TextField({
 
 function TextAreaField({ name, en, ku, placeholder }: any) {
   const { control } = useFormContext<RegisterFormValues>();
+  const ph = placeholder ?? `Enter ${String(en).toLowerCase()}`;
   return (
     <FormField
       control={control}
@@ -77,7 +79,7 @@ function TextAreaField({ name, en, ku, placeholder }: any) {
         <FormItem>
           <FieldLabel en={en} ku={ku} />
           <FormControl>
-            <Textarea rows={3} placeholder={placeholder} {...field} value={field.value ?? ""} />
+            <Textarea rows={3} placeholder={ph} {...field} value={field.value ?? ""} />
           </FormControl>
           <FormMessage />
         </FormItem>
