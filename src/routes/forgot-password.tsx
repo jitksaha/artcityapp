@@ -34,7 +34,7 @@ function ForgotPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Sending…" : "Send reset link"}

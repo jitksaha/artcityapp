@@ -34,7 +34,7 @@ function ResetPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New password</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" type="password" required minLength={6} placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Updating…" : "Update password"}
