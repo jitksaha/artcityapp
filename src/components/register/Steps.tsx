@@ -594,6 +594,7 @@ function MultiFileField({
               <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {files.map((f, i) => {
                   const isImage = f.type.startsWith("image/");
+                  const isPdf = f.type === "application/pdf";
                   return (
                     <li
                       key={`${f.name}-${i}`}
@@ -601,6 +602,8 @@ function MultiFileField({
                     >
                       {isImage ? (
                         <ImagePreview file={f} className="h-24 w-full" />
+                      ) : isPdf ? (
+                        <PdfThumbnail file={f} className="h-24 w-full" />
                       ) : (
                         <div className="flex h-24 items-center justify-center">
                           <FileText className="h-6 w-6 text-muted-foreground" />
