@@ -28,6 +28,8 @@ import { FieldLabel, SectionTitle } from "./FieldLabel";
 import type { RegisterFormValues } from "./schema";
 import { useUploads } from "./upload-context";
 import type { UploadKind } from "@/lib/upload-constraints";
+import { validateUpload, UPLOAD_RULES } from "@/lib/upload-constraints";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -382,6 +384,9 @@ function FileField({
   uploadPosition?: number;
 }) {
   const { control } = useFormContext<RegisterFormValues>();
+  const uploads = useUploads();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const rule = uploadKind ? UPLOAD_RULES[uploadKind] : null;
   return (
     <FormField
       control={control}
@@ -393,7 +398,27 @@ function FileField({
             <Input
               type="file"
               accept={accept}
-              onChange={(e) => onChange(e.target.files?.[0])}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setLocalError(null);
+                if (!f) { onChange(undefined); return; }
+                if (uploadKind) {
+                  const err = validateUpload(uploadKind, f);
+                  if (err) {
+                    setLocalError(err);
+                    toast.error(err);
+                    onChange(undefined);
+                    e.target.value = "";
+                    return;
+                  }
+                }
+                onChange(f);
+                if (uploadKind && uploadBucket && uploads) {
+                  uploads
+                    .uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: uploadPosition })
+                    .catch(() => {});
+                }
+              }}
               {...rest}
             />
           </FormControl>
@@ -410,9 +435,13 @@ function FileField({
               )}
             </>
           )}
-          {hint && (
+          {localError ? (
+            <p className="text-xs text-destructive">{localError}</p>
+          ) : hint ? (
             <p className="text-xs text-muted-foreground">{hint}</p>
-          )}
+          ) : rule ? (
+            <p className="text-xs text-muted-foreground">{rule.accept}</p>
+          ) : null}
           <FormMessage />
         </FormItem>
       )}
@@ -430,6 +459,7 @@ function MultiFileField({
   uploadPositionStart?: number;
 }) {
   const { control } = useFormContext<RegisterFormValues>();
+  const uploads = useUploads();
   return (
     <FormField
       control={control}
@@ -446,8 +476,25 @@ function MultiFileField({
                 multiple
                 onChange={(e) => {
                   const incoming = Array.from(e.target.files ?? []);
-                  const merged = [...files, ...incoming].slice(0, max);
+                  const accepted: File[] = [];
+                  for (const f of incoming) {
+                    if (uploadKind) {
+                      const err = validateUpload(uploadKind, f);
+                      if (err) { toast.error(err); continue; }
+                    }
+                    accepted.push(f);
+                  }
+                  const merged = [...files, ...accepted].slice(0, max);
+                  if (merged.length < files.length + accepted.length) {
+                    toast.error(`Only ${max} files allowed. Extra files were ignored.`);
+                  }
                   onChange(merged);
+                  if (uploadKind && uploadBucket && uploads) {
+                    accepted.forEach((f, idx) => {
+                      const pos = uploadPositionStart + files.length + idx;
+                      uploads.uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: pos }).catch(() => {});
+                    });
+                  }
                   e.target.value = "";
                 }}
               />
