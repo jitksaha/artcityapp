@@ -28,6 +28,8 @@ import { FieldLabel, SectionTitle } from "./FieldLabel";
 import type { RegisterFormValues } from "./schema";
 import { useUploads } from "./upload-context";
 import type { UploadKind } from "@/lib/upload-constraints";
+import { validateUpload, UPLOAD_RULES } from "@/lib/upload-constraints";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
