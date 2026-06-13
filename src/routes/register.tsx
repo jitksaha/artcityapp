@@ -23,6 +23,9 @@ import { UploadContext, type UploadContextValue } from "@/components/register/up
 export const Route = createFileRoute("/register")({
   beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
+    // Allow embed mode to load without auth — we render an inline CTA instead.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("embed") === "1") return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({ to: "/login", search: { redirect: location.href } as any });
