@@ -23,7 +23,7 @@ function acProfileUrl(slug){return PROFILE_PATTERN.replace('{slug}',encodeURICom
 function acFetchTalents(params){
   var qs=Object.keys(params||{}).filter(function(k){return params[k]!==''&&params[k]!=null;})
     .map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
-  return fetch(BASE+'/api/public/talents'+(qs?'?'+qs:''))
+  return fetch(BASE+'/api/public/v1/talents'+(qs?'?'+qs:''))
     .then(function(r){return r.json();})
     .then(function(res){
       if(res&&Array.isArray(res.data))return res.data;
@@ -269,7 +269,7 @@ function buildCastingForm(base: string, profilePattern: string) {
   f.addEventListener('submit',function(e){
     e.preventDefault();m.textContent='Sending…';m.style.color='#666';
     var d=Object.fromEntries(new FormData(f).entries());
-    fetch(BASE+'/api/public/casting-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+    fetch(BASE+'/api/public/v1/casting-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
       .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j};});})
       .then(function(x){if(x.ok){m.textContent='Request sent. We will contact you shortly.';m.style.color='#0a0';f.reset();}else{m.textContent=(x.j&&x.j.error)||'Failed to send';m.style.color='#c00';}})
       .catch(function(e){m.textContent=e.message;m.style.color='#c00';});
@@ -335,7 +335,7 @@ var slug=getSlug();
 var el=document.getElementById('ac-profile');
 if(!slug){el.innerHTML='<p style="color:#c00;text-align:center;padding:60px;">No talent slug in URL.</p>';return;}
 el.innerHTML='<div style="text-align:center;padding:80px 20px;color:#999;font-size:12px;letter-spacing:.25em;text-transform:uppercase;">Loading profile…</div>';
-fetch(BASE+'/api/public/talents/'+encodeURIComponent(slug))
+fetch(BASE+'/api/public/v1/talents/'+encodeURIComponent(slug))
  .then(function(r){return r.json();})
  .then(function(res){
     var payload=(res&&res.data)?res.data:res;
