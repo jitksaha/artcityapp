@@ -61,15 +61,19 @@ function RegisterPage() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [embedMode, setEmbedMode] = useState(false);
+  const [embedMode, setEmbedMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return new URLSearchParams(window.location.search).get("embed") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [authChecked, setAuthChecked] = useState(false);
   const [hasSession, setHasSession] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const isEmbed = params.get("embed") === "1";
-    setEmbedMode(isEmbed);
     supabase.auth.getSession().then(({ data }) => {
       setHasSession(!!data.session);
       setAuthChecked(true);
@@ -526,17 +530,19 @@ function RegisterPage() {
     <main className={embedMode ? "bg-background" : "min-h-screen bg-background"}>
       {!embedMode && <SiteHeader />}
       <div className={embedMode ? "mx-auto max-w-4xl px-4 py-6" : "mx-auto max-w-4xl px-4 py-10 md:py-16"}>
-        <header className="mb-8 space-y-2 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            Art City
-          </p>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Actor Register and Post Feeds
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Complete all steps. Your profile becomes public only after admin review.
-          </p>
-        </header>
+        {!embedMode && (
+          <header className="mb-8 space-y-2 text-center">
+            <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              Art City
+            </p>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+              Actor Register and Post Feeds
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Complete all steps. Your profile becomes public only after admin review.
+            </p>
+          </header>
+        )}
 
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
