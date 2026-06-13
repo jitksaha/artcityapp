@@ -703,6 +703,18 @@ export function Step1() {
         <TextField name="email" en="Email" ku="ئیمەیڵ" type="email" required />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
+        <TextField
+          name="password"
+          en="Password (optional)"
+          ku="وشەی نهێنی (ئارەزوومەندانە)"
+          type="password"
+          placeholder="Leave empty to auto-generate"
+        />
+        <div className="flex items-end text-xs text-muted-foreground">
+          If left empty we'll generate a strong password and show it once after you submit. Save it to sign in later.
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
         <TextField name="location" en="Location" ku="شوێن" required />
         <TextField name="nationality" en="Nationality" ku="نەتەوە" required />
       </div>

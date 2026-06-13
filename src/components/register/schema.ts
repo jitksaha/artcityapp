@@ -30,6 +30,14 @@ export const registerSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
   location: z.string().trim().min(1, "Required").max(150),
   nationality: z.string().trim().min(1, "Required").max(80),
+  // Optional: applicant may set their own password, otherwise one is auto-generated
+  // server-side and revealed on the welcome screen.
+  password: z
+    .string()
+    .min(8, "At least 8 characters")
+    .max(128)
+    .optional()
+    .or(z.literal("")),
 
   // Step 2
   height: z.string().trim().max(20).optional().or(z.literal("")),
@@ -190,6 +198,7 @@ export const STEP_FIELDS: (keyof RegisterFormValues)[][] = [
   [
     "firstName", "middleName", "lastName", "stageName", "gender", "age",
     "playingAge", "dateOfBirth", "phone", "email", "location", "nationality",
+    "password",
   ],
   [
     "height", "weight", "eyeColor", "hairColor", "hairLength", "skinTone",

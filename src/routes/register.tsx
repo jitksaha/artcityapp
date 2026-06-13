@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useForm, FormProvider } from "react-hook-form";
@@ -13,6 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
 import { Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "@/components/register/Steps";
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
+import { createApplicantAccount } from "@/lib/applicant-signup.functions";
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
@@ -21,16 +22,6 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { UploadContext, type UploadContextValue } from "@/components/register/upload-context";
 
 export const Route = createFileRoute("/register")({
-  beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined") return;
-    // Allow embed mode to load without auth — we render an inline CTA instead.
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("embed") === "1") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      throw redirect({ to: "/login", search: { redirect: location.href } as any });
-    }
-  },
   component: RegisterPage,
 });
 
@@ -65,6 +56,7 @@ function RegisterPage() {
   const saveDraftFn = useServerFn(saveDraft);
   const submitFn = useServerFn(submitApplication);
   const recordMediaFn = useServerFn(recordMediaUpload);
+  const createAccountFn = useServerFn(createApplicantAccount);
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -363,7 +355,15 @@ function RegisterPage() {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user.id;
     if (!userId) {
-      toast.error("Sign in to upload");
+      // Pre-signup: defer this upload until submit. Mark as pending so the
+      // user still sees the file in the queue. It will be re-uploaded inside
+      // persistDraft after the account is auto-created.
+      upsertUploadItem({
+        key, kind, bucket, file, position,
+        fileName: file.name,
+        progress: 0,
+        status: "pending",
+      });
       return;
     }
     const item: UploadItem = {
@@ -398,9 +398,32 @@ function RegisterPage() {
   const persistDraft = async (values: RegisterFormValues, doSubmit: boolean) => {
     setBusy(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const userId = sess.session?.user.id;
-      if (!userId) throw new Error("Not signed in");
+      let { data: sess } = await supabase.auth.getSession();
+      let userId = sess.session?.user.id;
+      let createdCreds: { email: string; password: string; generated: boolean } | null = null;
+      if (!userId) {
+        // Public application flow: auto-create an account from the form's email,
+        // sign in, then continue saving the draft as that user.
+        const full_name = `${values.firstName} ${values.middleName ?? ""} ${values.lastName}`
+          .replace(/\s+/g, " ")
+          .trim();
+        const acct = await createAccountFn({
+          data: {
+            email: values.email,
+            password: values.password && values.password.length >= 8 ? values.password : undefined,
+            full_name: full_name || values.email,
+          },
+        });
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: acct.email,
+          password: acct.password,
+        });
+        if (signInErr) throw new Error(signInErr.message);
+        createdCreds = { email: acct.email, password: acct.password, generated: acct.generated };
+        const refreshed = await supabase.auth.getSession();
+        userId = refreshed.data.session?.user.id;
+        if (!userId) throw new Error("Sign-in failed — please try again.");
+      }
       const queue = buildUploadQueue(values);
       // Preflight everything client-side before saving anything
       for (const item of queue) {
@@ -418,10 +441,22 @@ function RegisterPage() {
       }
       if (doSubmit) {
         await submitFn();
-        toast.success("Application submitted", { description: "Admin will review your profile." });
+        if (createdCreds && typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(
+              "ac:new_credentials",
+              JSON.stringify(createdCreds),
+            );
+          } catch {}
+        }
+        toast.success("Application submitted", {
+          description: createdCreds
+            ? "Your account is ready — save your login details on the next screen."
+            : "Admin will review your profile.",
+        });
         setTimeout(() => {
           navigate({ to: "/dashboard" });
-        }, 900);
+        }, 700);
       } else {
         toast.success("Draft saved");
       }
@@ -451,6 +486,13 @@ function RegisterPage() {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(async () => {
         try {
+          // Autosave requires an authenticated user. Pre-signup, skip silently —
+          // the full payload is saved on submit once the account is created.
+          const { data: sess } = await supabase.auth.getSession();
+          if (!sess.session) {
+            setAutoSaveState("idle");
+            return;
+          }
           setAutoSaveState("saving");
           const payload = JSON.parse(serialized);
           await saveDraftFn({ data: payload });
@@ -479,43 +521,6 @@ function RegisterPage() {
           : "";
 
   const progress = ((step + 1) / STEPS.length) * 100;
-
-  if (embedMode && authChecked && !hasSession) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-4 rounded-2xl border bg-card p-8 shadow-sm">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-            Art City Casting
-          </p>
-          <h1 className="text-2xl font-semibold">Apply to join the roster</h1>
-          <p className="text-sm text-muted-foreground">
-            The full multistep talent application opens in a new tab so you can sign in
-            (or create an account) and upload your media safely.
-          </p>
-          <a
-            href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
-            target="_blank"
-            rel="noopener"
-            className="inline-block rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-          >
-            Start application
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Already have an account?{" "}
-            <a
-              href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
-              target="_blank"
-              rel="noopener"
-              className="underline"
-            >
-              Sign in
-            </a>
-          </p>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background">

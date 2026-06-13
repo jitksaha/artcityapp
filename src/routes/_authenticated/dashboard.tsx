@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { myTalentQuery } from "@/lib/queries/dashboard.queries";
 import { toast } from "sonner";
 import { submitApplication, deleteMedia, recordMediaUpload, saveDraft } from "@/lib/talents.functions";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye } from "lucide-react";
+import { Trash2, Send, AlertCircle, CheckCircle2, Clock, FileEdit, Upload, Loader2, Eye, Copy, X } from "lucide-react";
 import { UPLOAD_RULES, validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
 import { compressImage, makeThumbnail, extForMime } from "@/lib/image-compression";
@@ -72,6 +72,29 @@ function Dashboard() {
   const { data, isLoading } = useQuery(myTalentQuery());
   const [uploadingKind, setUploadingKind] = useState<UploadKind | null>(null);
   const [uploadPct, setUploadPct] = useState(0);
+  const [welcomeCreds, setWelcomeCreds] = useState<{ email: string; password: string; generated: boolean } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("ac:new_credentials");
+      if (raw) setWelcomeCreds(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const dismissWelcome = () => {
+    setWelcomeCreds(null);
+    try { sessionStorage.removeItem("ac:new_credentials"); } catch {}
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
 
   if (!authLoading && isStaff) return <Navigate to="/superadmin" replace />;
 
@@ -190,6 +213,52 @@ function Dashboard() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 space-y-6">
+      {welcomeCreds && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+            <div>
+              <CardTitle className="text-lg">Welcome — your account is ready</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {welcomeCreds.generated
+                  ? "We generated a password for you. Save these details now — they won't be shown again."
+                  : "Save your sign-in details somewhere safe. You can change your password later."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={dismissWelcome}
+              aria-label="Dismiss"
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Email</p>
+                <p className="truncate font-mono">{welcomeCreds.email}</p>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => copyText(welcomeCreds.email, "Email")}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Copy
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Password</p>
+                <p className="truncate font-mono">{welcomeCreds.password}</p>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => copyText(welcomeCreds.password, "Password")}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Copy
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              You're already signed in. Use these credentials at <span className="font-mono">/login</span> next time.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Talent Portal</h1>
