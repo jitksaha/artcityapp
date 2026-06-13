@@ -446,8 +446,11 @@ function RegisterPage() {
       .replace(/\s+/g, " ")
       .trim();
 
-    // Create (or upsert) the applicant account server-side using the admin
-    // client so the user is auto-confirmed and we bypass email verification.
+    // Try the server-side admin create first (auto-confirms email so the
+    // user can sign in immediately). If that path is unavailable (e.g.
+    // SUPABASE_SERVICE_ROLE_KEY isn't injected at runtime), fall back to
+    // a normal client-side signUp + signInWithPassword.
+    let serverCreateOk = false;
     try {
       await createAccountFn({
         data: {
@@ -456,19 +459,43 @@ function RegisterPage() {
           fullName: fullName || values.email,
         },
       });
+      serverCreateOk = true;
     } catch (err: any) {
-      throw new Error(err?.message || "Could not create your account.");
+      // Swallow and try client-side fallback below.
+      console.warn("[register] server createAccount failed, falling back to client signUp:", err?.message);
     }
 
-    // Now sign in client-side so the session persists in the browser and RLS
-    // requests are scoped to this applicant.
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
+    // Sign in (works for both freshly-created and existing accounts).
+    let { error: signInErr } = await supabase.auth.signInWithPassword({
       email: values.email,
       password,
     });
+
+    if (signInErr && !serverCreateOk) {
+      // Account probably doesn't exist yet — create via standard signUp.
+      const { error: signUpErr } = await supabase.auth.signUp({
+        email: values.email,
+        password,
+        options: {
+          emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined,
+          data: { full_name: fullName || values.email },
+        },
+      });
+      if (signUpErr) {
+        throw new Error(signUpErr.message || "Could not create your account.");
+      }
+      // Retry sign-in (works when email confirmation is disabled in Supabase Auth).
+      const retry = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password,
+      });
+      signInErr = retry.error;
+    }
+
     if (signInErr) {
       throw new Error(
-        signInErr.message || "Account created, but automatic sign-in failed.",
+        signInErr.message ||
+          "Account created, but automatic sign-in failed. If email confirmation is enabled, disable it in Supabase Auth settings.",
       );
     }
 
