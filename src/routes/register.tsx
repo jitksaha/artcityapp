@@ -23,6 +23,9 @@ import { UploadContext, type UploadContextValue } from "@/components/register/up
 export const Route = createFileRoute("/register")({
   beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
+    // Allow embed mode to load without auth — we render an inline CTA instead.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("embed") === "1") return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({ to: "/login", search: { redirect: location.href } as any });
@@ -66,6 +69,20 @@ function RegisterPage() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [embedMode, setEmbedMode] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [hasSession, setHasSession] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const isEmbed = params.get("embed") === "1";
+    setEmbedMode(isEmbed);
+    supabase.auth.getSession().then(({ data }) => {
+      setHasSession(!!data.session);
+      setAuthChecked(true);
+    });
+  }, []);
 
   // When embedded via ?embed=1, post height to parent so the iframe auto-resizes.
   useEffect(() => {
@@ -462,6 +479,43 @@ function RegisterPage() {
           : "";
 
   const progress = ((step + 1) / STEPS.length) * 100;
+
+  if (embedMode && authChecked && !hasSession) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-4 rounded-2xl border bg-card p-8 shadow-sm">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+            Art City Casting
+          </p>
+          <h1 className="text-2xl font-semibold">Apply to join the roster</h1>
+          <p className="text-sm text-muted-foreground">
+            The full multistep talent application opens in a new tab so you can sign in
+            (or create an account) and upload your media safely.
+          </p>
+          <a
+            href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
+            target="_blank"
+            rel="noopener"
+            className="inline-block rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+          >
+            Start application
+          </a>
+          <p className="text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <a
+              href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
+              target="_blank"
+              rel="noopener"
+              className="underline"
+            >
+              Sign in
+            </a>
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">
