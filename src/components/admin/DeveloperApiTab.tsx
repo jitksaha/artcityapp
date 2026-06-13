@@ -466,9 +466,11 @@ export function DeveloperApiTab() {
         <CardHeader>
           <CardTitle className="text-base">WordPress embed snippets</CardTitle>
           <CardDescription>
-            Paste any snippet into a WordPress Custom HTML block. No API keys
-            needed — these endpoints are public. Start with the all-in-one,
-            or pick individual sections.
+            Paste any snippet into a WordPress Custom HTML block on{" "}
+            <strong>artcity.group</strong>. No API keys needed — these
+            endpoints are public. All snippets now use the versioned{" "}
+            <code>/api/public/v1/*</code> endpoints (legacy{" "}
+            <code>/api/public/*</code> URLs still respond for older embeds).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
