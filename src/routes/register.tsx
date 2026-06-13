@@ -69,6 +69,20 @@ function RegisterPage() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [embedMode, setEmbedMode] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [hasSession, setHasSession] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const isEmbed = params.get("embed") === "1";
+    setEmbedMode(isEmbed);
+    supabase.auth.getSession().then(({ data }) => {
+      setHasSession(!!data.session);
+      setAuthChecked(true);
+    });
+  }, []);
 
   // When embedded via ?embed=1, post height to parent so the iframe auto-resizes.
   useEffect(() => {
