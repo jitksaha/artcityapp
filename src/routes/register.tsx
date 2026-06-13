@@ -171,6 +171,18 @@ function RegisterPage() {
     },
   });
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!raw) return;
+      form.reset({ ...form.getValues(), ...fromLocalDraftValues(JSON.parse(raw)) } as RegisterFormValues);
+    } catch {
+      // Ignore corrupted local drafts.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const next = async () => {
     const ok = await form.trigger(STEP_FIELDS[step] as any, { shouldFocus: true });
     if (!ok) {
@@ -190,7 +202,7 @@ function RegisterPage() {
     stage_name: v.stageName || `${v.firstName} ${v.lastName}`.trim(),
     full_name: `${v.firstName} ${v.middleName ?? ""} ${v.lastName}`.replace(/\s+/g, " ").trim(),
     gender: v.gender,
-    age: v.age,
+    age: asOptionalInt(v.age),
     playing_age: v.playingAge || null,
     location: v.location,
     nationality: v.nationality,
@@ -217,7 +229,7 @@ function RegisterPage() {
       fluency: v.fluency, kurdishDialect: v.kurdishDialect, accents: v.accents,
     },
     experience: {
-      yearsOfExperience: v.yearsOfExperience,
+      yearsOfExperience: asOptionalInt(v.yearsOfExperience),
       filmCredits: v.filmCredits, tvCredits: v.tvCredits,
       theatreCredits: v.theatreCredits, commercialCredits: v.commercialCredits,
       training: v.training, workshops: v.workshops,
