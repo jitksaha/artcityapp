@@ -102,18 +102,25 @@ function SelectField({
       render={({ field }) => (
         <FormItem>
           <FieldLabel en={en} ku={ku} required={required} />
-          <Select onValueChange={field.onChange} value={field.value ?? ""}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
+          <FormControl>
+            <select
+              value={field.value ?? ""}
+              onChange={(e) => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+              name={field.name}
+              ref={field.ref}
+              className={cn(
+                "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm",
+                "focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                !field.value && "text-muted-foreground",
+              )}
+            >
+              <option value="" disabled>{placeholder}</option>
               {options.map((o) => (
-                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
-            </SelectContent>
-          </Select>
+            </select>
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}
