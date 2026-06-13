@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useForm, FormProvider } from "react-hook-form";
@@ -13,6 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
 import { Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "@/components/register/Steps";
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
+import { createApplicantAccount } from "@/lib/applicant-signup.functions";
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
@@ -21,16 +22,6 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { UploadContext, type UploadContextValue } from "@/components/register/upload-context";
 
 export const Route = createFileRoute("/register")({
-  beforeLoad: async ({ location }) => {
-    if (typeof window === "undefined") return;
-    // Allow embed mode to load without auth — we render an inline CTA instead.
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("embed") === "1") return;
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      throw redirect({ to: "/login", search: { redirect: location.href } as any });
-    }
-  },
   component: RegisterPage,
 });
 
@@ -65,6 +56,7 @@ function RegisterPage() {
   const saveDraftFn = useServerFn(saveDraft);
   const submitFn = useServerFn(submitApplication);
   const recordMediaFn = useServerFn(recordMediaUpload);
+  const createAccountFn = useServerFn(createApplicantAccount);
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
