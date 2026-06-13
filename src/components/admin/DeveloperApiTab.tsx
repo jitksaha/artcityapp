@@ -197,9 +197,8 @@ function buildApplyCta(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <style id="ac-apply-css">
 .aca-wrap{max-width:1200px;margin:0 auto;}
-.aca-shell{background:#fff;border:1px solid #ececec;border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -40px rgba(0,0,0,.25);}
-.aca-frame{width:100%;border:0;display:block;background:#fff;min-height:1800px;}
-@media(max-width:640px){.aca-frame{min-height:2400px;}}
+.aca-shell{background:#fff;border:0;border-radius:0;overflow:visible;}
+.aca-frame{width:100%;border:0;display:block;background:#fff;height:1200px;}
 </style>
 <section class="ac-wrap aca-wrap">
   <div class="aca-shell">
@@ -221,8 +220,8 @@ function buildApplyCta(base: string, profilePattern: string) {
     try{
       var d=e.data;if(!d)return;
       if(typeof d==='string'){try{d=JSON.parse(d);}catch(_){return;}}
-      if(d&&d.type==='ac:resize'&&typeof d.height==='number'&&d.height>400){
-        frame.style.height=Math.min(d.height+40,8000)+'px';
+      if(d&&d.type==='ac:resize'&&typeof d.height==='number'&&d.height>200){
+        frame.style.height=Math.min(d.height+24,8000)+'px';
       }
     }catch(_){}
   });

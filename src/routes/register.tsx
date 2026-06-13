@@ -74,6 +74,10 @@ function RegisterPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    try {
+      const isEmbed = new URLSearchParams(window.location.search).get("embed") === "1";
+      if (isEmbed) setEmbedMode(true);
+    } catch {}
     supabase.auth.getSession().then(({ data }) => {
       setHasSession(!!data.session);
       setAuthChecked(true);
