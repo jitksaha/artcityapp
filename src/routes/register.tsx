@@ -277,9 +277,9 @@ function RegisterPage() {
         status: "pending",
       });
     if (values.headshot instanceof File) push("headshot", "talent-media", values.headshot, 0);
-    if (values.fullBodyPhoto instanceof File) push("fullbody", "talent-media", values.fullBodyPhoto, 1);
+    if (values.fullBodyPhoto instanceof File) push("full_body", "talent-media", values.fullBodyPhoto, 1);
     (values.mediumShots ?? []).forEach((f, i) => {
-      if (f instanceof File) push("medium", "talent-media", f, 10 + i);
+      if (f instanceof File) push("medium_shot", "talent-media", f, 10 + i);
     });
     if (values.voiceReel instanceof File) push("voice_reel", "talent-media", values.voiceReel);
     if (values.cv instanceof File) push("cv", "talent-docs", values.cv);
