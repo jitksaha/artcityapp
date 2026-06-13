@@ -455,7 +455,7 @@ function RegisterPage() {
             : "Admin will review your profile.",
         });
         setTimeout(() => {
-          navigate({ to: "/dashboard", search: createdCreds ? { welcome: 1 } : undefined } as any);
+          navigate({ to: "/dashboard" });
         }, 700);
       } else {
         toast.success("Draft saved");
