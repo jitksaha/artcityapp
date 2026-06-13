@@ -1063,7 +1063,7 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Head-to-toe photo, JPG/PNG/WEBP, max 5MB"
-          uploadKind="fullbody"
+          uploadKind="full_body"
           uploadBucket="talent-media"
           uploadPosition={1}
         />
@@ -1075,7 +1075,7 @@ export function Step7() {
         accept="image/jpeg,image/png,image/webp"
         max={4}
         hint="Optional · Waist-up shots, JPG/PNG/WEBP, max 5MB each"
-        uploadKind="medium"
+        uploadKind="medium_shot"
         uploadBucket="talent-media"
         uploadPositionStart={10}
       />
