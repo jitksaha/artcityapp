@@ -621,8 +621,15 @@ function RegisterPage() {
   useEffect(() => {
     const sub = form.watch((values) => {
       if (busy) return;
-      // Skip until at least a name is present, to avoid empty initial save.
       const v = values as RegisterFormValues;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(toLocalDraftValues(v)));
+        } catch {
+          // Local autosave can fail in private browsing or full storage; server save still tries below.
+        }
+      }
+      // Skip server draft until at least a name/email is present, to avoid empty initial save.
       if (!v?.firstName && !v?.lastName && !v?.email) return;
       const serialized = JSON.stringify(buildDraftPayload(v));
       if (serialized === lastSerialized.current) return;
