@@ -461,7 +461,7 @@ function RegisterPage() {
       });
       if (signInErr) {
         throw new Error(
-          "Account was created but sign-in is blocked until email confirmation is disabled or completed.",
+          "Account was created, but Supabase is blocking uploads until the email is confirmed. Please confirm the email first or disable email confirmation in Supabase Auth.",
         );
       }
     }
