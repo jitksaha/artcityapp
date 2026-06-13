@@ -67,9 +67,9 @@ export const Route = createFileRoute("/api/public/v1/talents")({
           const offset = data.offset ?? (data.page ? (data.page - 1) * limit : 0);
           const useExactCount = data.count === "exact";
 
-          let q: any = supabasePublic
-            .from("talent_profiles")
-            .select(cols, useExactCount ? { count: "exact" } : undefined)
+          const selectOpts: any = useExactCount ? { count: "exact" } : {};
+          let q: any = (supabasePublic.from("talent_profiles") as any)
+            .select(cols, selectOpts)
             .eq("approved", true)
             .eq("published", true)
             .eq("visible_publicly", true)
