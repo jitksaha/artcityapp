@@ -582,6 +582,9 @@ function RegisterPage() {
             );
           } catch {}
         }
+        if (typeof window !== "undefined") {
+          try { localStorage.removeItem(LOCAL_DRAFT_KEY); } catch {}
+        }
         toast.success("Application submitted", {
           description: createdCreds
             ? "Your account is ready — save your login details on the next screen."
@@ -613,7 +616,13 @@ function RegisterPage() {
       : "Please complete the required fields.";
     showActionError("Submit blocked", msg);
   };
-  const onSaveDraft = () => persistDraft(form.getValues(), false);
+  const onSaveDraft = () => {
+    const values = form.getValues();
+    if (typeof window !== "undefined") {
+      try { localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(toLocalDraftValues(values))); } catch {}
+    }
+    persistDraft(values, false);
+  };
 
   // Real-time autosave: silently persist non-file fields as the user types.
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
