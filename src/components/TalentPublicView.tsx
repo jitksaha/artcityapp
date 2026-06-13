@@ -27,9 +27,9 @@ export function TalentPublicView({
       fullbody: [],
     };
     for (const m of media) {
-      if (m.kind === "headshot" || m.kind === "medium" || m.kind === "fullbody") {
-        groups[m.kind as keyof typeof groups].push(m);
-      }
+      if (m.kind === "headshot") groups.headshot.push(m);
+      else if (m.kind === "medium_shot" || m.kind === "medium") groups.medium.push(m);
+      else if (m.kind === "full_body" || m.kind === "fullbody") groups.fullbody.push(m);
     }
     (Object.keys(groups) as (keyof typeof groups)[]).forEach((k) =>
       groups[k].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
