@@ -446,26 +446,30 @@ function RegisterPage() {
       .replace(/\s+/g, " ")
       .trim();
 
-    const { data, error } = await supabase.auth.signUp({
+    // Create (or upsert) the applicant account server-side using the admin
+    // client so the user is auto-confirmed and we bypass email verification.
+    try {
+      await createAccountFn({
+        data: {
+          email: values.email,
+          password,
+          fullName: fullName || values.email,
+        },
+      });
+    } catch (err: any) {
+      throw new Error(err?.message || "Could not create your account.");
+    }
+
+    // Now sign in client-side so the session persists in the browser and RLS
+    // requests are scoped to this applicant.
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
       email: values.email,
       password,
-      options: {
-        data: { full_name: fullName || values.email },
-        emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-      },
     });
-    if (error) throw new Error(error.message);
-
-    if (!data.session) {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password,
-      });
-      if (signInErr) {
-        throw new Error(
-          "Account was created, but Supabase is blocking uploads until the email is confirmed. Please confirm the email first or disable email confirmation in Supabase Auth.",
-        );
-      }
+    if (signInErr) {
+      throw new Error(
+        signInErr.message || "Account created, but automatic sign-in failed.",
+      );
     }
 
     const refreshed = await supabase.auth.getSession();
