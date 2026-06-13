@@ -535,6 +535,20 @@ function FileField({
                   position={uploadPosition}
                 />
               )}
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    onChange(undefined);
+                    setLocalError(null);
+                  }}
+                >
+                  <Trash2 className="mr-1 h-3 w-3" /> Remove & re-upload
+                </Button>
+              </div>
             </>
           )}
           {localError ? (
