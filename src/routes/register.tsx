@@ -67,6 +67,30 @@ function RegisterPage() {
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
+  // When embedded via ?embed=1, post height to parent so the iframe auto-resizes.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("embed") !== "1") return;
+    const send = () => {
+      const h = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      );
+      try {
+        window.parent?.postMessage({ type: "ac:resize", height: h }, "*");
+      } catch {}
+    };
+    send();
+    const ro = new ResizeObserver(send);
+    ro.observe(document.body);
+    const id = window.setInterval(send, 1500);
+    return () => {
+      ro.disconnect();
+      window.clearInterval(id);
+    };
+  }, []);
+
   const patchUpload = (key: string, patch: Partial<UploadItem>) =>
     setUploads((prev) => prev.map((u) => (u.key === key ? { ...u, ...patch } : u)));
 
