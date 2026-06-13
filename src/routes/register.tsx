@@ -379,21 +379,21 @@ function RegisterPage() {
     return { headshotUrl, headshotThumbUrl };
   };
 
+  const ensureServerDraft = async (values: RegisterFormValues) => {
+    await saveDraftFn({ data: buildDraftPayload(values) });
+  };
+
   const retryUpload = async (key: string) => {
     const item = uploads.find((u) => u.key === key);
     if (!item) return;
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user.id;
-    if (!userId) {
-      toast.error("Not signed in");
-      return;
-    }
     try {
+      const values = form.getValues();
+      const { userId } = await ensureApplicantSession(values);
+      await ensureServerDraft(values);
       const path = await runUpload(userId, item);
       if (path && item.kind === "headshot") {
         const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
-        const payload: any = buildDraftPayload(form.getValues());
-        await saveDraftFn({ data: { ...payload, headshot_url: url } });
+        await saveDraftFn({ data: { ...buildDraftPayload(form.getValues()), headshot_url: url } });
       }
       toast.success(`${item.fileName} uploaded`);
     } catch (e: any) {
@@ -426,8 +426,6 @@ function RegisterPage() {
         }
         const { userId: newUserId } = await ensureApplicantSession(values);
         userId = newUserId;
-        const payload: any = buildDraftPayload(values);
-        await saveDraftFn({ data: payload });
       } catch (e: any) {
         const msg = e?.message ?? "Could not create account";
         patchUpload(key, { status: "error", progress: 0, error: msg });
@@ -436,6 +434,7 @@ function RegisterPage() {
       }
     }
     try {
+      await ensureServerDraft(form.getValues());
       const path = await runUpload(userId, item);
       if (path && kind === "headshot") {
         const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
