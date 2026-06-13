@@ -354,20 +354,8 @@ function RegisterPage() {
 
   const uploadOne: UploadContextValue["uploadOne"] = async ({ kind, bucket, file, position }) => {
     const key = uploadKey(kind, file, position);
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user.id;
-    if (!userId) {
-      // Pre-signup: defer this upload until submit. Mark as pending so the
-      // user still sees the file in the queue. It will be re-uploaded inside
-      // persistDraft after the account is auto-created.
-      upsertUploadItem({
-        key, kind, bucket, file, position,
-        fileName: file.name,
-        progress: 0,
-        status: "pending",
-      });
-      return;
-    }
+    let { data: sess } = await supabase.auth.getSession();
+    let userId = sess.session?.user.id;
     const item: UploadItem = {
       key, kind, bucket, file, position,
       fileName: file.name,
@@ -375,6 +363,26 @@ function RegisterPage() {
       status: "pending",
     };
     upsertUploadItem(item);
+    if (!userId) {
+      // Pre-signup: try to auto-create the account using the values entered
+      // so far so the user's "Upload now" click actually uploads.
+      try {
+        const values = form.getValues();
+        if (!values.email || !values.firstName || !values.lastName) {
+          toast.error("Add your name and email first", {
+            description: "We need them to create your account before uploading.",
+          });
+          return;
+        }
+        const { userId: newUserId } = await ensureApplicantSession(values);
+        userId = newUserId;
+        const payload: any = buildDraftPayload(values);
+        await saveDraftFn({ data: payload });
+      } catch (e: any) {
+        toast.error(e?.message ?? "Could not create account");
+        return;
+      }
+    }
     try {
       const path = await runUpload(userId, item);
       if (path && kind === "headshot") {
