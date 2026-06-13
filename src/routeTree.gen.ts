@@ -29,9 +29,11 @@ import { Route as ApiPublicCastingRequestsRouteImport } from './routes/api/publi
 import { Route as ApiPublicApplicationsRouteImport } from './routes/api/public/applications'
 import { Route as ApiPublicV1TalentsRouteImport } from './routes/api/public/v1/talents'
 import { Route as ApiPublicV1CastingRequestsRouteImport } from './routes/api/public/v1/casting-requests'
+import { Route as ApiPublicV1ApplicationsRouteImport } from './routes/api/public/v1/applications'
 import { Route as ApiPublicTalentsSlugRouteImport } from './routes/api/public/talents.$slug'
 import { Route as ApiPublicAuthLoginRouteImport } from './routes/api/public/auth.login'
 import { Route as ApiPublicV1TalentsSlugRouteImport } from './routes/api/public/v1/talents.$slug'
+import { Route as ApiPublicV1AuthLoginRouteImport } from './routes/api/public/v1/auth.login'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -134,6 +136,11 @@ const ApiPublicV1CastingRequestsRoute =
     path: '/api/public/v1/casting-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicV1ApplicationsRoute = ApiPublicV1ApplicationsRouteImport.update({
+  id: '/api/public/v1/applications',
+  path: '/api/public/v1/applications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTalentsSlugRoute = ApiPublicTalentsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -148,6 +155,11 @@ const ApiPublicV1TalentsSlugRoute = ApiPublicV1TalentsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => ApiPublicV1TalentsRoute,
+} as any)
+const ApiPublicV1AuthLoginRoute = ApiPublicV1AuthLoginRouteImport.update({
+  id: '/api/public/v1/auth/login',
+  path: '/api/public/v1/auth/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -170,8 +182,10 @@ export interface FileRoutesByFullPath {
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
+  '/api/public/v1/applications': typeof ApiPublicV1ApplicationsRoute
   '/api/public/v1/casting-requests': typeof ApiPublicV1CastingRequestsRoute
   '/api/public/v1/talents': typeof ApiPublicV1TalentsRouteWithChildren
+  '/api/public/v1/auth/login': typeof ApiPublicV1AuthLoginRoute
   '/api/public/v1/talents/$slug': typeof ApiPublicV1TalentsSlugRoute
 }
 export interface FileRoutesByTo {
@@ -194,8 +208,10 @@ export interface FileRoutesByTo {
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
+  '/api/public/v1/applications': typeof ApiPublicV1ApplicationsRoute
   '/api/public/v1/casting-requests': typeof ApiPublicV1CastingRequestsRoute
   '/api/public/v1/talents': typeof ApiPublicV1TalentsRouteWithChildren
+  '/api/public/v1/auth/login': typeof ApiPublicV1AuthLoginRoute
   '/api/public/v1/talents/$slug': typeof ApiPublicV1TalentsSlugRoute
 }
 export interface FileRoutesById {
@@ -220,8 +236,10 @@ export interface FileRoutesById {
   '/api/public/talents': typeof ApiPublicTalentsRouteWithChildren
   '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/talents/$slug': typeof ApiPublicTalentsSlugRoute
+  '/api/public/v1/applications': typeof ApiPublicV1ApplicationsRoute
   '/api/public/v1/casting-requests': typeof ApiPublicV1CastingRequestsRoute
   '/api/public/v1/talents': typeof ApiPublicV1TalentsRouteWithChildren
+  '/api/public/v1/auth/login': typeof ApiPublicV1AuthLoginRoute
   '/api/public/v1/talents/$slug': typeof ApiPublicV1TalentsSlugRoute
 }
 export interface FileRouteTypes {
@@ -246,8 +264,10 @@ export interface FileRouteTypes {
     | '/api/public/talents'
     | '/api/public/auth/login'
     | '/api/public/talents/$slug'
+    | '/api/public/v1/applications'
     | '/api/public/v1/casting-requests'
     | '/api/public/v1/talents'
+    | '/api/public/v1/auth/login'
     | '/api/public/v1/talents/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -270,8 +290,10 @@ export interface FileRouteTypes {
     | '/api/public/talents'
     | '/api/public/auth/login'
     | '/api/public/talents/$slug'
+    | '/api/public/v1/applications'
     | '/api/public/v1/casting-requests'
     | '/api/public/v1/talents'
+    | '/api/public/v1/auth/login'
     | '/api/public/v1/talents/$slug'
   id:
     | '__root__'
@@ -295,8 +317,10 @@ export interface FileRouteTypes {
     | '/api/public/talents'
     | '/api/public/auth/login'
     | '/api/public/talents/$slug'
+    | '/api/public/v1/applications'
     | '/api/public/v1/casting-requests'
     | '/api/public/v1/talents'
+    | '/api/public/v1/auth/login'
     | '/api/public/v1/talents/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -317,8 +341,10 @@ export interface RootRouteChildren {
   ApiPublicCastingRequestsRoute: typeof ApiPublicCastingRequestsRoute
   ApiPublicTalentsRoute: typeof ApiPublicTalentsRouteWithChildren
   ApiPublicAuthLoginRoute: typeof ApiPublicAuthLoginRoute
+  ApiPublicV1ApplicationsRoute: typeof ApiPublicV1ApplicationsRoute
   ApiPublicV1CastingRequestsRoute: typeof ApiPublicV1CastingRequestsRoute
   ApiPublicV1TalentsRoute: typeof ApiPublicV1TalentsRouteWithChildren
+  ApiPublicV1AuthLoginRoute: typeof ApiPublicV1AuthLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -463,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1CastingRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/applications': {
+      id: '/api/public/v1/applications'
+      path: '/api/public/v1/applications'
+      fullPath: '/api/public/v1/applications'
+      preLoaderRoute: typeof ApiPublicV1ApplicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/talents/$slug': {
       id: '/api/public/talents/$slug'
       path: '/$slug'
@@ -483,6 +516,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/v1/talents/$slug'
       preLoaderRoute: typeof ApiPublicV1TalentsSlugRouteImport
       parentRoute: typeof ApiPublicV1TalentsRoute
+    }
+    '/api/public/v1/auth/login': {
+      id: '/api/public/v1/auth/login'
+      path: '/api/public/v1/auth/login'
+      fullPath: '/api/public/v1/auth/login'
+      preLoaderRoute: typeof ApiPublicV1AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -542,9 +582,21 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCastingRequestsRoute: ApiPublicCastingRequestsRoute,
   ApiPublicTalentsRoute: ApiPublicTalentsRouteWithChildren,
   ApiPublicAuthLoginRoute: ApiPublicAuthLoginRoute,
+  ApiPublicV1ApplicationsRoute: ApiPublicV1ApplicationsRoute,
   ApiPublicV1CastingRequestsRoute: ApiPublicV1CastingRequestsRoute,
   ApiPublicV1TalentsRoute: ApiPublicV1TalentsRouteWithChildren,
+  ApiPublicV1AuthLoginRoute: ApiPublicV1AuthLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
