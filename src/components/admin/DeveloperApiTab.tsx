@@ -453,9 +453,12 @@ const SNIPPETS: Snippet[] = [
    ========================================================================= */
 
 export function DeveloperApiTab() {
+  const CANONICAL_BASE = "https://app.artcity.group";
   const detected = typeof window !== "undefined" ? window.location.origin : "";
-  const isPreview = /lovableproject\.com|id-preview--/.test(detected);
-  const [base, setBase] = useState(isPreview ? "https://acbe.lovable.app" : detected);
+  const isPreview =
+    /lovableproject\.com|id-preview--|lovable\.app/.test(detected) ||
+    detected !== CANONICAL_BASE;
+  const [base, setBase] = useState(CANONICAL_BASE);
   const [profilePattern, setProfilePattern] = useState(
     "https://artcity.group/talent-profile/?slug={slug}",
   );
@@ -467,7 +470,8 @@ export function DeveloperApiTab() {
           <CardTitle className="text-base">WordPress embed snippets</CardTitle>
           <CardDescription>
             Paste any snippet into a WordPress Custom HTML block on{" "}
-            <strong>artcity.group</strong>. No API keys needed — these
+            <strong>artcity.group</strong>. All API calls go to{" "}
+            <code>https://app.artcity.group</code>. No API keys needed — these
             endpoints are public. All snippets now use the versioned{" "}
             <code>/api/public/v1/*</code> endpoints (legacy{" "}
             <code>/api/public/*</code> URLs still respond for older embeds).
@@ -481,13 +485,14 @@ export function DeveloperApiTab() {
             <Input
               value={base}
               onChange={(e) => setBase(e.target.value.replace(/\/$/, ""))}
-              placeholder="https://acbe.lovable.app"
+              placeholder="https://app.artcity.group"
               className="font-mono text-xs"
             />
             {isPreview && (
               <p className="text-xs text-amber-600">
-                Preview URLs require Lovable auth. Keep this set to your
-                published domain (e.g. <code>https://acbe.lovable.app</code>).
+                Keep this set to the canonical app domain{" "}
+                <code>https://app.artcity.group</code> so embeds work from any
+                WordPress site.
               </p>
             )}
           </div>
