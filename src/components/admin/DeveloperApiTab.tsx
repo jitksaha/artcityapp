@@ -197,27 +197,11 @@ function buildApplyCta(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <style id="ac-apply-css">
 .aca-wrap{max-width:1200px;margin:0 auto;}
-.aca-card{padding:36px 32px;background:linear-gradient(135deg,#fafafa,#f0e9d6);border-radius:20px;text-align:center;margin-bottom:18px;}
-.aca-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#c9a14a;font-weight:700;}
-.aca-title{font-size:28px!important;line-height:1.15!important;margin:10px 0 0!important;font-weight:800;color:#111;}
-.aca-lede{margin:14px auto 0!important;max-width:640px;color:#555;font-size:15px;line-height:1.55;}
-.aca-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#fafaf7;border:1px solid #ececec;border-bottom:0;border-radius:14px 14px 0 0;flex-wrap:wrap;gap:8px;}
-.aca-bar h3{margin:0;font-size:14px;font-weight:700;color:#111;}
-.aca-bar a{font-size:12px;color:#666;text-decoration:underline!important;}
-.aca-shell{background:#fff;border:1px solid #ececec;border-radius:0 0 14px 14px;overflow:hidden;box-shadow:0 30px 60px -40px rgba(0,0,0,.25);}
+.aca-shell{background:#fff;border:1px solid #ececec;border-radius:14px;overflow:hidden;box-shadow:0 30px 60px -40px rgba(0,0,0,.25);}
 .aca-frame{width:100%;border:0;display:block;background:#fff;min-height:1800px;}
 @media(max-width:640px){.aca-frame{min-height:2400px;}}
 </style>
 <section class="ac-wrap aca-wrap">
-  <div class="aca-card">
-    <div class="aca-eyebrow">&#10026; Join the roster</div>
-    <h2 class="aca-title">Apply to Join Art City Casting</h2>
-    <p class="aca-lede">Complete the full multistep talent application below — basic info, physical attributes, skills, languages, experience, agent, media uploads, availability, notes, and agreements. Sign in or create an account inside the form to get started.</p>
-  </div>
-  <div class="aca-bar">
-    <h3>Talent application — full form</h3>
-    <a href="${base}/register" target="_blank" rel="noopener">Open in new tab</a>
-  </div>
   <div class="aca-shell">
     <iframe
       id="aca-frame"
