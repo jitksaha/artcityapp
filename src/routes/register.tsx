@@ -13,7 +13,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { registerSchema, STEP_FIELDS, type RegisterFormValues } from "@/components/register/schema";
 import { Step1, Step2, Step3, Step4, Step5, Step6, Step7, Step8, Step9, Step10 } from "@/components/register/Steps";
 import { saveDraft, submitApplication, recordMediaUpload } from "@/lib/talents.functions";
-import { createApplicantAccount } from "@/lib/applicant-signup.functions";
 import { validateUpload, type UploadKind } from "@/lib/upload-constraints";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
@@ -50,25 +49,20 @@ type UploadItem = {
   error?: string;
 };
 
+type AccountCreds = { email: string; password: string; generated: boolean };
+
 function RegisterPage() {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
   const saveDraftFn = useServerFn(saveDraft);
   const submitFn = useServerFn(submitApplication);
   const recordMediaFn = useServerFn(recordMediaUpload);
-  const createAccountFn = useServerFn(createApplicantAccount);
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [embedMode, setEmbedMode] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return new URLSearchParams(window.location.search).get("embed") === "1";
-    } catch {
-      return false;
-    }
-  });
+  const createdCredsRef = useRef<AccountCreds | null>(null);
+  const [embedMode, setEmbedMode] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [hasSession, setHasSession] = useState(true);
 
@@ -255,11 +249,13 @@ function RegisterPage() {
       patchUpload(item.key, { status: "error", error: preflight, progress: 0 });
       throw new Error(preflight);
     }
-    patchUpload(item.key, { status: "uploading", progress: 0, error: undefined });
+    patchUpload(item.key, { status: "uploading", progress: 1, error: undefined });
     try {
       const isImage = /^image\//i.test(item.file.type);
       // Compress images client-side; pass other files through untouched.
+      if (isImage) patchUpload(item.key, { progress: 5 });
       const compressed = isImage ? await compressImage(item.file, { maxDimension: 2000, quality: 0.85 }) : null;
+      patchUpload(item.key, { progress: isImage ? 12 : 3 });
       const uploadBlob: Blob = compressed ? compressed.blob : item.file;
       const uploadType = compressed ? compressed.type : item.file.type;
       const ext = compressed ? extForMime(uploadType) : (item.file.name.split(".").pop() || "bin").toLowerCase();
@@ -271,8 +267,9 @@ function RegisterPage() {
         file: uploadBlob as File,
         contentType: uploadType,
         upsert: true,
-        onProgress: (pct) => patchUpload(item.key, { progress: pct }),
+        onProgress: (pct) => patchUpload(item.key, { progress: Math.max(12, Math.min(92, pct)) }),
       });
+      patchUpload(item.key, { progress: 94 });
 
       // Generate + upload a small thumbnail for images so directory grids load fast.
       let thumbnail_path: string | undefined;
@@ -290,6 +287,7 @@ function RegisterPage() {
           if (!tErr) thumbnail_path = thumbPath;
         }
       }
+      patchUpload(item.key, { progress: 97 });
 
       await recordMediaFn({
         data: {
@@ -403,44 +401,84 @@ function RegisterPage() {
     uploadOne,
   };
 
+  const generateClientPassword = () => {
+    const sets = [
+      "ABCDEFGHJKLMNPQRSTUVWXYZ",
+      "abcdefghijkmnpqrstuvwxyz",
+      "23456789",
+      "!@#$%&*?",
+    ];
+    const all = sets.join("");
+    const bytes = new Uint32Array(12);
+    crypto.getRandomValues(bytes);
+    const chars = sets.map((set, i) => set[bytes[i] % set.length]);
+    for (let i = chars.length; i < 12; i++) chars.push(all[bytes[i] % all.length]);
+    return chars
+      .map((char, i) => ({ char, sort: bytes[i] }))
+      .sort((a, b) => a.sort - b.sort)
+      .map((item) => item.char)
+      .join("");
+  };
+
+  const ensureApplicantSession = async (values: RegisterFormValues): Promise<{ userId: string; createdCreds: AccountCreds | null }> => {
+    const { data: current } = await supabase.auth.getSession();
+    const existingUserId = current.session?.user.id;
+    if (existingUserId) return { userId: existingUserId, createdCreds: null };
+
+    const generated = !values.password;
+    const password = values.password && values.password.length >= 8 ? values.password : generateClientPassword();
+    const fullName = `${values.firstName} ${values.middleName ?? ""} ${values.lastName}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email,
+      password,
+      options: {
+        data: { full_name: fullName || values.email },
+        emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      },
+    });
+    if (error) throw new Error(error.message);
+
+    if (!data.session) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password,
+      });
+      if (signInErr) {
+        throw new Error(
+          "Account was created but sign-in is blocked until email confirmation is disabled or completed.",
+        );
+      }
+    }
+
+    const refreshed = await supabase.auth.getSession();
+    const userId = refreshed.data.session?.user.id;
+    if (!userId) throw new Error("Sign-in failed — please try again.");
+    const createdCreds = { email: values.email, password, generated };
+    createdCredsRef.current = createdCreds;
+    return { userId, createdCreds };
+  };
+
   const persistDraft = async (values: RegisterFormValues, doSubmit: boolean) => {
     setBusy(true);
     try {
-      let { data: sess } = await supabase.auth.getSession();
-      let userId = sess.session?.user.id;
-      let createdCreds: { email: string; password: string; generated: boolean } | null = null;
-      if (!userId) {
-        // Public application flow: auto-create an account from the form's email,
-        // sign in, then continue saving the draft as that user.
-        const full_name = `${values.firstName} ${values.middleName ?? ""} ${values.lastName}`
-          .replace(/\s+/g, " ")
-          .trim();
-        const acct = await createAccountFn({
-          data: {
-            email: values.email,
-            password: values.password && values.password.length >= 8 ? values.password : undefined,
-            full_name: full_name || values.email,
-          },
-        });
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: acct.email,
-          password: acct.password,
-        });
-        if (signInErr) throw new Error(signInErr.message);
-        createdCreds = { email: acct.email, password: acct.password, generated: acct.generated };
-        const refreshed = await supabase.auth.getSession();
-        userId = refreshed.data.session?.user.id;
-        if (!userId) throw new Error("Sign-in failed — please try again.");
-      }
+      const { userId, createdCreds } = await ensureApplicantSession(values);
       const queue = buildUploadQueue(values);
       // Preflight everything client-side before saving anything
       for (const item of queue) {
         const err = validateUpload(item.kind, item.file);
         if (err) throw new Error(err);
       }
-      setUploads(queue);
+      setUploads((prev) =>
+        queue.map((item) => {
+          const existing = prev.find((u) => u.key === item.key);
+          return existing ? { ...item, ...existing, file: item.file } : item;
+        }),
+      );
       const payload: any = buildDraftPayload(values);
-      const saved: any = await saveDraftFn({ data: payload });
+      await saveDraftFn({ data: payload });
       const { headshotUrl, headshotThumbUrl } = await uploadMedia(userId, queue);
       if (headshotUrl) {
         await saveDraftFn({
