@@ -514,7 +514,7 @@ function FileField({
                 if (uploadKind && uploadBucket && uploads) {
                   uploads
                     .uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: uploadPosition })
-                    .catch(() => {});
+                    .catch((err) => toast.error(err?.message ?? "Upload failed"));
                 }
               }}
               {...rest}
@@ -590,7 +590,9 @@ function MultiFileField({
                   if (uploadKind && uploadBucket && uploads) {
                     accepted.forEach((f, idx) => {
                       const pos = uploadPositionStart + files.length + idx;
-                      uploads.uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: pos }).catch(() => {});
+                      uploads
+                        .uploadOne({ kind: uploadKind, bucket: uploadBucket, file: f, position: pos })
+                        .catch((err) => toast.error(err?.message ?? "Upload failed"));
                     });
                   }
                   e.target.value = "";

@@ -63,6 +63,7 @@ function RegisterPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const createdCredsRef = useRef<AccountCreds | null>(null);
   const [embedMode, setEmbedMode] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -102,7 +103,12 @@ function RegisterPage() {
     setUploads((prev) => prev.map((u) => (u.key === key ? { ...u, ...patch } : u)));
 
   const uploadKey = (kind: UploadKind, file: File, position?: number) =>
-    `${kind}-${position ?? 0}-${file.name}`;
+    `${kind}-${position ?? 0}-${file.name}-${file.size}-${file.lastModified}`;
+
+  const showActionError = (message: string, description?: string) => {
+    setActionError(description ? `${message} ${description}` : message);
+    toast.error(message, description ? { description } : undefined);
+  };
 
   const upsertUploadItem = (item: UploadItem) =>
     setUploads((prev) => {
@@ -354,6 +360,7 @@ function RegisterPage() {
 
   const uploadOne: UploadContextValue["uploadOne"] = async ({ kind, bucket, file, position }) => {
     const key = uploadKey(kind, file, position);
+    setActionError(null);
     let { data: sess } = await supabase.auth.getSession();
     let userId = sess.session?.user.id;
     const item: UploadItem = {
@@ -369,9 +376,9 @@ function RegisterPage() {
       try {
         const values = form.getValues();
         if (!values.email || !values.firstName || !values.lastName) {
-          toast.error("Add your name and email first", {
-            description: "We need them to create your account before uploading.",
-          });
+          const msg = "Add first name, last name, and email before uploading.";
+          patchUpload(key, { status: "error", progress: 0, error: msg });
+          showActionError("Upload did not start", msg);
           return;
         }
         const { userId: newUserId } = await ensureApplicantSession(values);
@@ -379,7 +386,9 @@ function RegisterPage() {
         const payload: any = buildDraftPayload(values);
         await saveDraftFn({ data: payload });
       } catch (e: any) {
-        toast.error(e?.message ?? "Could not create account");
+        const msg = e?.message ?? "Could not create account";
+        patchUpload(key, { status: "error", progress: 0, error: msg });
+        showActionError("Upload failed", msg);
         return;
       }
     }
@@ -392,7 +401,7 @@ function RegisterPage() {
       }
       toast.success(`${file.name} uploaded`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Upload failed");
+      showActionError("Upload failed", e?.message ?? "Please retry this file.");
     }
   };
 
@@ -452,7 +461,7 @@ function RegisterPage() {
       });
       if (signInErr) {
         throw new Error(
-          "Account was created but sign-in is blocked until email confirmation is disabled or completed.",
+          "Account was created, but Supabase is blocking uploads until the email is confirmed. Please confirm the email first or disable email confirmation in Supabase Auth.",
         );
       }
     }
@@ -467,6 +476,7 @@ function RegisterPage() {
 
   const persistDraft = async (values: RegisterFormValues, doSubmit: boolean) => {
     setBusy(true);
+    setActionError(null);
     try {
       const { userId, createdCreds } = await ensureApplicantSession(values);
       const queue = buildUploadQueue(values);
@@ -511,15 +521,25 @@ function RegisterPage() {
         toast.success("Draft saved");
       }
     } catch (e: any) {
-      toast.error(e.message ?? "Save failed", {
-        description: "Use Retry on any failed upload below, then Save Draft or Submit again.",
-      });
+      showActionError(
+        doSubmit ? "Submit failed" : "Save failed",
+        e.message ?? "Use Retry on any failed upload below, then Save Draft or Submit again.",
+      );
     } finally {
       setBusy(false);
     }
   };
 
   const onSubmit = (values: RegisterFormValues) => persistDraft(values, true);
+  const onInvalid = (errors: any) => {
+    const firstField = Object.keys(errors)[0];
+    const firstStep = STEP_FIELDS.findIndex((fields) => fields.includes(firstField as keyof RegisterFormValues));
+    if (firstStep >= 0) setStep(firstStep);
+    const msg = firstField
+      ? `Please fix “${firstField.replace(/([A-Z])/g, " $1").toLowerCase()}”.`
+      : "Please complete the required fields.";
+    showActionError("Submit blocked", msg);
+  };
   const onSaveDraft = () => persistDraft(form.getValues(), false);
 
   // Real-time autosave: silently persist non-file fields as the user types.
@@ -623,10 +643,22 @@ function RegisterPage() {
         <Card>
           <CardContent className="p-6 md:p-8">
             <UploadContext.Provider value={uploadCtx}>
-            <FormProvider {...form}>
+              <FormProvider {...form}>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
                   {STEPS[step].render}
+
+                  {actionError && (
+                    <div
+                      className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                      role="alert"
+                    >
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p>{actionError}</p>
+                      </div>
+                    </div>
+                  )}
 
                   {uploads.length > 0 && (
                     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
@@ -699,6 +731,7 @@ function RegisterPage() {
                         </span>
                       )}
                       <Button type="button" variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Save Draft
                       </Button>
                       {step < STEPS.length - 1 ? (
@@ -707,6 +740,7 @@ function RegisterPage() {
                         </Button>
                       ) : (
                         <Button type="submit" disabled={busy}>
+                          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Submit Application <Check className="ml-2 h-4 w-4" />
                         </Button>
                       )}
