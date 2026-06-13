@@ -51,6 +51,35 @@ type UploadItem = {
 };
 
 type AccountCreds = { email: string; password: string; generated: boolean };
+const LOCAL_DRAFT_KEY = "ac:register_draft";
+const FILE_FIELD_NAMES = new Set([
+  "headshot",
+  "fullBodyPhoto",
+  "mediumShots",
+  "voiceReel",
+  "cv",
+  "drivingLicenseFile",
+]);
+
+const asOptionalInt = (value: unknown): number | null => {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.trunc(number) : null;
+};
+
+const toLocalDraftValues = (values: Partial<RegisterFormValues>) => {
+  const draft: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (FILE_FIELD_NAMES.has(key)) continue;
+    draft[key] = value instanceof Date ? value.toISOString() : value;
+  }
+  return draft;
+};
+
+const fromLocalDraftValues = (values: Record<string, unknown>) => ({
+  ...values,
+  dateOfBirth: typeof values.dateOfBirth === "string" ? new Date(values.dateOfBirth) : values.dateOfBirth,
+});
 
 function RegisterPage() {
   const [step, setStep] = useState(0);
