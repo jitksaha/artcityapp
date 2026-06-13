@@ -643,10 +643,22 @@ function RegisterPage() {
         <Card>
           <CardContent className="p-6 md:p-8">
             <UploadContext.Provider value={uploadCtx}>
-            <FormProvider {...form}>
+              <FormProvider {...form}>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-8">
                   {STEPS[step].render}
+
+                  {actionError && (
+                    <div
+                      className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                      role="alert"
+                    >
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p>{actionError}</p>
+                      </div>
+                    </div>
+                  )}
 
                   {uploads.length > 0 && (
                     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
@@ -719,6 +731,7 @@ function RegisterPage() {
                         </span>
                       )}
                       <Button type="button" variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Save Draft
                       </Button>
                       {step < STEPS.length - 1 ? (
@@ -727,6 +740,7 @@ function RegisterPage() {
                         </Button>
                       ) : (
                         <Button type="submit" disabled={busy}>
+                          {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Submit Application <Check className="ml-2 h-4 w-4" />
                         </Button>
                       )}
