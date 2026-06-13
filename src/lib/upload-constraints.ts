@@ -3,8 +3,8 @@
 
 export type UploadKind =
   | "headshot"
-  | "fullbody"
-  | "medium"
+  | "full_body"
+  | "medium_shot"
   | "voice_reel"
   | "cv"
   | "driving_license";
@@ -32,7 +32,7 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     accept: "JPG, PNG or WEBP up to 5MB",
     required: true,
   },
-  fullbody: {
+  full_body: {
     bucket: "talent-media",
     maxBytes: 5 * MB,
     mimes: /^image\/(jpeg|png|webp)$/,
@@ -40,7 +40,7 @@ export const UPLOAD_RULES: Record<UploadKind, UploadRule> = {
     accept: "JPG, PNG or WEBP up to 5MB",
     required: true,
   },
-  medium: {
+  medium_shot: {
     bucket: "talent-media",
     maxBytes: 5 * MB,
     mimes: /^image\/(jpeg|png|webp)$/,

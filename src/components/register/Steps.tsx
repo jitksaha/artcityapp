@@ -535,6 +535,20 @@ function FileField({
                   position={uploadPosition}
                 />
               )}
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    onChange(undefined);
+                    setLocalError(null);
+                  }}
+                >
+                  <Trash2 className="mr-1 h-3 w-3" /> Remove & re-upload
+                </Button>
+              </div>
             </>
           )}
           {localError ? (
@@ -1063,7 +1077,7 @@ export function Step7() {
           accept="image/jpeg,image/png,image/webp"
           required
           hint="Required · Head-to-toe photo, JPG/PNG/WEBP, max 5MB"
-          uploadKind="fullbody"
+          uploadKind="full_body"
           uploadBucket="talent-media"
           uploadPosition={1}
         />
@@ -1075,7 +1089,7 @@ export function Step7() {
         accept="image/jpeg,image/png,image/webp"
         max={4}
         hint="Optional · Waist-up shots, JPG/PNG/WEBP, max 5MB each"
-        uploadKind="medium"
+        uploadKind="medium_shot"
         uploadBucket="talent-media"
         uploadPositionStart={10}
       />
