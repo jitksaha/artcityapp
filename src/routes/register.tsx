@@ -486,6 +486,13 @@ function RegisterPage() {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(async () => {
         try {
+          // Autosave requires an authenticated user. Pre-signup, skip silently —
+          // the full payload is saved on submit once the account is created.
+          const { data: sess } = await supabase.auth.getSession();
+          if (!sess.session) {
+            setAutoSaveState("idle");
+            return;
+          }
           setAutoSaveState("saving");
           const payload = JSON.parse(serialized);
           await saveDraftFn({ data: payload });
@@ -514,43 +521,6 @@ function RegisterPage() {
           : "";
 
   const progress = ((step + 1) / STEPS.length) * 100;
-
-  if (embedMode && authChecked && !hasSession) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-4 rounded-2xl border bg-card p-8 shadow-sm">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-            Art City Casting
-          </p>
-          <h1 className="text-2xl font-semibold">Apply to join the roster</h1>
-          <p className="text-sm text-muted-foreground">
-            The full multistep talent application opens in a new tab so you can sign in
-            (or create an account) and upload your media safely.
-          </p>
-          <a
-            href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
-            target="_blank"
-            rel="noopener"
-            className="inline-block rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-          >
-            Start application
-          </a>
-          <p className="text-xs text-muted-foreground">
-            Already have an account?{" "}
-            <a
-              href={`${origin}/login?redirect=${encodeURIComponent("/register")}`}
-              target="_blank"
-              rel="noopener"
-              className="underline"
-            >
-              Sign in
-            </a>
-          </p>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background">
