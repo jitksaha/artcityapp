@@ -531,7 +531,7 @@ function RegisterPage() {
   };
 
   const onSubmit = (values: RegisterFormValues) => persistDraft(values, true);
-  const onInvalid = (errors: Record<string, unknown>) => {
+  const onInvalid = (errors: any) => {
     const firstField = Object.keys(errors)[0];
     const firstStep = STEP_FIELDS.findIndex((fields) => fields.includes(firstField as keyof RegisterFormValues));
     if (firstStep >= 0) setStep(firstStep);
