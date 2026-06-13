@@ -355,7 +355,15 @@ function RegisterPage() {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user.id;
     if (!userId) {
-      toast.error("Sign in to upload");
+      // Pre-signup: defer this upload until submit. Mark as pending so the
+      // user still sees the file in the queue. It will be re-uploaded inside
+      // persistDraft after the account is auto-created.
+      upsertUploadItem({
+        key, kind, bucket, file, position,
+        fileName: file.name,
+        progress: 0,
+        status: "pending",
+      });
       return;
     }
     const item: UploadItem = {
@@ -390,9 +398,32 @@ function RegisterPage() {
   const persistDraft = async (values: RegisterFormValues, doSubmit: boolean) => {
     setBusy(true);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const userId = sess.session?.user.id;
-      if (!userId) throw new Error("Not signed in");
+      let { data: sess } = await supabase.auth.getSession();
+      let userId = sess.session?.user.id;
+      let createdCreds: { email: string; password: string; generated: boolean } | null = null;
+      if (!userId) {
+        // Public application flow: auto-create an account from the form's email,
+        // sign in, then continue saving the draft as that user.
+        const full_name = `${values.firstName} ${values.middleName ?? ""} ${values.lastName}`
+          .replace(/\s+/g, " ")
+          .trim();
+        const acct = await createAccountFn({
+          data: {
+            email: values.email,
+            password: values.password && values.password.length >= 8 ? values.password : undefined,
+            full_name: full_name || values.email,
+          },
+        });
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
+          email: acct.email,
+          password: acct.password,
+        });
+        if (signInErr) throw new Error(signInErr.message);
+        createdCreds = { email: acct.email, password: acct.password, generated: acct.generated };
+        const refreshed = await supabase.auth.getSession();
+        userId = refreshed.data.session?.user.id;
+        if (!userId) throw new Error("Sign-in failed — please try again.");
+      }
       const queue = buildUploadQueue(values);
       // Preflight everything client-side before saving anything
       for (const item of queue) {
@@ -410,10 +441,22 @@ function RegisterPage() {
       }
       if (doSubmit) {
         await submitFn();
-        toast.success("Application submitted", { description: "Admin will review your profile." });
+        if (createdCreds && typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(
+              "ac:new_credentials",
+              JSON.stringify(createdCreds),
+            );
+          } catch {}
+        }
+        toast.success("Application submitted", {
+          description: createdCreds
+            ? "Your account is ready — save your login details on the next screen."
+            : "Admin will review your profile.",
+        });
         setTimeout(() => {
-          navigate({ to: "/dashboard" });
-        }, 900);
+          navigate({ to: "/dashboard", search: createdCreds ? { welcome: 1 } : undefined } as any);
+        }, 700);
       } else {
         toast.success("Draft saved");
       }
