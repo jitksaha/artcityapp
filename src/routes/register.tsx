@@ -51,6 +51,35 @@ type UploadItem = {
 };
 
 type AccountCreds = { email: string; password: string; generated: boolean };
+const LOCAL_DRAFT_KEY = "ac:register_draft";
+const FILE_FIELD_NAMES = new Set([
+  "headshot",
+  "fullBodyPhoto",
+  "mediumShots",
+  "voiceReel",
+  "cv",
+  "drivingLicenseFile",
+]);
+
+const asOptionalInt = (value: unknown): number | null => {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.trunc(number) : null;
+};
+
+const toLocalDraftValues = (values: Partial<RegisterFormValues>) => {
+  const draft: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (FILE_FIELD_NAMES.has(key)) continue;
+    draft[key] = value instanceof Date ? value.toISOString() : value;
+  }
+  return draft;
+};
+
+const fromLocalDraftValues = (values: Record<string, unknown>) => ({
+  ...values,
+  dateOfBirth: typeof values.dateOfBirth === "string" ? new Date(values.dateOfBirth) : values.dateOfBirth,
+});
 
 function RegisterPage() {
   const [step, setStep] = useState(0);
@@ -142,6 +171,18 @@ function RegisterPage() {
     },
   });
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!raw) return;
+      form.reset({ ...form.getValues(), ...fromLocalDraftValues(JSON.parse(raw)) } as RegisterFormValues);
+    } catch {
+      // Ignore corrupted local drafts.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const next = async () => {
     const ok = await form.trigger(STEP_FIELDS[step] as any, { shouldFocus: true });
     if (!ok) {
@@ -161,7 +202,7 @@ function RegisterPage() {
     stage_name: v.stageName || `${v.firstName} ${v.lastName}`.trim(),
     full_name: `${v.firstName} ${v.middleName ?? ""} ${v.lastName}`.replace(/\s+/g, " ").trim(),
     gender: v.gender,
-    age: v.age,
+    age: asOptionalInt(v.age),
     playing_age: v.playingAge || null,
     location: v.location,
     nationality: v.nationality,
@@ -188,7 +229,7 @@ function RegisterPage() {
       fluency: v.fluency, kurdishDialect: v.kurdishDialect, accents: v.accents,
     },
     experience: {
-      yearsOfExperience: v.yearsOfExperience,
+      yearsOfExperience: asOptionalInt(v.yearsOfExperience),
       filmCredits: v.filmCredits, tvCredits: v.tvCredits,
       theatreCredits: v.theatreCredits, commercialCredits: v.commercialCredits,
       training: v.training, workshops: v.workshops,
@@ -338,21 +379,21 @@ function RegisterPage() {
     return { headshotUrl, headshotThumbUrl };
   };
 
+  const ensureServerDraft = async (values: RegisterFormValues) => {
+    await saveDraftFn({ data: buildDraftPayload(values) });
+  };
+
   const retryUpload = async (key: string) => {
     const item = uploads.find((u) => u.key === key);
     if (!item) return;
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user.id;
-    if (!userId) {
-      toast.error("Not signed in");
-      return;
-    }
     try {
+      const values = form.getValues();
+      const { userId } = await ensureApplicantSession(values);
+      await ensureServerDraft(values);
       const path = await runUpload(userId, item);
       if (path && item.kind === "headshot") {
         const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
-        const payload: any = buildDraftPayload(form.getValues());
-        await saveDraftFn({ data: { ...payload, headshot_url: url } });
+        await saveDraftFn({ data: { ...buildDraftPayload(form.getValues()), headshot_url: url } });
       }
       toast.success(`${item.fileName} uploaded`);
     } catch (e: any) {
@@ -385,8 +426,6 @@ function RegisterPage() {
         }
         const { userId: newUserId } = await ensureApplicantSession(values);
         userId = newUserId;
-        const payload: any = buildDraftPayload(values);
-        await saveDraftFn({ data: payload });
       } catch (e: any) {
         const msg = e?.message ?? "Could not create account";
         patchUpload(key, { status: "error", progress: 0, error: msg });
@@ -395,6 +434,7 @@ function RegisterPage() {
       }
     }
     try {
+      await ensureServerDraft(form.getValues());
       const path = await runUpload(userId, item);
       if (path && kind === "headshot") {
         const url = supabase.storage.from("talent-media").getPublicUrl(path).data.publicUrl;
@@ -542,6 +582,9 @@ function RegisterPage() {
             );
           } catch {}
         }
+        if (typeof window !== "undefined") {
+          try { localStorage.removeItem(LOCAL_DRAFT_KEY); } catch {}
+        }
         toast.success("Application submitted", {
           description: createdCreds
             ? "Your account is ready — save your login details on the next screen."
@@ -573,7 +616,13 @@ function RegisterPage() {
       : "Please complete the required fields.";
     showActionError("Submit blocked", msg);
   };
-  const onSaveDraft = () => persistDraft(form.getValues(), false);
+  const onSaveDraft = () => {
+    const values = form.getValues();
+    if (typeof window !== "undefined") {
+      try { localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(toLocalDraftValues(values))); } catch {}
+    }
+    persistDraft(values, false);
+  };
 
   // Real-time autosave: silently persist non-file fields as the user types.
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -581,8 +630,15 @@ function RegisterPage() {
   useEffect(() => {
     const sub = form.watch((values) => {
       if (busy) return;
-      // Skip until at least a name is present, to avoid empty initial save.
       const v = values as RegisterFormValues;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(toLocalDraftValues(v)));
+        } catch {
+          // Local autosave can fail in private browsing or full storage; server save still tries below.
+        }
+      }
+      // Skip server draft until at least a name/email is present, to avoid empty initial save.
       if (!v?.firstName && !v?.lastName && !v?.email) return;
       const serialized = JSON.stringify(buildDraftPayload(v));
       if (serialized === lastSerialized.current) return;
