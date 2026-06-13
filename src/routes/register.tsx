@@ -523,9 +523,9 @@ function RegisterPage() {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <main className="min-h-screen bg-background">
-      <SiteHeader />
-      <div className="mx-auto max-w-4xl px-4 py-10 md:py-16">
+    <main className={embedMode ? "bg-background" : "min-h-screen bg-background"}>
+      {!embedMode && <SiteHeader />}
+      <div className={embedMode ? "mx-auto max-w-4xl px-4 py-6" : "mx-auto max-w-4xl px-4 py-10 md:py-16"}>
         <header className="mb-8 space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
             Art City
