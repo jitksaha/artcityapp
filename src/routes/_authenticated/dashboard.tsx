@@ -483,8 +483,8 @@ function DashboardSkeleton() {
 
 const REVISION_KINDS: UploadKind[] = [
   "headshot",
-  "fullbody",
-  "medium",
+  "full_body",
+  "medium_shot",
   "voice_reel",
   "cv",
   "driving_license",
