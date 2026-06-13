@@ -63,19 +63,15 @@ function RegisterPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const createdCredsRef = useRef<AccountCreds | null>(null);
   const [embedMode, setEmbedMode] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [hasSession, setHasSession] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const isEmbed = new URLSearchParams(window.location.search).get("embed") === "1";
       if (isEmbed) setEmbedMode(true);
-    } catch {}
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(!!data.session);
-      setAuthChecked(true);
-    });
+    } catch {
+      // Ignore malformed query strings.
+    }
   }, []);
 
   // When embedded via ?embed=1, post height to parent so the iframe auto-resizes.
