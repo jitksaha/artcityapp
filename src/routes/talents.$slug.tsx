@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { talentBySlugQuery } from "@/lib/queries/public-talents.queries";
@@ -18,6 +18,17 @@ export const Route = createFileRoute("/talents/$slug")({
       talentBySlugQuery(params.slug),
     );
     if (!result) throw notFound();
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        params.slug,
+      );
+    if (isUuid && result.talent.slug && result.talent.slug !== params.slug) {
+      throw redirect({
+        to: "/talents/$slug",
+        params: { slug: result.talent.slug },
+        replace: true,
+      });
+    }
     return null;
   },
 });
