@@ -1316,7 +1316,7 @@ function UsersTab() {
   return (
     <div className="space-y-4">
       <Input
-        placeholder="Search by email or name…"
+        placeholder="Search by name…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="max-w-sm"
@@ -1327,9 +1327,9 @@ function UsersTab() {
           <Card key={u.id}>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{u.email}</p>
+                <p className="text-sm font-medium truncate">{u.full_name || "Unnamed user"}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {u.full_name || "—"} · joined {new Date(u.created_at).toLocaleDateString()}
+                  {u.id} · joined {new Date(u.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
