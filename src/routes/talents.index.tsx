@@ -17,6 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 const sortValues = ["featured", "newest", "oldest", "name_asc", "name_desc"] as const;
 const talentsSearchSchema = z.object({
@@ -203,21 +210,35 @@ function TalentsPage() {
       </div>
 
       {!hasAnyFilter && vips.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12">
-          <div className="mb-6 flex items-end justify-between gap-4">
+        <section className="relative mx-auto max-w-7xl px-4 py-14">
+          <div className="pointer-events-none absolute inset-x-4 top-0 -z-10 h-48 rounded-3xl bg-gradient-to-br from-[#F7B500]/10 via-transparent to-[#1e6ef5]/10 blur-2xl" />
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
-                <Crown className="h-4 w-4" /> VIP Talent
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#F7B500]/40 bg-[#F7B500]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#9a6b00]">
+                <Crown className="h-3.5 w-3.5" /> VIP Talent
               </div>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Premium roster</h2>
-              <p className="text-sm text-muted-foreground">Highly requested talents selected by Art City Casting.</p>
+              <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">Premium roster</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Highly requested talents handpicked by Art City Casting.
+              </p>
             </div>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {vips.map((t) => (
-              <TalentCard key={t.id} t={t} variant="vip" />
-            ))}
-          </div>
+          <Carousel opts={{ align: "start", loop: vips.length > 4 }} className="w-full">
+            <CarouselContent className="-ml-4">
+              {vips.map((t) => (
+                <CarouselItem
+                  key={t.id}
+                  className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+                >
+                  <VipCard t={t} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <CarouselPrevious className="static translate-y-0 h-9 w-9 rounded-full border-border" />
+              <CarouselNext className="static translate-y-0 h-9 w-9 rounded-full border-border bg-[#1e6ef5] text-white hover:bg-[#1857c9] hover:text-white" />
+            </div>
+          </Carousel>
         </section>
       )}
 
@@ -530,6 +551,87 @@ function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
               </Link>
             </Button>
           </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function VipCard({ t }: { t: any }) {
+  const displayName = t.stage_name ?? t.full_name ?? "Talent";
+  const metaParts = [
+    t.age ? `${t.age} yrs` : null,
+    t.gender ? labelize(t.gender) : null,
+    t.location ?? null,
+  ].filter(Boolean) as string[];
+  const cats: string[] = (t.categories ?? []).slice(0, 2);
+  const langs: string[] = languageChips(t).slice(0, 2);
+
+  return (
+    <Card className="group relative h-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-[#F7B500]/40 transition-all hover:-translate-y-1 hover:shadow-xl hover:ring-[#F7B500]">
+      <Link
+        to="/talents/$slug"
+        params={{ slug: t.slug ?? t.id }}
+        className="relative block aspect-[3/4] overflow-hidden bg-muted"
+      >
+        <LazyImage
+          src={t.headshot_url ?? null}
+          thumbSrc={t.headshot_thumb_url ?? null}
+          alt={displayName}
+          ratioClassName="absolute inset-0 h-full w-full"
+          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          fallback={<UserRound className="h-10 w-10 text-muted-foreground" />}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#F7B500] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-black shadow">
+          <Crown className="h-3 w-3" /> VIP
+        </div>
+        <div className="absolute inset-x-0 bottom-0 p-4 text-white">
+          <h3 className="truncate text-lg font-bold leading-tight drop-shadow">
+            {displayName}
+          </h3>
+          {metaParts.length > 0 && (
+            <p className="mt-0.5 truncate text-xs text-white/85">
+              {metaParts.join(" • ")}
+            </p>
+          )}
+        </div>
+      </Link>
+
+      <div className="flex flex-col gap-3 p-4">
+        {(cats.length > 0 || langs.length > 0) && (
+          <div className="flex flex-wrap gap-1.5">
+            {cats.map((c) => (
+              <Pill key={`c-${c}`}>{labelize(c)}</Pill>
+            ))}
+            {langs.map((l) => (
+              <Pill key={`l-${l}`} tone="muted">
+                {l}
+              </Pill>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button
+            asChild
+            size="sm"
+            className="h-9 flex-1 bg-[#1e6ef5] text-xs font-semibold text-white hover:bg-[#1857c9]"
+          >
+            <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }}>
+              <UserRound className="mr-1 h-3.5 w-3.5" /> View Profile
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 border-border px-3 text-xs"
+            aria-label="Contact"
+          >
+            <Link to="/casting-request" search={{ talent: t.id, name: displayName } as any}>
+              <Mail className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </Card>
