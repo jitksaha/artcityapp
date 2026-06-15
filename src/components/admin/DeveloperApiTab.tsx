@@ -367,10 +367,10 @@ function buildAllInOne(base: string, profilePattern: string) {
 /* HERO */
 #acx-app .acx-hero {position:relative;overflow:hidden;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#1a1740 0%,#2b1d63 45%,#1e2a5e 100%);color:#fff;border-radius:0 0 24px 24px;margin:0 -16px 24px;}
 #acx-app .acx-hero-inner {display:grid;grid-template-columns:1fr;gap:32px;max-width:1280px;margin:0 auto;padding:56px 24px;}
-@media(min-width:768px){.acx-hero-inner{grid-template-columns:1fr 1fr;padding:80px 24px;}}
+@media(min-width:768px){#acx-app .acx-hero-inner{grid-template-columns:1fr 1fr;padding:80px 24px;}}
 #acx-app .acx-hero-eyebrow {display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:6px 12px;border-radius:999px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.85);width:fit-content;}
 #acx-app .acx-hero h1 {font-size:42px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin:18px 0 0;color:#fff;}
-@media(min-width:640px){.acx-hero h1{font-size:54px;}}
+@media(min-width:640px){#acx-app .acx-hero h1{font-size:54px;}}
 #acx-app .acx-hero p {margin:18px 0 0;max-width:560px;color:rgba(255,255,255,.78);font-size:17px;}
 #acx-app .acx-hero-cta {display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;}
 #acx-app .acx-btn {display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 22px;border-radius:10px;font-weight:600;font-size:14px;border:1px solid transparent;transition:all .2s ease;}
@@ -429,7 +429,7 @@ function buildAllInOne(base: string, profilePattern: string) {
 
 /* DIRECTORY LAYOUT */
 #acx-app .acx-dir-wrap {display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px;}
-@media(min-width:1024px){.acx-dir-wrap{grid-template-columns:260px 1fr;}}
+@media(min-width:1024px){#acx-app .acx-dir-wrap{grid-template-columns:260px 1fr;}}
 #acx-app .acx-side {background:#fff;border:1px solid #e5e7eb;border-radius:14px;height:fit-content;}
 #acx-app .acx-side-head {display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb;}
 #acx-app .acx-side-head h3 {margin:0;font-size:15px;font-weight:700;color:#0f172a;}
@@ -462,7 +462,7 @@ function buildAllInOne(base: string, profilePattern: string) {
 
 /* HORIZONTAL TALENT CARDS */
 #acx-app .acx-list {display:grid;gap:14px;grid-template-columns:1fr;}
-@media(min-width:640px){.acx-list{grid-template-columns:1fr 1fr;}}
+@media(min-width:640px){#acx-app .acx-list{grid-template-columns:1fr 1fr;}}
 #acx-app .acx-tcard {display:flex;gap:14px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;transition:border-color .2s,box-shadow .2s;}
 #acx-app .acx-tcard:hover {border-color:rgba(30,110,245,.4);box-shadow:0 8px 20px -10px rgba(0,0,0,.1);}
 #acx-app .acx-tcard.vip {outline:1px solid rgba(247,181,0,.5);outline-offset:-1px;}
