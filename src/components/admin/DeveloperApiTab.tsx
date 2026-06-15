@@ -229,34 +229,126 @@ function buildApplyCta(base: string, profilePattern: string) {
 }
 
 function buildCastingForm(base: string, profilePattern: string) {
-  return `${AC_RESET_CSS}
-<div class="ac-wrap"><form id="ac-casting" style="max-width:600px;margin:0 auto;display:grid;gap:10px;">
-  <input name="company_name" class="ac-input" placeholder="Company / Production *" required />
-  <input name="contact_person" class="ac-input" placeholder="Your name *" required />
-  <input name="email" class="ac-input" type="email" placeholder="Email *" required />
-  <input name="production_title" class="ac-input" placeholder="Project title *" required />
-  <textarea name="brief" class="ac-input" placeholder="Describe the role / brief *" required rows="5"></textarea>
-  <button type="submit" style="padding:12px;background:#111;color:#fff;border:0;border-radius:10px;cursor:pointer;font-weight:600;">Send request</button>
-  <p id="ac-casting-msg" style="margin:0;font-size:14px;"></p>
-</form></div>
+  return `<!-- Art City — Casting Request form (matches app/casting-request) -->
+<style id="acr-css">
+.acr-root{max-width:920px;margin:0 auto;padding:0 16px;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;line-height:1.5;}
+.acr-root *{box-sizing:border-box;}
+.acr-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:28px;box-shadow:0 1px 2px rgba(0,0,0,.02);}
+.acr-title{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px;color:#0f172a;}
+.acr-notice{border:1px solid #fecaca;background:#fef2f2;color:#7f1d1d;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:20px;}
+.acr-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:640px){.acr-grid{grid-template-columns:1fr 1fr;}}
+.acr-field{display:flex;flex-direction:column;gap:6px;}
+.acr-field.full{grid-column:1/-1;}
+.acr-label{font-size:13px;font-weight:700;color:#0f172a;}
+.acr-label .req{color:#dc2626;margin-left:2px;}
+.acr-input,.acr-textarea{width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;font:inherit;font-size:14px;transition:border-color .15s,box-shadow .15s;}
+.acr-input:focus,.acr-textarea:focus{outline:none;border-color:#1e6ef5;box-shadow:0 0 0 3px rgba(30,110,245,.15);}
+.acr-textarea{min-height:90px;resize:vertical;font-family:inherit;}
+.acr-actions{margin-top:8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.acr-submit{background:#dc2626;color:#fff;border:0;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:background .15s;}
+.acr-submit:hover:not(:disabled){background:#b91c1c;}
+.acr-submit:disabled{opacity:.7;cursor:not-allowed;}
+.acr-msg{margin:0;font-size:13px;}
+.acr-msg.ok{color:#15803d;}
+.acr-msg.err{color:#b91c1c;}
+</style>
+<div class="acr-root">
+  <form id="acr-form" class="acr-card" novalidate>
+    <h2 class="acr-title">Casting Request</h2>
+    <div class="acr-notice">Direct contact with listed talent is not available. All casting inquiries, negotiations, bookings, and confirmations are managed exclusively through Art City Casting.</div>
+    <div class="acr-grid">
+      <div class="acr-field">
+        <label class="acr-label" for="acr-production_title">Production title<span class="req">*</span></label>
+        <input id="acr-production_title" name="production_title" class="acr-input" placeholder="e.g. Untitled Feature Film" maxlength="200" required />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-production_type">Production type</label>
+        <input id="acr-production_type" name="production_type" class="acr-input" placeholder="Film, TV, commercial…" maxlength="80" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-shooting_dates">Shooting dates</label>
+        <input id="acr-shooting_dates" name="shooting_dates" class="acr-input" placeholder="e.g. Aug 12 – Sep 3, 2026" maxlength="200" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-shooting_location">Shooting location</label>
+        <input id="acr-shooting_location" name="shooting_location" class="acr-input" placeholder="City, country" maxlength="200" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-budget_range">Budget range</label>
+        <input id="acr-budget_range" name="budget_range" class="acr-input" placeholder="e.g. $5k – $10k" maxlength="80" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-company_name">Company name</label>
+        <input id="acr-company_name" name="company_name" class="acr-input" placeholder="Your production company" maxlength="200" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-contact_person">Contact person<span class="req">*</span></label>
+        <input id="acr-contact_person" name="contact_person" class="acr-input" placeholder="Full name" maxlength="150" required />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-email">Email<span class="req">*</span></label>
+        <input id="acr-email" name="email" type="email" class="acr-input" placeholder="you@example.com" maxlength="255" required />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-phone">Phone</label>
+        <input id="acr-phone" name="phone" class="acr-input" placeholder="+964 7XX XXX XXXX" maxlength="40" />
+      </div>
+      <div class="acr-field">
+        <label class="acr-label" for="acr-requested_talent_name">Requested talent name</label>
+        <input id="acr-requested_talent_name" name="requested_talent_name" class="acr-input" placeholder="Talent's name (if known)" maxlength="200" />
+      </div>
+      <div class="acr-field full">
+        <label class="acr-label" for="acr-role_description">Role description</label>
+        <textarea id="acr-role_description" name="role_description" class="acr-textarea" rows="3" maxlength="5000" placeholder="Describe the role, character, age range, requirements…"></textarea>
+      </div>
+      <div class="acr-field full">
+        <label class="acr-label" for="acr-message">Message</label>
+        <textarea id="acr-message" name="message" class="acr-textarea" rows="3" maxlength="5000" placeholder="Any additional details for our team"></textarea>
+      </div>
+    </div>
+    <div class="acr-actions">
+      <button type="submit" class="acr-submit" id="acr-submit">Submit Request</button>
+      <p id="acr-msg" class="acr-msg"></p>
+    </div>
+  </form>
+</div>
 <script>(function(){
   var BASE=${JSON.stringify(base)};
-  var f=document.getElementById('ac-casting'),m=document.getElementById('ac-casting-msg');
+  var f=document.getElementById('acr-form'),m=document.getElementById('acr-msg'),btn=document.getElementById('acr-submit');
+  /* Prefill requested_talent_name from ?talent= or ?name= query params (matches app behavior) */
+  try{
+    var qs=new URLSearchParams(window.location.search);
+    var preName=qs.get('name')||qs.get('talent_name');
+    if(preName){var rt=document.getElementById('acr-requested_talent_name');if(rt&&!rt.value)rt.value=preName;}
+  }catch(_){}
   f.addEventListener('submit',function(e){
-    e.preventDefault();m.textContent='Sending…';m.style.color='#666';
-    var raw=Object.fromEntries(new FormData(f).entries());
+    e.preventDefault();
+    btn.disabled=true;m.className='acr-msg';m.textContent='Sending…';
+    var raw={};Array.prototype.forEach.call(f.elements,function(el){if(el.name)raw[el.name]=(el.value||'').trim();});
+    if(!raw.production_title||!raw.contact_person||!raw.email){m.className='acr-msg err';m.textContent='Please fill all required fields.';btn.disabled=false;return;}
     var d={
+      production_title:raw.production_title,
+      production_type:raw.production_type||undefined,
+      shooting_dates:raw.shooting_dates||undefined,
+      shooting_location:raw.shooting_location||undefined,
+      budget_range:raw.budget_range||undefined,
       company_name:raw.company_name||undefined,
       contact_person:raw.contact_person,
       email:raw.email,
-      production_title:raw.production_title,
-      message:raw.brief||undefined,
-      role_description:raw.brief||undefined
+      phone:raw.phone||undefined,
+      requested_talent_name:raw.requested_talent_name||undefined,
+      role_description:raw.role_description||undefined,
+      message:raw.message||undefined
     };
     fetch(BASE+'/api/public/v1/casting-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
       .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j};});})
-      .then(function(x){if(x.ok){m.textContent='Request sent. We will contact you shortly.';m.style.color='#0a0';f.reset();}else{m.textContent=(x.j&&x.j.error)||'Failed to send';m.style.color='#c00';}})
-      .catch(function(e){m.textContent=e.message;m.style.color='#c00';});
+      .then(function(x){
+        btn.disabled=false;
+        if(x.ok){m.className='acr-msg ok';m.textContent='Request sent. Our team will contact you shortly.';f.reset();}
+        else{m.className='acr-msg err';m.textContent=(x.j&&x.j.error)||'Failed to send request.';}
+      })
+      .catch(function(e){btn.disabled=false;m.className='acr-msg err';m.textContent=e.message;});
   });
 })();</script>`;
 }
