@@ -4,7 +4,7 @@ import { supabasePublic } from "@/integrations/supabase/client.public.server";
 import { jsonResponse, optionsResponse } from "@/lib/api-cors";
 
 const PUBLIC_COLS =
-  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, headshot_thumb_url, showreel_link, categories, skills, experience, vip, featured, featured_order, published_at";
+  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, headshot_thumb_url, showreel_link, categories, physical, skills, languages, experience, agent, availability, extra_notes, vip, featured, featured_order, published_at";
 
 export const Route = createFileRoute("/api/public/talents/$slug")({
   server: {
@@ -31,7 +31,14 @@ export const Route = createFileRoute("/api/public/talents/$slug")({
             .eq("bucket", "talent-media")
             .order("position");
 
-          return jsonResponse({ data: { talent, media: media ?? [] } });
+          const mediaWithUrls = (media ?? []).map((m: any) => ({
+            ...m,
+            url: supabasePublic.storage.from("talent-media").getPublicUrl(m.path).data.publicUrl,
+            thumbnail_url: m.thumbnail_path
+              ? supabasePublic.storage.from("talent-media").getPublicUrl(m.thumbnail_path).data.publicUrl
+              : null,
+          }));
+          return jsonResponse({ data: { talent, media: mediaWithUrls } });
         } catch (err: any) {
           return jsonResponse({ error: err?.message || "Server error" }, { status: 500 });
         }
