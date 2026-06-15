@@ -354,8 +354,10 @@ function buildCastingForm(base: string, profilePattern: string) {
 }
 
 function buildAllInOne(base: string, profilePattern: string) {
-  return `<!-- Art City — Complete Talents experience (matches app/talents) -->
-<style id="acx-css">
+  const V = "v2";
+  return `<!-- Art City — Complete Talents experience ${V} (hero + VIP + filters + directory + apply) -->
+<!-- Regenerated UI. If you previously pasted an older snippet, DELETE the old Custom HTML block before pasting this one. -->
+<style id="acx-css-${V}">
 .acx-root{max-width:1280px;margin:0 auto;padding:0 16px 64px;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;line-height:1.5;}
 .acx-root *{box-sizing:border-box;}
 .acx-root img{max-width:100%;height:auto;display:block;}
