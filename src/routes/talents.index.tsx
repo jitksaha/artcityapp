@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown, Mail, UserRound, Heart, Megaphone } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -14,6 +17,24 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
+
+const sortValues = ["featured", "newest", "oldest", "name_asc", "name_desc"] as const;
+const talentsSearchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  gender: fallback(z.string().optional(), undefined),
+  category: fallback(z.string().optional(), undefined),
+  language: fallback(z.string(), "").default(""),
+  location: fallback(z.string(), "").default(""),
+  nationality: fallback(z.string(), "").default(""),
+  playing_age: fallback(z.string(), "").default(""),
+  age_min: fallback(z.string(), "").default(""),
+  age_max: fallback(z.string(), "").default(""),
+  vip_only: fallback(z.boolean(), false).default(false),
+  featured_only: fallback(z.boolean(), false).default(false),
+  skills: fallback(z.string(), "").default(""),
+  experience: fallback(z.string().optional(), undefined),
+  sort: fallback(z.enum(sortValues), "featured").default("featured"),
+});
 
 function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
   return (
@@ -30,6 +51,7 @@ function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => voi
 
 export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
+  validateSearch: zodValidator(talentsSearchSchema),
   // Prime the cache with the default (no-filter) view so first paint has data
   // on direct visits and on Link-preload from elsewhere in the site.
   loader: ({ context }) =>
@@ -46,20 +68,23 @@ export const Route = createFileRoute("/talents/")({
 });
 
 function TalentsPage() {
-  const [q, setQ] = useState("");
-  const [gender, setGender] = useState<string | undefined>();
-  const [category, setCategory] = useState<string | undefined>();
-  const [language, setLanguage] = useState("");
-  const [location, setLocation] = useState("");
-  const [nationality, setNationality] = useState("");
-  const [playingAge, setPlayingAge] = useState("");
-  const [ageMin, setAgeMin] = useState("");
-  const [ageMax, setAgeMax] = useState("");
-  const [vipOnly, setVipOnly] = useState(false);
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [skills, setSkills] = useState("");
-  const [experience, setExperience] = useState<string | undefined>();
-  const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/talents" });
+
+  const [q, setQ] = useState(search.q);
+  const [gender, setGender] = useState<string | undefined>(search.gender);
+  const [category, setCategory] = useState<string | undefined>(search.category);
+  const [language, setLanguage] = useState(search.language);
+  const [location, setLocation] = useState(search.location);
+  const [nationality, setNationality] = useState(search.nationality);
+  const [playingAge, setPlayingAge] = useState(search.playing_age);
+  const [ageMin, setAgeMin] = useState(search.age_min);
+  const [ageMax, setAgeMax] = useState(search.age_max);
+  const [vipOnly, setVipOnly] = useState(search.vip_only);
+  const [featuredOnly, setFeaturedOnly] = useState(search.featured_only);
+  const [skills, setSkills] = useState(search.skills);
+  const [experience, setExperience] = useState<string | undefined>(search.experience);
+  const [sort, setSort] = useState<(typeof sortValues)[number]>(search.sort);
 
   const dq = useDebouncedValue(q, 300);
   const dLanguage = useDebouncedValue(language, 300);
@@ -69,6 +94,38 @@ function TalentsPage() {
   const dAgeMin = useDebouncedValue(ageMin, 400);
   const dAgeMax = useDebouncedValue(ageMax, 400);
   const dSkills = useDebouncedValue(skills, 300);
+
+  // Sync debounced state to URL search params so filters are shareable & persist
+  const didMount = useRef(false);
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    navigate({
+      search: {
+        q: dq,
+        gender,
+        category,
+        language: dLanguage,
+        location: dLocation,
+        nationality: dNationality,
+        playing_age: dPlayingAge,
+        age_min: dAgeMin,
+        age_max: dAgeMax,
+        vip_only: vipOnly,
+        featured_only: featuredOnly,
+        skills: dSkills,
+        experience,
+        sort,
+      },
+      replace: true,
+      resetScroll: false,
+    });
+  }, [
+    dq, gender, category, dLanguage, dLocation, dNationality, dPlayingAge,
+    dAgeMin, dAgeMax, vipOnly, featuredOnly, dSkills, experience, sort, navigate,
+  ]);
 
   const isTyping =
     dq !== q || dLanguage !== language || dLocation !== location ||
@@ -103,13 +160,13 @@ function TalentsPage() {
   const all = useMemo(() => {
     const skillTerms = dSkills
       .split(",")
-      .map((s) => s.trim().toLowerCase())
+      .map((s: string) => s.trim().toLowerCase())
       .filter(Boolean);
     const exp = experience?.toLowerCase();
     return raw.filter((t) => {
       if (skillTerms.length > 0) {
         const hay = JSON.stringify(t.skills ?? {}).toLowerCase();
-        if (!skillTerms.every((s) => hay.includes(s))) return false;
+        if (!skillTerms.every((s: string) => hay.includes(s))) return false;
       }
       if (exp) {
         const hay = JSON.stringify(t.experience ?? {}).toLowerCase();
