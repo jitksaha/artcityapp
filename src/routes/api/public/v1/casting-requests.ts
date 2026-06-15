@@ -27,13 +27,11 @@ export const Route = createFileRoute("/api/public/v1/casting-requests")({
         try {
           const body = await request.json();
           const data = Schema.parse(body);
-          const { data: inserted, error } = await supabasePublic
+          const { error } = await supabasePublic
             .from("casting_requests")
-            .insert(data)
-            .select("id, created_at")
-            .single();
+            .insert(data);
           if (error) return jsonResponse({ error: error.message }, { status: 500 });
-          return jsonResponse({ ok: true, version: "v1", data: inserted }, { status: 201 });
+          return jsonResponse({ ok: true, version: "v1" }, { status: 201 });
         } catch (err: any) {
           if (err?.issues) return jsonResponse({ error: "Invalid body", issues: err.issues }, { status: 400 });
           return jsonResponse({ error: err?.message || "Server error" }, { status: 500 });
