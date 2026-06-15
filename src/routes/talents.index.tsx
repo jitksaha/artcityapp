@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
-import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown, Mail, UserRound, Heart, Megaphone } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   talentsListQuery,
@@ -131,11 +131,19 @@ function TalentsPage() {
       <HeroSlideshow items={heroPool} loading={isLoading && all.length === 0} />
 
       <div className="mx-auto max-w-7xl px-4 pt-6">
-        <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
-          Direct contact with listed talent is not available. All casting inquiries,
-          negotiations, bookings, and confirmations are managed exclusively through
-          Art City Casting.
-        </p>
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Casting Directory</h2>
+            <p className="text-sm text-muted-foreground">
+              All inquiries, negotiations, and bookings are managed exclusively through Art City Casting.
+            </p>
+          </div>
+          <Button asChild size="lg" className="bg-[#F7B500] text-black hover:bg-[#F7B500]/90 shadow-sm">
+            <Link to="/casting-request">
+              <Megaphone className="mr-2 h-4 w-4" /> Post a Casting Call
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {!hasAnyFilter && vips.length > 0 && (
