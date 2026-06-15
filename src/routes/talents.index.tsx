@@ -293,15 +293,12 @@ function TalentsPage() {
                     { v: "non_binary", l: "Non Binary" },
                     { v: "other", l: "Other" },
                   ].map((g) => (
-                    <label key={g.v} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-input"
-                        checked={gender === g.v}
-                        onChange={(e) => setGender(e.target.checked ? g.v : undefined)}
-                      />
-                      {g.l}
-                    </label>
+                    <FancyCheckbox
+                      key={g.v}
+                      label={g.l}
+                      checked={gender === g.v}
+                      onChange={(c) => setGender(c ? g.v : undefined)}
+                    />
                   ))}
                 </div>
               </FilterSection>
@@ -336,14 +333,10 @@ function TalentsPage() {
               </FilterSection>
 
               <FilterSection title="Availability">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={vipOnly} onChange={(e) => setVipOnly(e.target.checked)} />
-                  VIP only
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />
-                  Featured only
-                </label>
+                <div className="space-y-1.5">
+                  <FancyCheckbox label="VIP only" checked={vipOnly} onChange={setVipOnly} />
+                  <FancyCheckbox label="Featured only" checked={featuredOnly} onChange={setFeaturedOnly} />
+                </div>
               </FilterSection>
 
               <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
@@ -655,6 +648,43 @@ function Pill({
     >
       {children}
     </span>
+  );
+}
+
+function FancyCheckbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="group flex cursor-pointer select-none items-center gap-2.5 rounded-md px-1.5 py-1 text-sm transition-colors hover:bg-muted/60">
+      <span className="relative inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center">
+        <input
+          type="checkbox"
+          className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-[5px] border-2 border-[#cbd5e1] bg-white outline-none transition-all checked:border-[#1e6ef5] checked:bg-[#1e6ef5] hover:border-[#1e6ef5] focus-visible:ring-2 focus-visible:ring-[#1e6ef5]/30"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          className="pointer-events-none relative z-10 h-3 w-3 scale-0 text-white opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100"
+        >
+          <path
+            d="M3 8.5L6.5 12L13 4.5"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <span className="text-foreground/90 peer-checked:font-medium">{label}</span>
+    </label>
   );
 }
 
