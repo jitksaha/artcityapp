@@ -1,0 +1,2 @@
+ALTER TABLE public.casting_requests DROP CONSTRAINT IF EXISTS casting_requests_status_check;
+ALTER TABLE public.casting_requests ADD CONSTRAINT casting_requests_status_check CHECK (status = ANY (ARRAY['new'::text, 'reviewed'::text, 'contacted'::text, 'closed'::text, 'rejected'::text]));
