@@ -60,7 +60,6 @@ function TalentsPage() {
   const [skills, setSkills] = useState("");
   const [experience, setExperience] = useState<string | undefined>();
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const dq = useDebouncedValue(q, 300);
   const dLanguage = useDebouncedValue(language, 300);
@@ -166,159 +165,166 @@ function TalentsPage() {
       )}
 
       <main id="directory" className="mx-auto max-w-7xl px-4 pb-16 pt-8">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
-              <Sparkles className="h-4 w-4" /> Directory
-            </div>
-            <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">All represented talents</h2>
-            <p className="text-sm text-muted-foreground">Approved and published by Art City Casting.</p>
-          </div>
-        </div>
-
-        <div className="mb-6 rounded-xl border border-border/60 bg-card/50 p-4 backdrop-blur">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setFiltersOpen((v) => !v)}
-              aria-expanded={filtersOpen}
-              className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent/40"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-              <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
-            </button>
-            <div className="flex items-center gap-3">
-              {hasAnyFilter && (
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground underline"
-                  onClick={() => {
-                    setQ(""); setGender(undefined); setCategory(undefined);
-                    setLanguage(""); setLocation("");
-                    setNationality(""); setPlayingAge("");
-                    setAgeMin(""); setAgeMax("");
-                    setVipOnly(false); setFeaturedOnly(false);
-                    setSkills(""); setExperience(undefined);
-                    setSort("featured");
-                  }}
-                >
-                  Clear all
-                </button>
-              )}
-            </div>
-          </div>
-          <div
-            className={`relative mt-4 overflow-hidden transition-all duration-300 ${
-              filtersOpen ? "max-h-[2000px]" : "max-h-[64px] cursor-pointer"
-            }`}
-            onClick={() => {
-              if (!filtersOpen) setFiltersOpen(true);
-            }}
-          >
-          <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 ${!filtersOpen ? "pointer-events-none select-none" : ""}`}>
-          <Input placeholder="Search by name or stage name…" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:col-span-2" />
-          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={gender ?? ""} onChange={(e) => setGender(e.target.value || undefined)}>
-            <option value="">All genders</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="non_binary">Non-binary</option>
-            <option value="other">Other</option>
-          </select>
-          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={category ?? ""} onChange={(e) => setCategory(e.target.value || undefined)}>
-            <option value="">All categories</option>
-            <option value="actor">Actor</option>
-            <option value="actress">Actress</option>
-            <option value="model">Model</option>
-            <option value="performer">Performer</option>
-            <option value="voice_talent">Voice talent</option>
-          </select>
-          <Input placeholder="Language" value={language} onChange={(e) => setLanguage(e.target.value)} className="w-full" />
-          <Input placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full" />
-          <Input placeholder="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} className="w-full" />
-          <Input placeholder="Playing age (e.g. 25-35)" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} className="w-full" />
-          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Min age" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} className="w-full" />
-          <Input type="number" inputMode="numeric" min={0} max={120} placeholder="Max age" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} className="w-full" />
-          <Input placeholder="Skills (e.g. acting, dancing)" value={skills} onChange={(e) => setSkills(e.target.value)} className="w-full sm:col-span-2" />
-          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
-            <option value="">Any experience</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="experienced">Experienced</option>
-            <option value="professional">Professional</option>
-          </select>
-          <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
-            <option value="featured">Sort: Featured</option>
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="name_asc">Name A–Z</option>
-            <option value="name_desc">Name Z–A</option>
-          </select>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent/40">
-            <input
-              type="checkbox"
-              checked={vipOnly}
-              onChange={(e) => setVipOnly(e.target.checked)}
-              className="h-4 w-4 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors checked:border-primary checked:bg-primary checked:shadow-[inset_0_0_0_3px_hsl(var(--background))]"
-            />
-            VIP only
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-accent/40">
-            <input
-              type="checkbox"
-              checked={featuredOnly}
-              onChange={(e) => setFeaturedOnly(e.target.checked)}
-              className="h-4 w-4 cursor-pointer appearance-none rounded-full border border-input bg-background transition-colors checked:border-primary checked:bg-primary checked:shadow-[inset_0_0_0_3px_hsl(var(--background))]"
-            />
-            Featured only
-          </label>
-          </div>
-          {!filtersOpen && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 top-8 bg-gradient-to-b from-transparent via-card/70 to-card backdrop-blur-[3px]" />
-          )}
-          {!filtersOpen && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setFiltersOpen(true); }}
-              className="absolute inset-x-0 bottom-1 mx-auto block w-fit rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:opacity-90"
-            >
-              Show all filters
-            </button>
-          )}
-          </div>
-        </div>
-
-        <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground" aria-live="polite">
-          {(isFetching || isTyping) ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Filtering…
-            </span>
-          ) : (
-            <span>
-              {all.length} {all.length === 1 ? "result" : "results"}
-              {hasAnyFilter ? " match your filters" : ""}
-            </span>
-          )}
-        </div>
-        {isLoading && (
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[3/4] w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
+        <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+          <aside className="lg:sticky lg:top-20 lg:self-start">
+            <div className="rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <h3 className="text-base font-semibold">Filters</h3>
+                {hasAnyFilter && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline"
+                    onClick={() => {
+                      setQ(""); setGender(undefined); setCategory(undefined);
+                      setLanguage(""); setLocation("");
+                      setNationality(""); setPlayingAge("");
+                      setAgeMin(""); setAgeMax("");
+                      setVipOnly(false); setFeaturedOnly(false);
+                      setSkills(""); setExperience(undefined);
+                      setSort("featured");
+                    }}
+                  >
+                    Clear all
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-        {!isLoading && all.length === 0 && (
-          <p className="text-muted-foreground">No talents published yet.</p>
-        )}
 
-        <div className={`grid gap-4 sm:grid-cols-2 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
-          {(hasAnyFilter ? all : regulars).map((t: any) => (
-            <TalentCard key={t.id} t={t} />
-          ))}
+              <FilterSection title="Basic" defaultOpen>
+                <FieldLabel>Search</FieldLabel>
+                <Input placeholder="Name or stage name" value={q} onChange={(e) => setQ(e.target.value)} />
+                <FieldLabel>Category</FieldLabel>
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={category ?? ""} onChange={(e) => setCategory(e.target.value || undefined)}>
+                  <option value="">All categories</option>
+                  <option value="actor">Actor</option>
+                  <option value="actress">Actress</option>
+                  <option value="model">Model</option>
+                  <option value="performer">Performer</option>
+                  <option value="voice_talent">Voice talent</option>
+                </select>
+                <FieldLabel>Age range</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <Input type="number" min={0} max={120} placeholder="Min" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} />
+                  <span className="text-xs text-muted-foreground">to</span>
+                  <Input type="number" min={0} max={120} placeholder="Max" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} />
+                </div>
+                <FieldLabel>Gender</FieldLabel>
+                <div className="space-y-1.5">
+                  {[
+                    { v: "male", l: "Male" },
+                    { v: "female", l: "Female" },
+                    { v: "non_binary", l: "Non Binary" },
+                    { v: "other", l: "Other" },
+                  ].map((g) => (
+                    <label key={g.v} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input"
+                        checked={gender === g.v}
+                        onChange={(e) => setGender(e.target.checked ? g.v : undefined)}
+                      />
+                      {g.l}
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+
+              <FilterSection title="Physical">
+                <FieldLabel>Playing age</FieldLabel>
+                <Input placeholder="e.g. 25-35" value={playingAge} onChange={(e) => setPlayingAge(e.target.value)} />
+                <FieldLabel>Location</FieldLabel>
+                <Input placeholder="City / region" value={location} onChange={(e) => setLocation(e.target.value)} />
+                <FieldLabel>Nationality</FieldLabel>
+                <Input placeholder="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} />
+              </FilterSection>
+
+              <FilterSection title="Languages">
+                <FieldLabel>Native or spoken</FieldLabel>
+                <Input placeholder="e.g. Kurdish, Arabic" value={language} onChange={(e) => setLanguage(e.target.value)} />
+              </FilterSection>
+
+              <FilterSection title="Skills">
+                <FieldLabel>Skills (comma-separated)</FieldLabel>
+                <Input placeholder="e.g. acting, dancing" value={skills} onChange={(e) => setSkills(e.target.value)} />
+              </FilterSection>
+
+              <FilterSection title="Experience">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={experience ?? ""} onChange={(e) => setExperience(e.target.value || undefined)}>
+                  <option value="">Any experience</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="experienced">Experienced</option>
+                  <option value="professional">Professional</option>
+                </select>
+              </FilterSection>
+
+              <FilterSection title="Availability">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={vipOnly} onChange={(e) => setVipOnly(e.target.checked)} />
+                  VIP only
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />
+                  Featured only
+                </label>
+              </FilterSection>
+
+              <div className="border-t border-border p-3">
+                <Button className="w-full bg-[#F7B500] text-black hover:bg-[#F7B500]/90">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" /> Search
+                </Button>
+              </div>
+            </div>
+          </aside>
+
+          <div className="min-w-0">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="text-sm" aria-live="polite">
+                {(isFetching || isTyping) ? (
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Filtering
+                  </span>
+                ) : (
+                  <span className="font-medium">
+                    {all.length} {all.length === 1 ? "Talent" : "Talents"}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground">Sort:</label>
+                <select className="rounded-md border border-input bg-background px-2 py-1.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+                  <option value="featured">Best Match</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="name_asc">Name A-Z</option>
+                  <option value="name_desc">Name Z-A</option>
+                </select>
+              </div>
+            </div>
+
+            {isLoading && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex gap-3 rounded-xl border border-border p-3">
+                    <Skeleton className="h-28 w-24 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-3 w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoading && all.length === 0 && (
+              <p className="text-muted-foreground">No talents published yet.</p>
+            )}
+
+            <div className={`grid gap-4 sm:grid-cols-2 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
+              {(hasAnyFilter ? all : regulars).map((t: any) => (
+                <TalentCard key={t.id} t={t} />
+              ))}
+            </div>
+          </div>
         </div>
 
         <section className="mt-20 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-card to-card p-8 sm:p-12">
@@ -356,7 +362,7 @@ function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
   const displayName = t.stage_name ?? t.full_name ?? "Talent";
   const meta = [
     t.age ? `${t.age}` : null,
-    t.gender ? cap(t.gender) : null,
+    t.gender ? labelize(t.gender) : null,
     t.location ?? null,
   ]
     .filter(Boolean)
@@ -502,6 +508,37 @@ function languageChips(t: any): string[] {
     }
   }
   return out.slice(0, 4);
+}
+
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{children}</div>;
+}
+
+function FilterSection({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold hover:bg-muted/40"
+        aria-expanded={open}
+      >
+        {title}
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="space-y-1 px-4 pb-4">{children}</div>}
+    </div>
+  );
 }
 
 function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
