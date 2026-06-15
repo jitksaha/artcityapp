@@ -232,9 +232,9 @@ function buildCastingForm(base: string, profilePattern: string) {
   return `${AC_RESET_CSS}
 <div class="ac-wrap"><form id="ac-casting" style="max-width:600px;margin:0 auto;display:grid;gap:10px;">
   <input name="company_name" class="ac-input" placeholder="Company / Production *" required />
-  <input name="contact_name" class="ac-input" placeholder="Your name *" required />
-  <input name="contact_email" class="ac-input" type="email" placeholder="Email *" required />
-  <input name="project_title" class="ac-input" placeholder="Project title" />
+  <input name="contact_person" class="ac-input" placeholder="Your name *" required />
+  <input name="email" class="ac-input" type="email" placeholder="Email *" required />
+  <input name="production_title" class="ac-input" placeholder="Project title *" required />
   <textarea name="brief" class="ac-input" placeholder="Describe the role / brief *" required rows="5"></textarea>
   <button type="submit" style="padding:12px;background:#111;color:#fff;border:0;border-radius:10px;cursor:pointer;font-weight:600;">Send request</button>
   <p id="ac-casting-msg" style="margin:0;font-size:14px;"></p>
@@ -244,7 +244,15 @@ function buildCastingForm(base: string, profilePattern: string) {
   var f=document.getElementById('ac-casting'),m=document.getElementById('ac-casting-msg');
   f.addEventListener('submit',function(e){
     e.preventDefault();m.textContent='Sending…';m.style.color='#666';
-    var d=Object.fromEntries(new FormData(f).entries());
+    var raw=Object.fromEntries(new FormData(f).entries());
+    var d={
+      company_name:raw.company_name||undefined,
+      contact_person:raw.contact_person,
+      email:raw.email,
+      production_title:raw.production_title,
+      message:raw.brief||undefined,
+      role_description:raw.brief||undefined
+    };
     fetch(BASE+'/api/public/v1/casting-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
       .then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j};});})
       .then(function(x){if(x.ok){m.textContent='Request sent. We will contact you shortly.';m.style.color='#0a0';f.reset();}else{m.textContent=(x.j&&x.j.error)||'Failed to send';m.style.color='#c00';}})
