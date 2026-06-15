@@ -552,45 +552,124 @@ function ReviewDialog({ id, onClose }: { id: string; onClose: () => void }) {
             </div>
             {t.bio && <p className="text-sm">{t.bio}</p>}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant={t.vip ? "default" : "outline"}
-                onClick={() => flagMut.mutate({ flag: "vip", value: !t.vip })}>VIP</Button>
-              <Button size="sm" variant={t.featured ? "default" : "outline"}
-                onClick={() => flagMut.mutate({ flag: "featured", value: !t.featured })}>Featured</Button>
-              <Button size="sm" variant={t.visible_publicly ? "default" : "outline"}
-                onClick={() => flagMut.mutate({ flag: "visible_publicly", value: !t.visible_publicly })}>
-                Visible
-              </Button>
+            {/* Directory visibility flags */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Directory placement
+                </h3>
+                <span className="text-[10px] text-muted-foreground">
+                  Controls how this talent appears on the public site
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <FlagToggle
+                  label="Publicly visible"
+                  hint="Show on /talents directory"
+                  checked={!!t.visible_publicly}
+                  disabled={t.status !== "published" || flagMut.isPending}
+                  onCheckedChange={(v) => flagMut.mutate({ flag: "visible_publicly", value: v })}
+                />
+                <FlagToggle
+                  label="Featured"
+                  hint="Pinned in featured row"
+                  checked={!!t.featured}
+                  disabled={flagMut.isPending}
+                  onCheckedChange={(v) => flagMut.mutate({ flag: "featured", value: v })}
+                />
+                <FlagToggle
+                  label="VIP roster"
+                  hint="Show in VIP slider"
+                  checked={!!t.vip}
+                  disabled={flagMut.isPending}
+                  onCheckedChange={(v) => flagMut.mutate({ flag: "vip", value: v })}
+                />
+              </div>
               {t.featured && (
-                <div className="ml-2 flex items-center gap-1">
+                <div className="mt-3 flex items-center gap-2 border-t border-border/60 pt-3">
+                  <Label className="text-xs text-muted-foreground">Featured order</Label>
                   <Input
                     type="number"
-                    placeholder="order"
-                    className="h-8 w-20"
+                    placeholder="0"
+                    className="h-8 w-24"
                     defaultValue={t.featured_order ?? ""}
                     onChange={(e) => setOrderInput(e.target.value)}
                   />
                   <Button size="sm" variant="outline" onClick={() => {
                     const n = parseInt(orderInput || String(t.featured_order ?? 0), 10);
                     if (!Number.isNaN(n)) orderMut.mutate(n);
-                  }}>Save order</Button>
+                  }}>Save</Button>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Lower = higher priority</span>
                 </div>
+              )}
+              {t.status !== "published" && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Publish the profile first to make it visible on the public directory.
+                </p>
               )}
             </div>
 
-            <div className="space-y-2">
+            {/* Workflow actions */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Review &amp; workflow
+                </h3>
+                <Badge variant="outline" className="text-[10px]">
+                  Current: {String(t.status ?? "draft").replace(/_/g, " ")}
+                </Badge>
+              </div>
               <Textarea
-                placeholder="Admin feedback (visible to applicant)…"
+                placeholder="Admin feedback (visible to applicant on Needs Revision / Reject)…"
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
+                rows={3}
               />
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => mut.mutate("under_review")}>Mark Under Review</Button>
-                <Button size="sm" variant="outline" onClick={() => mut.mutate("needs_revision")}>Needs Revision</Button>
-                <Button size="sm" variant="default" onClick={() => mut.mutate("approve")}>Approve</Button>
-                <Button size="sm" onClick={() => mut.mutate("publish")}>Publish</Button>
-                <Button size="sm" variant="outline" onClick={() => mut.mutate("unpublish")}>Unpublish</Button>
-                <Button size="sm" variant="destructive" onClick={() => mut.mutate("reject")}>Reject</Button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Move forward
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="secondary"
+                      disabled={mut.isPending || t.status === "under_review"}
+                      onClick={() => mut.mutate("under_review")}>
+                      Mark Under Review
+                    </Button>
+                    <Button size="sm"
+                      disabled={mut.isPending || t.status === "approved" || t.status === "published"}
+                      onClick={() => mut.mutate("approve")}>
+                      Approve
+                    </Button>
+                    <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700"
+                      disabled={mut.isPending || t.status === "published"}
+                      onClick={() => mut.mutate("publish")}>
+                      Publish
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Send back / remove
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="outline"
+                      disabled={mut.isPending}
+                      onClick={() => mut.mutate("needs_revision")}>
+                      Needs Revision
+                    </Button>
+                    <Button size="sm" variant="outline"
+                      disabled={mut.isPending || t.status !== "published"}
+                      onClick={() => mut.mutate("unpublish")}>
+                      Unpublish
+                    </Button>
+                    <Button size="sm" variant="destructive"
+                      disabled={mut.isPending || t.status === "rejected"}
+                      onClick={() => mut.mutate("reject")}>
+                      Reject
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 
