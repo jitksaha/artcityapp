@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabasePublic } from "@/integrations/supabase/client.public.server";
 import { jsonResponse, optionsResponse } from "@/lib/api-cors";
 
 const Schema = z.object({
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/v1/casting-requests")({
         try {
           const body = await request.json();
           const data = Schema.parse(body);
-          const { data: inserted, error } = await supabaseAdmin
+          const { data: inserted, error } = await supabasePublic
             .from("casting_requests")
             .insert(data)
             .select("id, created_at")
