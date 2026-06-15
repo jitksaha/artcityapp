@@ -3,7 +3,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
 const PUBLIC_COLS =
-  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, headshot_thumb_url, showreel_link, categories, skills, experience, vip, featured, featured_order, published_at";
+  "id, slug, stage_name, full_name, gender, age, playing_age, location, nationality, native_language, bio, headshot_url, headshot_thumb_url, showreel_link, categories, basic_info, physical, skills, languages, experience, agent, availability, extra_notes, vip, featured, featured_order, published_at";
 
 export const listPublicTalents = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) =>
