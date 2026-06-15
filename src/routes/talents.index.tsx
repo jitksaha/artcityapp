@@ -268,10 +268,18 @@ function TalentsPage() {
                 </label>
               </FilterSection>
 
-              <div className="border-t border-border p-3">
-                <Button className="w-full bg-[#F7B500] text-black hover:bg-[#F7B500]/90">
-                  <SlidersHorizontal className="mr-2 h-4 w-4" /> Search
-                </Button>
+              <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
+                {(isFetching || isTyping) ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Updating results…
+                  </>
+                ) : (
+                  <>
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Results update as you type
+                  </>
+                )}
               </div>
             </div>
           </aside>
