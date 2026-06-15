@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const submitCastingRequest = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) =>
@@ -23,7 +22,8 @@ export const submitCastingRequest = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin.from("casting_requests").insert(data);
+    const { supabasePublic } = await import("@/integrations/supabase/client.public.server");
+    const { error } = await supabasePublic.from("casting_requests").insert(data);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
