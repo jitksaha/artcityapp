@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Loader2, ChevronLeft, ChevronRight, Sparkles, Crown, ArrowRight, SlidersHorizontal, ChevronDown, Mail, UserRound, Heart, Megaphone } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -14,6 +17,24 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
+
+const sortValues = ["featured", "newest", "oldest", "name_asc", "name_desc"] as const;
+const talentsSearchSchema = z.object({
+  q: fallback(z.string(), "").default(""),
+  gender: fallback(z.string().optional(), undefined),
+  category: fallback(z.string().optional(), undefined),
+  language: fallback(z.string(), "").default(""),
+  location: fallback(z.string(), "").default(""),
+  nationality: fallback(z.string(), "").default(""),
+  playing_age: fallback(z.string(), "").default(""),
+  age_min: fallback(z.string(), "").default(""),
+  age_max: fallback(z.string(), "").default(""),
+  vip_only: fallback(z.boolean(), false).default(false),
+  featured_only: fallback(z.boolean(), false).default(false),
+  skills: fallback(z.string(), "").default(""),
+  experience: fallback(z.string().optional(), undefined),
+  sort: fallback(z.enum(sortValues), "featured").default("featured"),
+});
 
 function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
   return (
@@ -30,6 +51,7 @@ function TalentsErrorBoundary({ error, reset }: { error: Error; reset: () => voi
 
 export const Route = createFileRoute("/talents/")({
   component: TalentsPage,
+  validateSearch: zodValidator(talentsSearchSchema),
   // Prime the cache with the default (no-filter) view so first paint has data
   // on direct visits and on Link-preload from elsewhere in the site.
   loader: ({ context }) =>
