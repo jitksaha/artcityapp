@@ -262,217 +262,383 @@ function buildCastingForm(base: string, profilePattern: string) {
 }
 
 function buildAllInOne(base: string, profilePattern: string) {
-  return `<!-- Art City — Complete Talents experience (unified design) -->
+  return `<!-- Art City — Complete Talents experience (matches app/talents) -->
 <style id="acx-css">
-.acx-root{max-width:1200px;margin:0 auto;padding:32px 20px 64px;color:#111;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.5;}
+.acx-root{max-width:1280px;margin:0 auto;padding:0 16px 64px;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;line-height:1.5;}
 .acx-root *{box-sizing:border-box;}
 .acx-root img{max-width:100%;height:auto;display:block;}
 .acx-root a{color:inherit;text-decoration:none;}
-.acx-section{margin-top:56px;}
-.acx-section:first-child{margin-top:0;}
-.acx-eyebrow{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:#71717a;font-weight:600;}
-.acx-h2{font-size:26px;font-weight:600;letter-spacing:-.02em;margin:6px 0 4px;color:#0a0a0a;line-height:1.15;}
-.acx-sub{margin:0;color:#71717a;font-size:14px;}
-.acx-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.acx-root button{font:inherit;cursor:pointer;}
 
 /* HERO */
-.acx-hero{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:21/9;background:#0a0a0a;}
-.acx-hero-slide{position:absolute;inset:0;}
-.acx-hero-slide img{width:100%;height:100%;object-fit:cover;animation:acxFade .8s ease;}
-.acx-hero-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.78) 100%);}
-.acx-hero-meta{position:absolute;left:0;right:0;bottom:0;padding:28px 32px;color:#fff;}
-.acx-hero-meta .e{font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85;}
-.acx-hero-meta .n{font-size:32px;font-weight:600;letter-spacing:-.02em;margin:8px 0 2px;line-height:1.1;}
-.acx-hero-meta .m{opacity:.85;font-size:14px;}
-.acx-hero-cta{display:inline-flex;align-items:center;gap:6px;margin-top:16px;background:#fff;color:#111;padding:10px 18px;border-radius:8px;font-weight:500;font-size:14px;}
-.acx-hero-cta:hover{background:#f4f4f5;}
-.acx-hero-dots{position:absolute;right:24px;top:24px;display:flex;gap:6px;}
-.acx-hero-dot{width:6px;height:6px;border-radius:999px;background:rgba(255,255,255,.4);}
-.acx-hero-dot.on{background:#fff;width:22px;}
+.acx-hero{position:relative;overflow:hidden;border-bottom:1px solid #e5e7eb;background:linear-gradient(135deg,#1a1740 0%,#2b1d63 45%,#1e2a5e 100%);color:#fff;border-radius:0 0 24px 24px;margin:0 -16px 24px;}
+.acx-hero-inner{display:grid;grid-template-columns:1fr;gap:32px;max-width:1280px;margin:0 auto;padding:56px 24px;}
+@media(min-width:768px){.acx-hero-inner{grid-template-columns:1fr 1fr;padding:80px 24px;}}
+.acx-hero-eyebrow{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:6px 12px;border-radius:999px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.85);width:fit-content;}
+.acx-hero h1{font-size:42px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin:18px 0 0;color:#fff;}
+@media(min-width:640px){.acx-hero h1{font-size:54px;}}
+.acx-hero p{margin:18px 0 0;max-width:560px;color:rgba(255,255,255,.78);font-size:17px;}
+.acx-hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;}
+.acx-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 22px;border-radius:10px;font-weight:600;font-size:14px;border:1px solid transparent;transition:all .2s ease;}
+.acx-btn-white{background:#fff;color:#1a1740;}
+.acx-btn-white:hover{background:#f1f5f9;}
+.acx-btn-ghost{border-color:rgba(255,255,255,.3);color:#fff;background:rgba(255,255,255,.05);}
+.acx-btn-ghost:hover{background:rgba(255,255,255,.12);}
+.acx-hero-dots{display:flex;align-items:center;gap:10px;margin-top:32px;}
+.acx-hero-dots .nav{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:6px;border-radius:999px;color:rgba(255,255,255,.9);width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;}
+.acx-hero-dots .dot{height:6px;border-radius:999px;background:rgba(255,255,255,.3);width:12px;transition:all .25s;}
+.acx-hero-dots .dot.on{background:#fff;width:32px;}
+.acx-hero-card{position:relative;aspect-ratio:4/5;max-width:420px;margin:0 auto;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);box-shadow:0 30px 70px -20px rgba(0,0,0,.5);}
+.acx-hero-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:acxFade .8s ease;}
+.acx-hero-card .grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88),rgba(0,0,0,.2) 40%,transparent);}
+.acx-hero-card .info{position:absolute;left:20px;right:20px;bottom:20px;color:#fff;}
+.acx-hero-card .info .n{font-size:22px;font-weight:700;letter-spacing:-.01em;}
+.acx-hero-card .info .m{font-size:13px;opacity:.85;margin-top:2px;}
+.acx-hero-card .pill{position:absolute;top:14px;left:14px;background:#F7B500;color:#000;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
 @keyframes acxFade{from{opacity:0}to{opacity:1}}
 
-/* GRID + CARDS */
-.acx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px;}
-.acx-card{display:block;background:#fff;border:1px solid #e4e4e7;border-radius:12px;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;}
-.acx-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px -16px rgba(0,0,0,.18);border-color:#d4d4d8;}
-.acx-card .ph{position:relative;background:#f4f4f5;}
-.acx-card .ph img{width:100%;aspect-ratio:3/4;object-fit:cover;}
-.acx-card .ph .empty{width:100%;aspect-ratio:3/4;}
-.acx-card .body{padding:12px 14px 14px;}
-.acx-card .name{font-weight:600;font-size:15px;color:#111;letter-spacing:-.01em;}
-.acx-card .meta{font-size:12px;color:#71717a;margin-top:3px;}
-.acx-badge{position:absolute;top:10px;left:10px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:6px;}
-.acx-badge.vip{background:#111;color:#fff;}
-.acx-badge.feat{background:#fff;color:#111;border:1px solid #e4e4e7;}
-.acx-card.vip{border-color:#c9a14a33;box-shadow:inset 0 0 0 1px #c9a14a55;}
+/* DIRECTORY HEADER CARD */
+.acx-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;border:1px solid #e5e7eb;background:#fff;padding:16px 20px;border-radius:14px;margin-top:8px;}
+.acx-bar h2{font-size:22px;font-weight:700;letter-spacing:-.01em;margin:0;color:#0f172a;}
+.acx-bar p{font-size:13px;color:#64748b;margin:2px 0 0;}
+.acx-bar .cta{background:#F7B500;color:#000;padding:10px 18px;border-radius:10px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;}
+.acx-bar .cta:hover{background:#e0a200;}
 
-/* CHIPS + FILTERS */
+/* SECTION HEADS */
+.acx-section{margin-top:48px;}
+.acx-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:#9a6b00;background:rgba(247,181,0,.12);border:1px solid rgba(247,181,0,.4);padding:5px 12px;border-radius:999px;}
+.acx-eyebrow.feat{color:#1e3a8a;background:#eef2ff;border-color:#c7d2fe;}
+.acx-h2{font-size:32px;font-weight:700;letter-spacing:-.02em;margin:14px 0 4px;color:#0f172a;line-height:1.15;}
+.acx-sub{margin:0;color:#64748b;font-size:14px;}
+
+/* VIP CAROUSEL */
+.acx-vip-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-top:20px;}
+.acx-vip-card{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.02);transition:transform .25s ease,box-shadow .25s ease;outline:1px solid rgba(247,181,0,.4);outline-offset:-1px;}
+.acx-vip-card:hover{transform:translateY(-3px);box-shadow:0 18px 35px -18px rgba(0,0,0,.22);}
+.acx-vip-photo{position:relative;aspect-ratio:3/4;background:#f1f5f9;overflow:hidden;}
+.acx-vip-photo img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease;}
+.acx-vip-card:hover .acx-vip-photo img{transform:scale(1.06);}
+.acx-vip-photo .grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.2) 35%,transparent);}
+.acx-vip-photo .vip-pill{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:4px;background:#F7B500;color:#000;padding:5px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 4px 10px rgba(247,181,0,.4);}
+.acx-vip-photo .info{position:absolute;left:14px;right:14px;bottom:12px;color:#fff;}
+.acx-vip-photo .info .n{font-size:18px;font-weight:700;line-height:1.1;letter-spacing:-.01em;text-shadow:0 2px 8px rgba(0,0,0,.4);}
+.acx-vip-photo .info .m{font-size:12px;opacity:.88;margin-top:2px;}
+.acx-vip-foot{padding:14px;display:flex;flex-direction:column;gap:10px;}
+.acx-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.acx-pill{background:#eef2ff;color:#1e3a8a;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:500;}
+.acx-pill.muted{background:#f1f5f9;color:#475569;}
+.acx-row-btns{display:flex;gap:8px;}
+.acx-btn-blue{background:#1e6ef5;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1;}
+.acx-btn-blue:hover{background:#1857c9;}
+.acx-btn-outline{border:1px solid #e2e8f0;background:#fff;color:#0f172a;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;}
+.acx-btn-outline:hover{background:#f8fafc;}
+
+/* DIRECTORY LAYOUT */
+.acx-dir-wrap{display:grid;grid-template-columns:1fr;gap:24px;margin-top:24px;}
+@media(min-width:1024px){.acx-dir-wrap{grid-template-columns:260px 1fr;}}
+.acx-side{background:#fff;border:1px solid #e5e7eb;border-radius:14px;height:fit-content;}
+.acx-side-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb;}
+.acx-side-head h3{margin:0;font-size:15px;font-weight:700;color:#0f172a;}
+.acx-side-head .clr{font-size:11px;color:#64748b;text-decoration:underline;background:none;border:none;padding:0;}
+.acx-fs{border-bottom:1px solid #e5e7eb;}
+.acx-fs:last-child{border-bottom:none;}
+.acx-fs-btn{display:flex;width:100%;align-items:center;justify-content:space-between;background:none;border:none;padding:12px 16px;font-size:13px;font-weight:600;color:#0f172a;text-align:left;}
+.acx-fs-btn:hover{background:#f8fafc;}
+.acx-fs-btn .chev{transition:transform .2s;}
+.acx-fs[data-open="true"] .acx-fs-btn .chev{transform:rotate(180deg);}
+.acx-fs-body{display:none;padding:0 16px 14px;}
+.acx-fs[data-open="true"] .acx-fs-body{display:block;}
+.acx-flabel{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin:10px 0 4px;}
+.acx-fchk{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:13px;}
+.acx-fchk:hover{background:#f8fafc;}
+.acx-fchk input{accent-color:#1e6ef5;}
+
 .acx-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.acx-chip{cursor:pointer;padding:7px 14px;border:1px solid #e4e4e7;border-radius:999px;background:#fff;color:#111;font-size:13px;font-weight:500;transition:all .15s ease;}
-.acx-chip:hover{border-color:#111;}
-.acx-chip[aria-pressed="true"]{background:#111;color:#fff;border-color:#111;}
-.acx-chip.vip[aria-pressed="true"]{background:#c9a14a;border-color:#c9a14a;color:#111;}
-.acx-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;}
-.acx-input{width:100%;padding:10px 12px;border:1px solid #e4e4e7;border-radius:8px;background:#fff;color:#111;font:inherit;}
-.acx-input:focus{outline:none;border-color:#111;}
-.acx-meta-line{font-size:13px;color:#71717a;margin:0 0 12px;}
+.acx-chip{cursor:pointer;padding:7px 14px;border:1px solid #e2e8f0;border-radius:999px;background:#fff;color:#0f172a;font-size:13px;font-weight:500;transition:all .15s ease;}
+.acx-chip:hover{border-color:#0f172a;}
+.acx-chip[aria-pressed="true"]{background:#0f172a;color:#fff;border-color:#0f172a;}
+.acx-chip.vip[aria-pressed="true"]{background:#F7B500;border-color:#F7B500;color:#000;}
+
+.acx-input{width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#0f172a;font:inherit;font-size:13px;}
+.acx-input:focus{outline:none;border-color:#1e6ef5;box-shadow:0 0 0 3px rgba(30,110,245,.15);}
+
+.acx-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.acx-count{font-size:14px;font-weight:600;color:#0f172a;}
+.acx-sort{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;}
+
+/* HORIZONTAL TALENT CARDS */
+.acx-list{display:grid;gap:14px;grid-template-columns:1fr;}
+@media(min-width:640px){.acx-list{grid-template-columns:1fr 1fr;}}
+.acx-tcard{display:flex;gap:14px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;transition:border-color .2s,box-shadow .2s;}
+.acx-tcard:hover{border-color:rgba(30,110,245,.4);box-shadow:0 8px 20px -10px rgba(0,0,0,.1);}
+.acx-tcard.vip{outline:1px solid rgba(247,181,0,.5);outline-offset:-1px;}
+.acx-tphoto{position:relative;width:110px;height:130px;flex-shrink:0;border-radius:10px;overflow:hidden;background:#f1f5f9;}
+.acx-tphoto img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
+.acx-tcard:hover .acx-tphoto img{transform:scale(1.05);}
+.acx-tphoto .badges{position:absolute;top:6px;left:6px;display:flex;flex-direction:column;gap:4px;}
+.acx-tphoto .b{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:none;letter-spacing:0;}
+.acx-tphoto .b.feat{background:#F7B500;color:#000;}
+.acx-tphoto .b.vip{background:rgba(0,0,0,.82);color:#fff;}
+.acx-tinfo{flex:1;min-width:0;display:flex;flex-direction:column;}
+.acx-tname{font-size:17px;font-weight:600;letter-spacing:-.01em;color:#0f172a;line-height:1.15;}
+.acx-tname:hover{text-decoration:underline;}
+.acx-tmeta{font-size:12px;color:#64748b;margin-top:2px;}
+.acx-tbtns{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;}
 
 /* APPLY CTA */
-.acx-apply{background:#0a0a0a;color:#fff;border-radius:16px;padding:40px 32px;text-align:center;}
-.acx-apply .e{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#a1a1aa;}
-.acx-apply h3{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:8px 0 6px;color:#fff;}
-.acx-apply p{color:#a1a1aa;margin:0 auto 22px;max-width:520px;font-size:14px;}
+.acx-apply{margin-top:64px;border:1px solid #e5e7eb;border-radius:18px;background:linear-gradient(135deg,rgba(30,110,245,.08),#fff 70%);padding:48px 32px;text-align:center;}
+.acx-apply .e{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#1e6ef5;}
+.acx-apply h3{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:10px 0 6px;color:#0f172a;}
+.acx-apply p{color:#475569;margin:0 auto 22px;max-width:540px;font-size:14px;}
 .acx-apply .btns{display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;}
-.acx-apply .b1{background:#fff;color:#111;padding:11px 22px;border-radius:8px;font-weight:500;font-size:14px;}
-.acx-apply .b1:hover{background:#f4f4f5;}
-.acx-apply .b2{border:1px solid #3f3f46;color:#fff;padding:11px 22px;border-radius:8px;font-weight:500;font-size:14px;}
-.acx-apply .b2:hover{border-color:#fff;}
+.acx-apply .b1{background:#0f172a;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;}
+.acx-apply .b1:hover{background:#1e293b;}
+.acx-apply .b2{border:1px solid #e2e8f0;color:#0f172a;background:#fff;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;}
+.acx-apply .b2:hover{background:#f8fafc;}
 
-.acx-state{text-align:center;padding:36px;color:#71717a;font-size:14px;}
-.acx-error{text-align:center;padding:36px;color:#b91c1c;font-size:14px;}
+.acx-state{text-align:center;padding:36px;color:#64748b;font-size:14px;grid-column:1/-1;}
+.acx-error{text-align:center;padding:36px;color:#b91c1c;font-size:14px;grid-column:1/-1;}
 </style>
 <div class="acx-root">
-  <section class="acx-section">
-    <div id="acx-hero" class="acx-hero">
-      <div id="acx-hero-slide" class="acx-hero-slide"></div>
-      <div class="acx-hero-grad"></div>
-      <div id="acx-hero-dots" class="acx-hero-dots"></div>
-      <div id="acx-hero-meta" class="acx-hero-meta"></div>
-    </div>
-  </section>
-
-  <section class="acx-section">
-    <div class="acx-head">
+  <!-- HERO -->
+  <section class="acx-hero">
+    <div class="acx-hero-inner">
       <div>
-        <div class="acx-eyebrow" style="color:#c9a14a;">&#9819; VIP Talent</div>
-        <h2 class="acx-h2">Premium roster</h2>
-        <p class="acx-sub">Highly requested talents selected by Art City Casting.</p>
+        <span class="acx-hero-eyebrow">&#10026; Art City Casting</span>
+        <h1>Talent Gallery</h1>
+        <p>Browse our represented actors, actresses, models, voice talents, and performers — for films, series, commercials, music videos, and branded productions. All casting requests are handled directly through Art City.</p>
+        <div class="acx-hero-cta">
+          <a class="acx-btn acx-btn-white" href="#acx-directory">Browse the roster &rarr;</a>
+          <a class="acx-btn acx-btn-ghost" href="${base}/casting-request" target="_blank" rel="noopener">Submit a casting request</a>
+        </div>
+        <div class="acx-hero-dots" id="acx-hero-dots"></div>
       </div>
+      <div class="acx-hero-card" id="acx-hero-card"></div>
     </div>
-    <div id="acx-vip" class="acx-grid"><div class="acx-state">Loading…</div></div>
   </section>
 
-  <section class="acx-section">
-    <div class="acx-head">
+  <!-- DIRECTORY HEADER BAR -->
+  <div class="acx-bar">
+    <div>
+      <h2>Casting Directory</h2>
+      <p>All inquiries, negotiations, and bookings are managed exclusively through Art City Casting.</p>
+    </div>
+    <a class="cta" href="${base}/casting-request" target="_blank" rel="noopener">&#128227; Post a Casting Call</a>
+  </div>
+
+  <!-- VIP -->
+  <section class="acx-section" id="acx-vip-section">
+    <div class="acx-eyebrow">&#9819; VIP Talent</div>
+    <h2 class="acx-h2">Premium roster</h2>
+    <p class="acx-sub">Highly requested talents handpicked by Art City Casting.</p>
+    <div id="acx-vip" class="acx-vip-row"><div class="acx-state">Loading VIP talents…</div></div>
+  </section>
+
+  <!-- DIRECTORY -->
+  <main id="acx-directory" class="acx-section">
+    <div class="acx-dir-wrap">
+      <aside class="acx-side">
+        <div class="acx-side-head">
+          <h3>Filters</h3>
+          <button type="button" class="clr" id="acx-clear">Clear all</button>
+        </div>
+        <div class="acx-fs" data-open="true">
+          <button type="button" class="acx-fs-btn">Basic<span class="chev">&#9662;</span></button>
+          <div class="acx-fs-body">
+            <div class="acx-flabel">Search</div>
+            <input id="acx-q" class="acx-input" placeholder="Name or stage name"/>
+            <div class="acx-flabel">Category</div>
+            <select id="acx-cat" class="acx-input">
+              <option value="">All categories</option><option value="actor">Actor</option><option value="actress">Actress</option><option value="model">Model</option><option value="performer">Performer</option><option value="voice_talent">Voice talent</option>
+            </select>
+            <div class="acx-flabel">Gender</div>
+            <select id="acx-gender" class="acx-input">
+              <option value="">All genders</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="acx-fs">
+          <button type="button" class="acx-fs-btn">Physical<span class="chev">&#9662;</span></button>
+          <div class="acx-fs-body">
+            <div class="acx-flabel">Location</div>
+            <input id="acx-loc" class="acx-input" placeholder="City / region"/>
+            <div class="acx-flabel">Nationality</div>
+            <input id="acx-nat" class="acx-input" placeholder="Nationality"/>
+          </div>
+        </div>
+        <div class="acx-fs">
+          <button type="button" class="acx-fs-btn">Languages<span class="chev">&#9662;</span></button>
+          <div class="acx-fs-body">
+            <div class="acx-flabel">Native or spoken</div>
+            <input id="acx-lang" class="acx-input" placeholder="e.g. Kurdish, Arabic"/>
+          </div>
+        </div>
+        <div class="acx-fs">
+          <button type="button" class="acx-fs-btn">Availability<span class="chev">&#9662;</span></button>
+          <div class="acx-fs-body">
+            <label class="acx-fchk"><input type="checkbox" id="acx-vipOnly"/> VIP only</label>
+            <label class="acx-fchk"><input type="checkbox" id="acx-featOnly"/> Featured only</label>
+          </div>
+        </div>
+      </aside>
+
       <div>
-        <div class="acx-eyebrow">&#10026; Featured</div>
-        <h2 class="acx-h2">Featured talents</h2>
-        <p class="acx-sub">Editorially highlighted by our casting team.</p>
+        <div class="acx-chips" role="group" aria-label="Quick filters">
+          <button type="button" class="acx-chip" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="acx-chip vip" data-filter="vip" aria-pressed="false">&#9819; VIP</button>
+          <button type="button" class="acx-chip" data-filter="featured" aria-pressed="false">&#10026; Featured</button>
+        </div>
+        <div class="acx-toolbar">
+          <div class="acx-count" id="acx-count">Loading…</div>
+          <div class="acx-sort">
+            <label>Sort:</label>
+            <select id="acx-sort" class="acx-input" style="width:auto;">
+              <option value="featured">Best Match</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="name_asc">Name A-Z</option><option value="name_desc">Name Z-A</option>
+            </select>
+          </div>
+        </div>
+        <div id="acx-dir" class="acx-list"></div>
       </div>
     </div>
-    <div id="acx-feat" class="acx-grid"><div class="acx-state">Loading…</div></div>
-  </section>
+  </main>
 
-  <section class="acx-section">
-    <div class="acx-head">
-      <div>
-        <div class="acx-eyebrow">Directory</div>
-        <h2 class="acx-h2">All represented talents</h2>
-        <p class="acx-sub">Search, filter, and discover our complete roster.</p>
-      </div>
-    </div>
-    <div class="acx-chips" role="group" aria-label="Quick filters">
-      <button type="button" class="acx-chip" data-filter="all" aria-pressed="true">All</button>
-      <button type="button" class="acx-chip vip" data-filter="vip" aria-pressed="false">&#9819; VIP</button>
-      <button type="button" class="acx-chip" data-filter="featured" aria-pressed="false">&#10026; Featured</button>
-    </div>
-    <div class="acx-filters">
-      <input id="acx-q" class="acx-input" placeholder="Search name…" />
-      <select id="acx-gender" class="acx-input">
-        <option value="">All genders</option><option value="male">Male</option><option value="female">Female</option><option value="non_binary">Non-binary</option><option value="other">Other</option>
-      </select>
-      <select id="acx-cat" class="acx-input">
-        <option value="">All categories</option><option value="actor">Actor</option><option value="actress">Actress</option><option value="model">Model</option><option value="performer">Performer</option><option value="voice_talent">Voice talent</option>
-      </select>
-      <input id="acx-loc" class="acx-input" placeholder="Location" />
-      <input id="acx-lang" class="acx-input" placeholder="Language" />
-      <select id="acx-sort" class="acx-input">
-        <option value="featured">Sort: Featured</option><option value="newest">Newest</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option>
-      </select>
-    </div>
-    <p id="acx-dir-meta" class="acx-meta-line"></p>
-    <div id="acx-dir" class="acx-grid"></div>
-  </section>
-
-  <section class="acx-section">
-    <div class="acx-apply">
-      <div class="e">Join Art City</div>
-      <h3>Apply to be represented</h3>
-      <p>Submit your profile to be considered for casting opportunities across film, TV, theatre, and commercial productions.</p>
-      <div class="btns">
-        <a class="b1" href="${base}/register" target="_blank" rel="noopener">Start application &rarr;</a>
-        <a class="b2" href="${base}/login" target="_blank" rel="noopener">Sign in</a>
-      </div>
+  <!-- APPLY -->
+  <section class="acx-apply">
+    <div class="e">&#10026; Join the roster</div>
+    <h3>Apply to Join Art City Casting</h3>
+    <p>Actors, actresses, models, voice talents, and performers can submit their information for review. Approved applicants may be added to the Art City Casting talent database.</p>
+    <div class="btns">
+      <a class="b1" href="${base}/register" target="_blank" rel="noopener">Start your application</a>
+      <a class="b2" href="${base}/login" target="_blank" rel="noopener">Sign in</a>
     </div>
   </section>
 </div>
 <script>(function(){
 ${FETCH_HELPER(base, profilePattern)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function card(t,opts){
-  opts=opts||{};
-  var img=t.headshot_thumb_url||t.headshot_url||'';
-  var name=esc(t.stage_name||t.full_name||'Talent');
-  var badge='';
-  if(t.featured) badge='<span class="acx-badge feat">Featured</span>';
-  else if(t.vip) badge='<span class="acx-badge vip">VIP</span>';
-  var meta=[t.location,t.nationality].filter(Boolean).map(esc).join(' \u00b7 ');
-  return '<a class="acx-card'+(opts.vip?' vip':'')+'" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">'+
-    '<div class="ph">'+(img?'<img src="'+esc(img)+'" alt="'+name+'" loading="lazy" decoding="async"/>':'<div class="empty"></div>')+badge+'</div>'+
-    '<div class="body"><div class="name">'+name+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</div>'+
-  '</a>';
-}
+function cap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+function lbl(s){return String(s||'').replace(/_/g,' ').replace(/\\b\\w/g,function(c){return c.toUpperCase();});}
+function langChips(t){var o=[];if(t.native_language)o.push(cap(t.native_language));var more=t&&t.skills&&t.skills.languages;if(Array.isArray(more)){for(var i=0;i<more.length;i++){var v=typeof more[i]==='string'?more[i]:(more[i]&&more[i].name);if(v&&o.indexOf(v)===-1)o.push(cap(v));}}return o.slice(0,3);}
+function castReq(t){return '${base}/casting-request?talent='+encodeURIComponent(t.id||'')+'&name='+encodeURIComponent(t.stage_name||t.full_name||'');}
 
-/* Hero */
+/* HERO SLIDESHOW */
 (function(){
-  var slideEl=document.getElementById('acx-hero-slide'),metaEl=document.getElementById('acx-hero-meta'),dotsEl=document.getElementById('acx-hero-dots');
-  var items=[],idx=0;
+  var card=document.getElementById('acx-hero-card'),dots=document.getElementById('acx-hero-dots');
+  var items=[],idx=0,timer=null;
   function render(){
-    if(!items.length){metaEl.innerHTML='<div class="e">Art City Casting</div><div class="n">Discover represented talent</div>';return;}
+    if(!items.length){card.innerHTML='<div class="grad"></div>';return;}
     var t=items[idx%items.length],img=t.headshot_url||t.headshot_thumb_url||'';
-    slideEl.innerHTML=img?'<img src="'+esc(img)+'" alt=""/>':'';
-    metaEl.innerHTML='<div class="e">Featured Talent</div>'+
-      '<div class="n">'+esc(t.stage_name||t.full_name||'Talent')+'</div>'+
-      (t.location?'<div class="m">'+esc(t.location)+'</div>':'')+
-      '<a class="acx-hero-cta" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">View profile &rarr;</a>';
-    dotsEl.innerHTML=items.map(function(_,i){return '<span class="acx-hero-dot'+(i===idx%items.length?' on':'')+'"></span>';}).join('');
+    var meta=[t.age?t.age+' yrs':null,t.gender?lbl(t.gender):null,t.location].filter(Boolean).join(' \u2022 ');
+    card.innerHTML='<a href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">'+
+      (img?'<img src="'+esc(img)+'" alt=""/>':'')+
+      (t.vip?'<span class="pill">&#9819; VIP</span>':(t.featured?'<span class="pill" style="background:#fff;color:#0f172a;">FEATURED</span>':''))+
+      '<div class="grad"></div><div class="info"><div class="n">'+esc(t.stage_name||t.full_name||'Talent')+'</div>'+(meta?'<div class="m">'+esc(meta)+'</div>':'')+'</div></a>';
+    if(items.length>1){
+      var html='<button type="button" class="nav" data-d="-1">&#9664;</button>';
+      for(var i=0;i<items.length;i++)html+='<span class="dot'+(i===idx%items.length?' on':'')+'"></span>';
+      html+='<button type="button" class="nav" data-d="1">&#9654;</button>';
+      dots.innerHTML=html;
+      Array.prototype.forEach.call(dots.querySelectorAll('.nav'),function(b){b.addEventListener('click',function(){idx+=parseInt(b.getAttribute('d')||b.getAttribute('data-d')||'1',10);render();reset();});});
+    }
   }
+  function reset(){if(timer)clearInterval(timer);timer=setInterval(function(){idx++;render();},6000);}
   acFetchTalents({featured_only:'true',limit:6}).then(function(r){
-    if(r.length){items=r;render();}
-    else acFetchTalents({limit:6}).then(function(x){items=x;render();});
-  }).catch(function(){});
-  setInterval(function(){idx++;render();},5500);
+    if(r&&r.length){items=r;}else{return acFetchTalents({limit:6}).then(function(x){items=x;});}
+  }).then(function(){render();reset();}).catch(function(){});
 })();
 
-/* VIP + Featured */
-function fillGrid(elId,params,opts){
-  var el=document.getElementById(elId);
-  acFetchTalents(params).then(function(items){
-    if(!items.length){el.innerHTML='<p class="acx-state">No talents yet.</p>';return;}
-    el.innerHTML=items.map(function(t){return card(t,opts||{});}).join('');
-  }).catch(function(e){el.innerHTML='<p class="acx-error">'+esc(e.message)+'</p>';});
+/* VIP STRIP */
+function vipCardHtml(t){
+  var img=t.headshot_url||t.headshot_thumb_url||'';
+  var name=esc(t.stage_name||t.full_name||'Talent');
+  var meta=[t.age?t.age+' yrs':null,t.gender?lbl(t.gender):null,t.location].filter(Boolean).map(esc).join(' \u2022 ');
+  var cats=(t.categories||[]).slice(0,2).map(function(c){return '<span class="acx-pill">'+esc(lbl(c))+'</span>';}).join('');
+  var langs=langChips(t).slice(0,2).map(function(l){return '<span class="acx-pill muted">'+esc(l)+'</span>';}).join('');
+  return '<div class="acx-vip-card">'+
+    '<a class="acx-vip-photo" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">'+
+      (img?'<img src="'+esc(img)+'" alt="'+name+'" loading="lazy" decoding="async"/>':'')+
+      '<div class="grad"></div><span class="vip-pill">&#9819; VIP</span>'+
+      '<div class="info"><div class="n">'+name+'</div>'+(meta?'<div class="m">'+meta+'</div>':'')+'</div>'+
+    '</a>'+
+    '<div class="acx-vip-foot">'+
+      (cats||langs?'<div class="acx-pills">'+cats+langs+'</div>':'')+
+      '<div class="acx-row-btns">'+
+        '<a class="acx-btn-blue" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">&#128100; View Profile</a>'+
+        '<a class="acx-btn-outline" href="'+esc(castReq(t))+'" target="_blank" rel="noopener" aria-label="Contact">&#9993;</a>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
 }
-fillGrid('acx-vip',{vip_only:'true',limit:8},{vip:true});
-fillGrid('acx-feat',{featured_only:'true',limit:8});
-
-/* Directory */
 (function(){
-  var ids=['acx-q','acx-gender','acx-cat','acx-loc','acx-lang','acx-sort'];
-  var grid=document.getElementById('acx-dir'),meta=document.getElementById('acx-dir-meta'),t,activeFilter='all',reqId=0;
+  var el=document.getElementById('acx-vip');
+  acFetchTalents({vip_only:'true',limit:8}).then(function(items){
+    if(!items.length){document.getElementById('acx-vip-section').style.display='none';return;}
+    el.innerHTML=items.map(vipCardHtml).join('');
+  }).catch(function(e){el.innerHTML='<p class="acx-error">'+esc(e.message)+'</p>';});
+})();
+
+/* DIRECTORY */
+function tCardHtml(t){
+  var img=t.headshot_thumb_url||t.headshot_url||'';
+  var name=esc(t.stage_name||t.full_name||'Talent');
+  var meta=[t.age,t.gender?lbl(t.gender):null,t.location].filter(Boolean).map(esc).join(', ');
+  var cats=(t.categories||[]).slice(0,3).map(function(c){return '<span class="acx-pill">'+esc(lbl(c))+'</span>';}).join('');
+  var langs=langChips(t).map(function(l){return '<span class="acx-pill muted">'+esc(l)+'</span>';}).join('');
+  var badges='';
+  if(t.featured)badges+='<span class="b feat">Featured</span>';
+  if(t.vip)badges+='<span class="b vip">VIP</span>';
+  return '<div class="acx-tcard'+(t.vip?' vip':'')+'">'+
+    '<a class="acx-tphoto" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">'+
+      (img?'<img src="'+esc(img)+'" alt="'+name+'" loading="lazy" decoding="async"/>':'')+
+      (badges?'<div class="badges">'+badges+'</div>':'')+
+    '</a>'+
+    '<div class="acx-tinfo">'+
+      '<a class="acx-tname" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">'+name+'</a>'+
+      '<div class="acx-tmeta">'+(meta||'\u2014')+'</div>'+
+      (cats?'<div class="acx-pills" style="margin-top:8px;">'+cats+'</div>':'')+
+      (langs?'<div class="acx-pills" style="margin-top:6px;">'+langs+'</div>':'')+
+      '<div class="acx-tbtns">'+
+        '<a class="acx-btn-blue" style="flex:0 0 auto;padding:7px 12px;" href="'+esc(acProfileUrl(t.slug))+'" rel="noopener">&#128100; View Profile</a>'+
+        '<a class="acx-btn-outline" style="padding:7px 12px;" href="'+esc(castReq(t))+'" target="_blank" rel="noopener">&#9993; Contact me</a>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+(function(){
+  var grid=document.getElementById('acx-dir'),count=document.getElementById('acx-count');
+  var activeFilter='all',reqId=0,debounceT;
+  var fields=['acx-q','acx-cat','acx-gender','acx-loc','acx-nat','acx-lang','acx-sort'];
+  var checks=['acx-vipOnly','acx-featOnly'];
   function load(){
     var myReq=++reqId;
-    meta.textContent='Loading…';
-    var params={q:document.getElementById('acx-q').value,gender:document.getElementById('acx-gender').value,category:document.getElementById('acx-cat').value,location:document.getElementById('acx-loc').value,language:document.getElementById('acx-lang').value,sort:document.getElementById('acx-sort').value,limit:100};
-    if(activeFilter==='vip')params.vip_only='true';
-    if(activeFilter==='featured')params.featured_only='true';
-    acFetchTalents(params).then(function(items){
+    count.textContent='Loading…';
+    var p={
+      q:document.getElementById('acx-q').value,
+      category:document.getElementById('acx-cat').value,
+      gender:document.getElementById('acx-gender').value,
+      location:document.getElementById('acx-loc').value,
+      nationality:document.getElementById('acx-nat').value,
+      language:document.getElementById('acx-lang').value,
+      sort:document.getElementById('acx-sort').value,
+      limit:100
+    };
+    if(document.getElementById('acx-vipOnly').checked||activeFilter==='vip')p.vip_only='true';
+    if(document.getElementById('acx-featOnly').checked||activeFilter==='featured')p.featured_only='true';
+    acFetchTalents(p).then(function(items){
       if(myReq!==reqId)return;
-      meta.textContent=items.length+' '+(items.length===1?'result':'results');
-      grid.innerHTML=items.length?items.map(function(x){return card(x,{vip:activeFilter==='vip'});}).join(''):'<p class="acx-state">No talents found.</p>';
-    }).catch(function(e){if(myReq!==reqId)return;meta.textContent='';grid.innerHTML='<p class="acx-error">'+esc(e.message)+'</p>';});
+      count.textContent=items.length+' '+(items.length===1?'Talent':'Talents');
+      grid.innerHTML=items.length?items.map(tCardHtml).join(''):'<p class="acx-state">No talents found.</p>';
+    }).catch(function(e){if(myReq!==reqId)return;count.textContent='';grid.innerHTML='<p class="acx-error">'+esc(e.message)+'</p>';});
   }
-  ids.forEach(function(id){var el=document.getElementById(id);if(el.tagName==='SELECT')el.addEventListener('change',load);else el.addEventListener('input',function(){clearTimeout(t);t=setTimeout(load,250);});});
+  function debLoad(){clearTimeout(debounceT);debounceT=setTimeout(load,250);}
+  fields.forEach(function(id){var el=document.getElementById(id);if(!el)return;if(el.tagName==='SELECT')el.addEventListener('change',load);else el.addEventListener('input',debLoad);});
+  checks.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('change',load);});
+  /* Chip filters */
   Array.prototype.forEach.call(document.querySelectorAll('.acx-chip'),function(b){b.addEventListener('click',function(){activeFilter=b.getAttribute('data-filter');Array.prototype.forEach.call(document.querySelectorAll('.acx-chip'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});load();});});
+  /* Collapsible sections */
+  Array.prototype.forEach.call(document.querySelectorAll('.acx-fs-btn'),function(b){b.addEventListener('click',function(){var fs=b.parentNode;fs.setAttribute('data-open',fs.getAttribute('data-open')==='true'?'false':'true');});});
+  /* Clear */
+  var clr=document.getElementById('acx-clear');if(clr)clr.addEventListener('click',function(){fields.forEach(function(id){var el=document.getElementById(id);if(el)el.value=id==='acx-sort'?'featured':'';});checks.forEach(function(id){var el=document.getElementById(id);if(el)el.checked=false;});activeFilter='all';Array.prototype.forEach.call(document.querySelectorAll('.acx-chip'),function(x){x.setAttribute('aria-pressed',x.getAttribute('data-filter')==='all'?'true':'false');});load();});
   load();
 })();
 })();</script>`;
