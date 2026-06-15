@@ -972,9 +972,9 @@ fetch(BASE+'/api/public/v1/talents/'+encodeURIComponent(slug))
 const SNIPPETS: Snippet[] = [
   {
     id: "all",
-    title: "🎬 Complete Talents experience (all-in-one)",
+    title: "🎬 Complete Talents experience (all-in-one) — v2 (regenerated)",
     description:
-      "Hero slideshow + VIP roster + Featured + filterable directory + Apply CTA. One paste — full page.",
+      "Regenerated UI: hero slideshow + VIP roster + featured + filterable directory (sidebar filters, chips, sort) + Apply CTA. One paste — full page. If you previously pasted v1, delete the old Custom HTML block first, then paste this fresh.",
     build: buildAllInOne,
   },
   {
