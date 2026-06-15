@@ -769,6 +769,38 @@ function Field({ label, value }: { label: string; value: any }) {
   );
 }
 
+function FlagToggle({
+  label,
+  hint,
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      className={`flex items-start justify-between gap-3 rounded-md border bg-background px-3 py-2 ${
+        checked ? "border-primary/60" : "border-border"
+      } ${disabled ? "opacity-60" : "cursor-pointer hover:bg-muted/40"}`}
+    >
+      <span className="flex flex-col">
+        <span className="text-xs font-medium">{label}</span>
+        {hint && <span className="text-[10px] text-muted-foreground">{hint}</span>}
+      </span>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
+      />
+    </label>
+  );
+}
+
 function CastingTab() {
   const fn = useServerFn(listCastingRequests);
   const updateFn = useServerFn(updateCastingRequest);
