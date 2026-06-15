@@ -315,7 +315,7 @@ function TalentsPage() {
           <p className="text-muted-foreground">No talents published yet.</p>
         )}
 
-        <div className={`grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
+        <div className={`grid gap-4 sm:grid-cols-2 transition-opacity ${isFetching && !isLoading ? "opacity-60" : "opacity-100"}`}>
           {(hasAnyFilter ? all : regulars).map((t: any) => (
             <TalentCard key={t.id} t={t} />
           ))}
@@ -354,52 +354,154 @@ function TalentsPage() {
 
 function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
   const displayName = t.stage_name ?? t.full_name ?? "Talent";
+  const meta = [
+    t.age ? `${t.age}` : null,
+    t.gender ? cap(t.gender) : null,
+    t.location ?? null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const cats: string[] = (t.categories ?? []).slice(0, 3);
+  const langs: string[] = languageChips(t);
+
   return (
-    <Card className={`group overflow-hidden border-border/60 bg-card/60 backdrop-blur transition-all hover:-translate-y-1 hover:border-primary/60 hover:shadow-[var(--shadow-elegant)] ${variant === "vip" ? "ring-1 ring-primary/30" : ""}`}>
-      <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }} className="block">
-        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+    <Card
+      className={`group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-[#1e6ef5]/40 hover:shadow-md ${
+        variant === "vip" ? "ring-1 ring-[#F7B500]/50" : ""
+      }`}
+    >
+      <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+        <Link
+          to="/talents/$slug"
+          params={{ slug: t.slug ?? t.id }}
+          className="relative block h-28 w-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:h-32 sm:w-28"
+        >
           <LazyImage
             src={t.headshot_url ?? null}
             thumbSrc={t.headshot_thumb_url ?? null}
             alt={displayName}
             ratioClassName="absolute inset-0 h-full w-full"
-            className="transition-transform duration-700 group-hover:scale-105"
-            fallback="No photo"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            fallback={<UserRound className="h-8 w-8 text-muted-foreground" />}
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-          <div className="absolute left-3 top-3 flex gap-1.5">
-            {t.featured && <Badge className="bg-primary text-primary-foreground">Featured</Badge>}
-            {t.vip && <Badge className="bg-gradient-to-r from-primary to-[color:var(--primary-glow)] text-primary-foreground border-0">VIP</Badge>}
+          <div className="absolute left-1 top-1 flex flex-col gap-1">
+            {t.featured && (
+              <span className="rounded-sm bg-[#F7B500] px-1.5 py-0.5 text-[10px] font-semibold text-black shadow">
+                Featured
+              </span>
+            )}
+            {t.vip && (
+              <span className="rounded-sm bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                VIP
+              </span>
+            )}
           </div>
-          <div className="absolute inset-x-3 bottom-3 text-white">
-            <p className="text-lg font-semibold leading-tight drop-shadow">{displayName}</p>
-            <p className="mt-0.5 text-xs text-white/80">
-              {[t.gender, t.playing_age, t.location].filter(Boolean).join(" · ") || "—"}
-            </p>
+        </Link>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-start justify-between gap-2">
+            <Link
+              to="/talents/$slug"
+              params={{ slug: t.slug ?? t.id }}
+              className="truncate text-base font-semibold leading-tight hover:underline sm:text-lg"
+            >
+              {displayName}
+            </Link>
+            <div className="flex shrink-0 items-center gap-1 text-muted-foreground">
+              <button type="button" aria-label="Save" className="rounded-full p-1 hover:bg-muted">
+                <Heart className="h-4 w-4" />
+              </button>
+              <button type="button" aria-label="Contact" className="rounded-full p-1 hover:bg-muted">
+                <Mail className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta || "—"}</p>
+
+          {cats.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {cats.map((c) => (
+                <Pill key={c}>{labelize(c)}</Pill>
+              ))}
+            </div>
+          )}
+          {langs.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {langs.map((l) => (
+                <Pill key={l} tone="muted">
+                  {l}
+                </Pill>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-auto flex flex-wrap gap-2 pt-3">
+            <Button
+              asChild
+              size="sm"
+              className="h-8 bg-[#1e6ef5] px-3 text-xs text-white hover:bg-[#1857c9]"
+            >
+              <Link to="/talents/$slug" params={{ slug: t.slug ?? t.id }}>
+                <UserRound className="mr-1 h-3.5 w-3.5" /> View Profile
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 border-border bg-background px-3 text-xs"
+            >
+              <Link
+                to="/casting-request"
+                search={{ talent: t.id, name: displayName } as any}
+              >
+                <Mail className="mr-1 h-3.5 w-3.5" /> Contact me
+              </Link>
+            </Button>
           </div>
         </div>
-      </Link>
-      <CardContent className="flex flex-col gap-2 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs text-muted-foreground">
-            {(t.categories ?? []).slice(0, 2).join(", ") || "Talent"}
-          </span>
-          <Link
-            to="/talents/$slug"
-            params={{ slug: t.slug ?? t.id }}
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            View profile <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <Button asChild size="sm" variant="secondary" className="w-full">
-          <Link to="/casting-request" search={{ talent: t.id, name: displayName } as any}>
-            Request Through Art City
-          </Link>
-        </Button>
-      </CardContent>
+      </div>
     </Card>
   );
+}
+
+function Pill({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "muted";
+}) {
+  const cls =
+    tone === "muted"
+      ? "bg-muted text-foreground/70"
+      : "bg-[#eef2ff] text-[#1e3a8a]";
+  return (
+    <span
+      className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${cls}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function labelize(s: string) {
+  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+function languageChips(t: any): string[] {
+  const out: string[] = [];
+  if (t.native_language) out.push(cap(String(t.native_language)));
+  const more = t?.skills?.languages;
+  if (Array.isArray(more)) {
+    for (const l of more) {
+      const v = typeof l === "string" ? l : l?.name;
+      if (v && !out.includes(v)) out.push(cap(String(v)));
+    }
+  }
+  return out.slice(0, 4);
 }
 
 function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
