@@ -31,13 +31,19 @@ export const Route = createFileRoute("/api/public/v1/talents/$slug")({
             .eq("bucket", "talent-media")
             .order("position");
 
-          const mediaWithUrls = (media ?? []).map((m: any) => ({
-            ...m,
-            url: supabasePublic.storage.from("talent-media").getPublicUrl(m.path).data.publicUrl,
-            thumbnail_url: m.thumbnail_path
-              ? supabasePublic.storage.from("talent-media").getPublicUrl(m.thumbnail_path).data.publicUrl
-              : null,
-          }));
+          const bucket = supabasePublic.storage.from("talent-media");
+          const isImage = (kind: string) => ["headshot", "medium_shot", "medium", "full_body", "fullbody", "photo", "image"].includes(kind);
+          const mediaWithUrls = (media ?? []).map((m: any) => {
+            const url = bucket.getPublicUrl(m.path).data.publicUrl;
+            let thumbnail_url: string | null = null;
+            if (m.thumbnail_path) {
+              thumbnail_url = bucket.getPublicUrl(m.thumbnail_path).data.publicUrl;
+            } else if (isImage(m.kind)) {
+              // Fallback: request a transformed thumbnail (served if image transforms are enabled)
+              thumbnail_url = `${url}?width=600&quality=70`;
+            }
+            return { ...m, url, thumbnail_url };
+          });
           return jsonResponse({ version: "v1", data: { talent, media: mediaWithUrls } });
         } catch (err: any) {
           return jsonResponse({ error: err?.message || "Server error" }, { status: 500 });

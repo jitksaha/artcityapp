@@ -340,7 +340,8 @@ function pick(o){for(var i=1;i<arguments.length;i++){var k=arguments[i];if(o&&o[
 function credList(arr){if(!arr||!arr.length)return '<p class="acp-kv-empty">Not provided</p>';return '<ul class="acp-cred-list">'+arr.map(function(c){var bits=[];if(c.role)bits.push('· '+esc(c.role));if(c.director)bits.push('· dir. '+esc(c.director));if(c.year)bits.push('· '+esc(c.year));if(c.productionCompany)bits.push('· '+esc(c.productionCompany));return '<li><span style="font-weight:500;">'+esc(c.projectName||'Untitled')+'</span> <span class="acp-cred-meta">'+bits.join(' ')+'</span></li>';}).join('')+'</ul>';}
 function section(title,inner){return '<section class="acp-section"><h2>'+esc(title)+'</h2>'+inner+'</section>';}
 function detailCard(items){return '<div class="acp-card"><div class="acp-detail-grid">'+items.join('')+'</div></div>';}
-function renderGallery(items,emptyText){if(!items.length)return '<p class="acp-empty">'+esc(emptyText||'No photos in this category.')+'</p>';return '<div class="acp-gallery">'+items.map(function(m){return '<button type="button" data-src="'+esc(m.url)+'" aria-label="Open photo"><img src="'+esc(m.thumbnail_url||m.url)+'" alt="" loading="lazy"/></button>';}).join('')+'</div>';}
+function renderGallery(items,emptyText){if(!items.length)return '<p class="acp-empty">'+esc(emptyText||'No photos in this category.')+'</p>';return '<div class="acp-gallery">'+items.map(function(m,i){var thumb=m.thumbnail_url||m.url;var eager=i<4;return '<button type="button" data-src="'+esc(m.url)+'" aria-label="Open photo"><img src="'+esc(thumb)+'" alt="" width="300" height="400" loading="'+(eager?'eager':'lazy')+'" decoding="async" fetchpriority="'+(eager?'high':'low')+'"/></button>';}).join('')+'</div>';}
+function preconnectFor(url){try{var u=new URL(url);var key='acp-pc-'+u.origin;if(document.getElementById(key))return;var l=document.createElement('link');l.id=key;l.rel='preconnect';l.href=u.origin;l.crossOrigin='';document.head.appendChild(l);}catch(e){}}
 
 var slug=getSlug();
 var el=document.getElementById('ac-profile');
@@ -357,6 +358,8 @@ fetch(BASE+'/api/public/v1/talents/'+encodeURIComponent(slug))
 
     var name=esc(t.stage_name||t.full_name||'Talent');
     var img=t.headshot_url||t.headshot_thumb_url||'';
+    if(img)preconnectFor(img);
+    if(media[0]&&media[0].url)preconnectFor(media[0].url);
     var metaParts=[t.age&&(t.age+' yrs'),t.gender&&String(t.gender).replace(/_/g,' '),t.playing_age&&('playing '+t.playing_age),t.location,t.nationality].filter(Boolean).map(esc);
     var badges='';
     if(t.vip)badges+='<span class="acp-badge vip">VIP</span>';
@@ -369,8 +372,9 @@ fetch(BASE+'/api/public/v1/talents/'+encodeURIComponent(slug))
     var totalGal=galHead.length+galMed.length+galFull.length;
 
     // Header
+    var heroThumb=t.headshot_thumb_url||t.headshot_url||'';
     var header='<header class="acp-header">'+
-      (img?'<div class="acp-photo"><img src="'+esc(img)+'" alt="'+name+'"/></div>':'')+
+      (img?'<div class="acp-photo"><img src="'+esc(heroThumb)+'" alt="'+name+'" width="320" height="427" loading="eager" fetchpriority="high" decoding="async"/></div>':'')+
       '<div class="acp-main">'+
         '<div class="acp-title-row"><h1 class="acp-name">'+name+'</h1>'+badges+'</div>'+
         (metaParts.length?'<p class="acp-meta-line">'+metaParts.join(' \u00b7 ')+'</p>':'')+
@@ -457,7 +461,7 @@ fetch(BASE+'/api/public/v1/talents/'+encodeURIComponent(slug))
 
     var mediaSec=section('Media & Documents','<div class="acp-card"><div class="acp-detail-grid">'+
       detail('Showreel',t.showreel_link?'<a href="'+esc(t.showreel_link)+'" target="_blank" rel="noopener" style="color:#111;text-decoration:underline;word-break:break-all;">'+esc(t.showreel_link)+'</a>':null)+
-      '<div><div class="acp-kv-label">Voice reel</div><div style="margin-top:4px;">'+(voiceReel?'<audio controls src="'+esc(voiceReel.url)+'" style="width:100%;max-width:280px;"></audio>':'<span class="acp-kv-empty">Not provided</span>')+'</div></div>'+
+      '<div><div class="acp-kv-label">Voice reel</div><div style="margin-top:4px;">'+(voiceReel?'<audio controls preload="none" src="'+esc(voiceReel.url)+'" style="width:100%;max-width:280px;"></audio>':'<span class="acp-kv-empty">Not provided</span>')+'</div></div>'+
       detail('CV / R\u00e9sum\u00e9',cvFile?'<a href="'+esc(cvFile.url)+'" target="_blank" rel="noopener" style="color:#111;text-decoration:underline;">Download CV</a>':null)+
     '</div></div>');
 
