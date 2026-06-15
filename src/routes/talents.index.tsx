@@ -293,15 +293,12 @@ function TalentsPage() {
                     { v: "non_binary", l: "Non Binary" },
                     { v: "other", l: "Other" },
                   ].map((g) => (
-                    <label key={g.v} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-input"
-                        checked={gender === g.v}
-                        onChange={(e) => setGender(e.target.checked ? g.v : undefined)}
-                      />
-                      {g.l}
-                    </label>
+                    <FancyCheckbox
+                      key={g.v}
+                      label={g.l}
+                      checked={gender === g.v}
+                      onChange={(c) => setGender(c ? g.v : undefined)}
+                    />
                   ))}
                 </div>
               </FilterSection>
@@ -336,14 +333,10 @@ function TalentsPage() {
               </FilterSection>
 
               <FilterSection title="Availability">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={vipOnly} onChange={(e) => setVipOnly(e.target.checked)} />
-                  VIP only
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input type="checkbox" className="h-4 w-4 rounded border-input" checked={featuredOnly} onChange={(e) => setFeaturedOnly(e.target.checked)} />
-                  Featured only
-                </label>
+                <div className="space-y-1.5">
+                  <FancyCheckbox label="VIP only" checked={vipOnly} onChange={setVipOnly} />
+                  <FancyCheckbox label="Featured only" checked={featuredOnly} onChange={setFeaturedOnly} />
+                </div>
               </FilterSection>
 
               <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground">
@@ -639,6 +632,12 @@ function VipCard({ t }: { t: any }) {
 }
 
 function Pill({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "muted";
+}) {
   children,
   tone = "default",
 }: {
