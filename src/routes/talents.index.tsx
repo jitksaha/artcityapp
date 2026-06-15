@@ -17,6 +17,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SiteHeader } from "@/components/SiteHeader";
 import { LazyImage } from "@/components/LazyImage";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 const sortValues = ["featured", "newest", "oldest", "name_asc", "name_desc"] as const;
 const talentsSearchSchema = z.object({
@@ -203,21 +210,35 @@ function TalentsPage() {
       </div>
 
       {!hasAnyFilter && vips.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12">
-          <div className="mb-6 flex items-end justify-between gap-4">
+        <section className="relative mx-auto max-w-7xl px-4 py-14">
+          <div className="pointer-events-none absolute inset-x-4 top-0 -z-10 h-48 rounded-3xl bg-gradient-to-br from-[#F7B500]/10 via-transparent to-[#1e6ef5]/10 blur-2xl" />
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary">
-                <Crown className="h-4 w-4" /> VIP Talent
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#F7B500]/40 bg-[#F7B500]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#9a6b00]">
+                <Crown className="h-3.5 w-3.5" /> VIP Talent
               </div>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">Premium roster</h2>
-              <p className="text-sm text-muted-foreground">Highly requested talents selected by Art City Casting.</p>
+              <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight">Premium roster</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Highly requested talents handpicked by Art City Casting.
+              </p>
             </div>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {vips.map((t) => (
-              <TalentCard key={t.id} t={t} variant="vip" />
-            ))}
-          </div>
+          <Carousel opts={{ align: "start", loop: vips.length > 4 }} className="w-full">
+            <CarouselContent className="-ml-4">
+              {vips.map((t) => (
+                <CarouselItem
+                  key={t.id}
+                  className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+                >
+                  <VipCard t={t} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <CarouselPrevious className="static translate-y-0 h-9 w-9 rounded-full border-border" />
+              <CarouselNext className="static translate-y-0 h-9 w-9 rounded-full border-border bg-[#1e6ef5] text-white hover:bg-[#1857c9] hover:text-white" />
+            </div>
+          </Carousel>
         </section>
       )}
 
