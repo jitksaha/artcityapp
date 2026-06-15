@@ -160,13 +160,13 @@ function TalentsPage() {
   const all = useMemo(() => {
     const skillTerms = dSkills
       .split(",")
-      .map((s) => s.trim().toLowerCase())
+      .map((s: string) => s.trim().toLowerCase())
       .filter(Boolean);
     const exp = experience?.toLowerCase();
     return raw.filter((t) => {
       if (skillTerms.length > 0) {
         const hay = JSON.stringify(t.skills ?? {}).toLowerCase();
-        if (!skillTerms.every((s) => hay.includes(s))) return false;
+        if (!skillTerms.every((s: string) => hay.includes(s))) return false;
       }
       if (exp) {
         const hay = JSON.stringify(t.experience ?? {}).toLowerCase();
