@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { parseCsv, rowsToObjects, DEMO_TALENTS_SAMPLE_CSV } from "@/lib/demo-talents-csv";
 
 async function assertStaff(supabase: any, userId: string) {
@@ -276,7 +275,7 @@ export const updateAppSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("app_settings")
       .upsert(
         {
@@ -301,6 +300,7 @@ export const importDemoTalents = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const csvText = (data.csv && data.csv.trim().length > 0
       ? data.csv
       : DEMO_TALENTS_SAMPLE_CSV
@@ -512,13 +512,14 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
     await assertAdmin(context.supabase, context.userId);
     const q = (data?.query ?? "").trim().toLowerCase();
 
-    const { data: users, error: userErr } = await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 200,
-    });
-    if (userErr) throw new Error(userErr.message);
+    const { data: profiles, error: profileErr } = await context.supabase
+      .from("profiles")
+      .select("user_id, full_name, display_name, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (profileErr) throw new Error(profileErr.message);
 
-    const { data: roleRows, error: roleErr } = await supabaseAdmin
+    const { data: roleRows, error: roleErr } = await context.supabase
       .from("user_roles")
       .select("user_id, role");
     if (roleErr) throw new Error(roleErr.message);
@@ -530,20 +531,21 @@ export const listUsersWithRoles = createServerFn({ method: "GET" })
       rolesByUser.set(r.user_id, list);
     }
 
-    const result = (users?.users ?? [])
-      .filter((u) => {
+    const result = (profiles ?? [])
+      .filter((u: any) => {
         if (!q) return true;
-        const name = ((u.user_metadata as any)?.full_name ?? "").toLowerCase();
-        return (u.email ?? "").toLowerCase().includes(q) || name.includes(q);
+        return [u.full_name, u.display_name]
+          .filter(Boolean)
+          .some((value: string) => value.toLowerCase().includes(q));
       })
-      .map((u) => ({
-        id: u.id,
-        email: u.email ?? "",
-        full_name: ((u.user_metadata as any)?.full_name as string) ?? null,
+      .map((u: any) => ({
+        id: u.user_id,
+        email: "",
+        full_name: u.full_name || u.display_name || null,
         created_at: u.created_at,
-        roles: rolesByUser.get(u.id) ?? [],
+        roles: rolesByUser.get(u.user_id) ?? [],
       }))
-      .sort((a, b) => (a.email > b.email ? 1 : -1));
+      .sort((a: any, b: any) => (a.full_name > b.full_name ? 1 : -1));
 
     return result;
   });
@@ -567,14 +569,14 @@ export const setUserRole = createServerFn({ method: "POST" })
     }
 
     if (data.grant) {
-      const { error } = await supabaseAdmin
+      const { error } = await context.supabase
         .from("user_roles")
         .upsert({ user_id: data.user_id, role: data.role }, {
           onConflict: "user_id,role",
         });
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabaseAdmin
+      const { error } = await context.supabase
         .from("user_roles")
         .delete()
         .eq("user_id", data.user_id)
