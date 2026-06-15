@@ -638,12 +638,6 @@ function Pill({
   children: React.ReactNode;
   tone?: "default" | "muted";
 }) {
-  children,
-  tone = "default",
-}: {
-  children: React.ReactNode;
-  tone?: "default" | "muted";
-}) {
   const cls =
     tone === "muted"
       ? "bg-muted text-foreground/70"
