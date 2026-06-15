@@ -244,7 +244,7 @@ function TalentsPage() {
 
       <main id="directory" className="mx-auto max-w-7xl px-4 pb-16 pt-8">
         <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-          <aside className="lg:sticky lg:top-20 lg:self-start">
+          <aside className="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pr-1">
             <div className="rounded-xl border border-border bg-card">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <h3 className="text-base font-semibold">Filters</h3>
