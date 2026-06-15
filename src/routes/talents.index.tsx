@@ -60,7 +60,6 @@ function TalentsPage() {
   const [skills, setSkills] = useState("");
   const [experience, setExperience] = useState<string | undefined>();
   const [sort, setSort] = useState<"featured" | "newest" | "oldest" | "name_asc" | "name_desc">("featured");
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const dq = useDebouncedValue(q, 300);
   const dLanguage = useDebouncedValue(language, 300);
@@ -509,6 +508,37 @@ function languageChips(t: any): string[] {
     }
   }
   return out.slice(0, 4);
+}
+
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{children}</div>;
+}
+
+function FilterSection({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold hover:bg-muted/40"
+        aria-expanded={open}
+      >
+        {title}
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="space-y-1 px-4 pb-4">{children}</div>}
+    </div>
+  );
 }
 
 function HeroSlideshow({ items, loading }: { items: any[]; loading: boolean }) {
