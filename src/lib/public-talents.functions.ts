@@ -80,14 +80,20 @@ export const listPublicTalents = createServerFn({ method: "GET" })
 export const getPublicTalent = createServerFn({ method: "GET" })
   .inputValidator((i: unknown) => z.object({ slug: z.string().max(160) }).parse(i))
   .handler(async ({ data }) => {
-    const { data: talent, error: talentError } = await supabase
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        data.slug,
+      );
+    let query = supabase
       .from("talent_profiles")
       .select(PUBLIC_COLS)
-      .eq("slug", data.slug)
       .eq("approved", true)
       .eq("published", true)
-      .eq("visible_publicly", true)
-      .maybeSingle();
+      .eq("visible_publicly", true);
+    query = isUuid
+      ? query.or(`slug.eq.${data.slug},id.eq.${data.slug}`)
+      : query.eq("slug", data.slug);
+    const { data: talent, error: talentError } = await query.maybeSingle();
 
     if (talentError) throw new Error(talentError.message);
     if (!talent) return null;
