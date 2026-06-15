@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { parseCsv, rowsToObjects, DEMO_TALENTS_SAMPLE_CSV } from "@/lib/demo-talents-csv";
 
 async function assertStaff(supabase: any, userId: string) {
@@ -276,7 +275,7 @@ export const updateAppSettings = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("app_settings")
       .upsert(
         {
@@ -301,6 +300,7 @@ export const importDemoTalents = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const csvText = (data.csv && data.csv.trim().length > 0
       ? data.csv
       : DEMO_TALENTS_SAMPLE_CSV
