@@ -703,33 +703,81 @@ function CastingTab() {
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const STATUS_TONE: Record<string, string> = {
     new: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
     reviewed: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
     contacted: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
     closed: "bg-muted text-muted-foreground border-border",
   };
+  const categories = Array.from(
+    new Set(((data ?? []) as any[]).map((r) => r.production_type).filter(Boolean) as string[]),
+  ).sort();
+  const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toTs = dateTo ? new Date(dateTo).getTime() + 86_400_000 - 1 : null;
   const filtered = (data ?? []).filter((r: any) => {
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (categoryFilter !== "all" && (r.production_type ?? "") !== categoryFilter) return false;
+    if (fromTs !== null && new Date(r.created_at).getTime() < fromTs) return false;
+    if (toTs !== null && new Date(r.created_at).getTime() > toTs) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return [r.production_title, r.contact_person, r.email, r.company_name, r.requested_talent_name]
       .filter(Boolean)
       .some((v: string) => v.toLowerCase().includes(q));
   });
+  const hasFilters =
+    statusFilter !== "all" ||
+    categoryFilter !== "all" ||
+    !!search.trim() ||
+    !!dateFrom ||
+    !!dateTo;
 
   if (isLoading) return <ListSkeleton rows={4} />;
   return (
     <div className="space-y-3">
       <Card>
-        <CardContent className="py-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input
-            placeholder="Search by production, company, contact, email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="sm:max-w-sm"
-          />
-          <div className="flex flex-wrap gap-1.5">
+        <CardContent className="space-y-3 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Search by name, production, company, email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="sm:max-w-sm"
+            />
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            >
+              <option value="all">All categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>From</span>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 w-[150px]"
+              />
+              <span>To</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 w-[150px]"
+              />
+            </div>
+            <div className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
+              {filtered.length} {filtered.length === 1 ? "request" : "requests"}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
             {["all", "new", "reviewed", "contacted", "closed"].map((s) => (
               <Button
                 key={s}
@@ -741,9 +789,22 @@ function CastingTab() {
                 {s}
               </Button>
             ))}
-          </div>
-          <div className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
-            {filtered.length} {filtered.length === 1 ? "request" : "requests"}
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-7 px-2 text-xs"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setCategoryFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
