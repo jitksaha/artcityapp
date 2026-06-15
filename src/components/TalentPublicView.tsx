@@ -8,6 +8,21 @@ import { publicMediaUrl } from "@/lib/storage";
 
 type MediaItem = { id: string; kind: string; bucket: string; path: string; position?: number | null };
 
+const NOT_PROVIDED = (
+  <span className="italic text-muted-foreground/60">Not provided</span>
+);
+
+function pretty(v: unknown): React.ReactNode {
+  if (v === null || v === undefined || v === "") return NOT_PROVIDED;
+  if (Array.isArray(v)) {
+    const cleaned = v.filter((x) => x !== null && x !== undefined && x !== "");
+    if (cleaned.length === 0) return NOT_PROVIDED;
+    return cleaned.map((x) => String(x).replace(/_/g, " ")).join(", ");
+  }
+  if (typeof v === "boolean") return v ? "Yes" : "No";
+  return String(v).replace(/_/g, " ");
+}
+
 export function TalentPublicView({
   talent,
   media,
@@ -36,6 +51,9 @@ export function TalentPublicView({
     );
     return groups;
   }, [media]);
+
+  const voiceReel = useMemo(() => media.find((m) => m.kind === "voice_reel"), [media]);
+  const cvFile = useMemo(() => media.find((m) => m.kind === "cv"), [media]);
 
   const totalGallery =
     galleries.headshot.length + galleries.medium.length + galleries.fullbody.length;
@@ -88,9 +106,23 @@ export function TalentPublicView({
               {t.featured && <Badge variant="secondary">Featured</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
-              {[t.gender, t.playing_age, t.location, t.nationality].filter(Boolean).join(" · ")}
+              {[
+                t.age && `${t.age} yrs`,
+                t.gender && String(t.gender).replace(/_/g, " "),
+                t.playing_age && `playing ${t.playing_age}`,
+                t.location,
+                t.nationality,
+              ].filter(Boolean).join(" · ")}
             </p>
             {t.bio && <p className="text-sm leading-relaxed">{t.bio}</p>}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-2 text-sm sm:grid-cols-3">
+              <KV label="Age" value={t.age} />
+              <KV label="Playing age" value={t.playing_age} />
+              <KV label="Gender" value={t.gender} />
+              <KV label="Location" value={t.location} />
+              <KV label="Nationality" value={t.nationality} />
+              <KV label="Native language" value={t.native_language} />
+            </div>
             {showContactCta && (
               <div className="space-y-2">
                 <Button asChild>
@@ -141,7 +173,7 @@ export function TalentPublicView({
           </section>
         )}
 
-        <ProfileSections talent={t} />
+        <ProfileSections talent={t} voiceReel={voiceReel} cvFile={cvFile} />
       </article>
 
       <Dialog open={!!lightbox} onOpenChange={(open) => !open && setLightbox(null)}>
@@ -157,20 +189,24 @@ export function TalentPublicView({
 }
 
 function Detail({ label, value }: { label: string; value: any }) {
-  if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) return null;
-  const display = Array.isArray(value) ? value.join(", ") : String(value);
   return (
     <div className="text-sm">
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5">{display}</dd>
+      <dd className="mt-0.5 capitalize">{pretty(value)}</dd>
+    </div>
+  );
+}
+
+function KV({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="flex flex-col">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-sm capitalize">{pretty(value)}</span>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  const arr = Array.isArray(children) ? children.filter(Boolean) : children;
-  const empty = Array.isArray(arr) ? arr.every((c) => c === null || c === false) : !arr;
-  if (empty) return null;
   return (
     <section>
       <h2 className="text-lg font-semibold mb-3">{title}</h2>
@@ -181,12 +217,22 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ProfileSections({ talent }: { talent: any }) {
+function ProfileSections({
+  talent,
+  voiceReel,
+  cvFile,
+}: {
+  talent: any;
+  voiceReel?: MediaItem;
+  cvFile?: MediaItem;
+}) {
   const physical = talent.physical ?? {};
   const skills = talent.skills ?? {};
   const languages = talent.languages ?? {};
   const experience = talent.experience ?? {};
   const agent = talent.agent ?? {};
+  const availability = talent.availability ?? {};
+  const extra = talent.extra_notes ?? {};
 
   const creditGroups: Array<{ label: string; key: string }> = [
     { label: "Film", key: "filmCredits" },
@@ -197,16 +243,18 @@ function ProfileSections({ talent }: { talent: any }) {
 
   return (
     <div className="space-y-8">
-      {Array.isArray(talent.categories) && talent.categories.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold mb-3">Categories</h2>
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Categories</h2>
+        {Array.isArray(talent.categories) && talent.categories.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {talent.categories.map((c: string) => (
               <Badge key={c} variant="secondary" className="capitalize">{c.replace(/_/g, " ")}</Badge>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="text-sm">{NOT_PROVIDED}</p>
+        )}
+      </section>
 
       <Section title="Physical Attributes">
         <Detail label="Height" value={physical.height} />
@@ -242,21 +290,23 @@ function ProfileSections({ talent }: { talent: any }) {
         <Detail label="Accents" value={languages.accents} />
       </Section>
 
-      {(experience.yearsOfExperience || experience.years_of_experience || creditGroups.some((g) => (experience as any)[g.key]?.length) || experience.training?.length || experience.workshops) && (
-        <section>
-          <h2 className="text-lg font-semibold mb-3">Experience</h2>
-          <div className="space-y-4 rounded-lg border border-border p-4 bg-card">
-            {(experience.yearsOfExperience ?? experience.years_of_experience) !== undefined && (experience.yearsOfExperience ?? experience.years_of_experience) !== null && (
-              <p className="text-sm"><span className="text-muted-foreground">Years of experience:</span> {experience.yearsOfExperience ?? experience.years_of_experience}</p>
-            )}
-            {creditGroups.map((g) => {
-              const list = (experience as any)[g.key] as any[] | undefined;
-              if (!list || list.length === 0) return null;
-              return (
-                <div key={g.key}>
-                  <h3 className="text-sm font-medium mb-2">{g.label} Credits</h3>
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Experience</h2>
+        <div className="space-y-4 rounded-lg border border-border p-4 bg-card">
+          <p className="text-sm">
+            <span className="text-muted-foreground">Years of experience: </span>
+            {pretty(experience.yearsOfExperience ?? experience.years_of_experience)}
+          </p>
+          {creditGroups.map((g) => {
+            const list = ((experience as any)[g.key] as any[] | undefined) ?? [];
+            return (
+              <div key={g.key}>
+                <h3 className="text-sm font-medium mb-2">{g.label} Credits</h3>
+                {list.length === 0 ? (
+                  <p className="text-sm">{NOT_PROVIDED}</p>
+                ) : (
                   <ul className="space-y-1 text-sm">
-                    {list.map((c, i) => (
+                    {list.map((c: any, i: number) => (
                       <li key={i} className="border-l-2 border-border pl-3">
                         <span className="font-medium">{c.projectName || "Untitled"}</span>
                         {c.role && <span className="text-muted-foreground"> · {c.role}</span>}
@@ -266,29 +316,32 @@ function ProfileSections({ talent }: { talent: any }) {
                       </li>
                     ))}
                   </ul>
-                </div>
-              );
-            })}
-            {experience.training?.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-2">Training</h3>
-                <ul className="space-y-1 text-sm">
-                  {experience.training.map((tr: any, i: number) => (
-                    <li key={i} className="border-l-2 border-border pl-3">
-                      <span className="font-medium">{tr.institution || "Institution"}</span>
-                      {tr.yearGraduated && <span className="text-muted-foreground"> · {tr.yearGraduated}</span>}
-                      {tr.productionCompany && <span className="text-muted-foreground"> · {tr.productionCompany}</span>}
-                    </li>
-                  ))}
-                </ul>
+                )}
               </div>
-            )}
-            {experience.workshops && (
-              <p className="text-sm"><span className="text-muted-foreground">Workshops:</span> {experience.workshops}</p>
+            );
+          })}
+          <div>
+            <h3 className="text-sm font-medium mb-2">Training</h3>
+            {(experience.training?.length ?? 0) === 0 ? (
+              <p className="text-sm">{NOT_PROVIDED}</p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {experience.training.map((tr: any, i: number) => (
+                  <li key={i} className="border-l-2 border-border pl-3">
+                    <span className="font-medium">{tr.institution || "Institution"}</span>
+                    {tr.yearGraduated && <span className="text-muted-foreground"> · {tr.yearGraduated}</span>}
+                    {tr.productionCompany && <span className="text-muted-foreground"> · {tr.productionCompany}</span>}
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
-        </section>
-      )}
+          <p className="text-sm">
+            <span className="text-muted-foreground">Workshops: </span>
+            {pretty(experience.workshops)}
+          </p>
+        </div>
+      </section>
 
       <Section title="Agent / Representation">
         <Detail label="Agent name" value={agent.agentName ?? agent.agent_name} />
@@ -296,6 +349,68 @@ function ProfileSections({ talent }: { talent: any }) {
         <Detail label="Agent email" value={agent.agentEmail ?? agent.agent_email} />
         <Detail label="Agent phone" value={agent.agentPhone ?? agent.agent_phone} />
       </Section>
+
+      <Section title="Availability">
+        <Detail label="Available for work" value={availability.availableForWork ?? availability.available_for_work} />
+        <Detail label="Travel availability" value={availability.travelAvailability ?? availability.travel_availability} />
+        <Detail label="Passport" value={availability.passport} />
+        <Detail label="Work permit" value={availability.workPermit ?? availability.work_permit} />
+        <Detail label="Willing to travel" value={availability.willingToTravel ?? availability.willing_to_travel} />
+      </Section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Special Skills & Notes</h2>
+        <div className="grid gap-4 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
+          <LongField label="Special skills" value={extra.specialSkills ?? extra.special_skills} />
+          <LongField label="Awards" value={extra.awards} />
+          <LongField label="Language notes" value={extra.languageNotes ?? extra.language_notes} />
+          <LongField label="Casting notes" value={extra.castingNotes ?? extra.casting_notes} />
+          <LongField label="Other notes" value={extra.notes} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">Media & Documents</h2>
+        <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2">
+          <div className="text-sm">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">Showreel</div>
+            <div className="mt-0.5">
+              {talent.showreel_link ? (
+                <a href={talent.showreel_link} target="_blank" rel="noreferrer" className="text-primary underline break-all">
+                  {talent.showreel_link}
+                </a>
+              ) : NOT_PROVIDED}
+            </div>
+          </div>
+          <div className="text-sm">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">Voice reel</div>
+            <div className="mt-0.5">
+              {voiceReel ? (
+                <audio controls src={publicMediaUrl(voiceReel.path)} className="w-full max-w-xs" />
+              ) : NOT_PROVIDED}
+            </div>
+          </div>
+          <div className="text-sm">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">CV / Résumé</div>
+            <div className="mt-0.5">
+              {cvFile ? (
+                <a href={publicMediaUrl(cvFile.path)} target="_blank" rel="noreferrer" className="text-primary underline">
+                  Download CV
+                </a>
+              ) : NOT_PROVIDED}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LongField({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="text-sm">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 whitespace-pre-wrap leading-relaxed">{pretty(value)}</div>
     </div>
   );
 }
