@@ -356,7 +356,7 @@ function TalentCard({ t, variant }: { t: any; variant?: "vip" }) {
   const displayName = t.stage_name ?? t.full_name ?? "Talent";
   const meta = [
     t.age ? `${t.age}` : null,
-    t.gender ? cap(t.gender) : null,
+    t.gender ? labelize(t.gender) : null,
     t.location ?? null,
   ]
     .filter(Boolean)
