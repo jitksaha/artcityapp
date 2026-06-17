@@ -1,71 +1,74 @@
-# Data loading optimization plan
+# Cloudflare baad — Static SPA + Supabase Edge Functions migration
 
-Refactor the four targeted areas to use the canonical TanStack pattern: route `loader` calls `queryClient.ensureQueryData(queryOptions)`, component reads via `useSuspenseQuery(queryOptions)`. This gives:
+Apnar app ekhon TanStack Start SSR mode-e Cloudflare Workers chalachhe. cPanel-e static `dist/` upload korte hole pura architecture change korte hobe. Eta boro kaj — sob server function ar `/api/public/*` route Supabase Edge Functions-e port korte hobe.
 
-- SSR-rendered first paint (no client loading spinner on initial visit for public pages)
-- Shared `queryOptions` across loaders + components + prefetch
-- Automatic prefetch on `Link` hover (`defaultPreload: "intent"`)
-- Background revalidation via Query, not manual `useEffect` refetches
+## Scope
 
-## 1. Shared query-options modules
+### 1. Build system — SSR theke SPA mode
 
-Create co-located `*.queries.ts` files exporting `queryOptions(...)` factories so loader and component share the exact same key + fn:
+- `vite.config.ts` theke `@lovable.dev/vite-tanstack-config` baad diye plain `@tanstack/router-plugin` + `@vitejs/plugin-react` use korbo
+- TanStack Router-er `spa: true` / prerender disabled
+- Cloudflare-related file delete: `wrangler.jsonc`, `src/server.ts`, `src/start.ts`
+- `package.json` theke `@cloudflare/vite-plugin`, `wrangler`, `@lovable.dev/vite-tanstack-config` remove
+- `npm run build` shudhu `dist/` (static files) banabe — kono Worker bundle na
+- `public/.htaccess` add korbo Apache SPA fallback-er jonno (cPanel-e darkar)
 
-- `src/lib/queries/public-talents.queries.ts` — `talentsListQuery(filters)`, `talentBySlugQuery(slug)`
-- `src/lib/queries/admin.queries.ts` — `adminAnalyticsQuery`, `applicationsListQuery(filters)`, `castingListQuery(filters)`, `usersWithRolesQuery`, `appSettingsQuery`
-- `src/lib/queries/dashboard.queries.ts` — `myProfileQuery`, `myMediaQuery`, `myStatusLogsQuery`
+### 2. Server functions → Supabase Edge Functions migrate
 
-Each file wraps the existing server fn — no server-side changes.
+Ei file gulor logic Edge Functions-e move korte hobe:
 
-## 2. Public talents directory (`/talents`)
+| Current server fn / route | Naya Edge Function |
+|---|---|
+| `src/lib/casting-requests.functions.ts` | `submit-casting-request` |
+| `src/lib/admin.functions.ts` (listUsersWithRoles, setUserRole, updateAppSettings) | `admin-users`, `admin-settings` |
+| `src/lib/talents.functions.ts` | `talents-crud` |
+| `src/lib/public-talents.functions.ts` | `public-talents` |
+| `src/lib/applicant-auth.functions.ts` | `applicant-auth` |
+| `src/routes/api/public/talents.ts` + `v1/talents.ts` | `public-talents` (same fn) |
+| `src/routes/api/public/talents.$slug.ts` + v1 | `public-talents` (?slug=) |
+| `src/routes/api/public/casting-requests.ts` + v1 | `submit-casting-request` |
+| `src/routes/api/public/applications.ts` + v1 | `applicant-apply` |
+| `src/routes/api/public/auth.login.ts` + v1 | `applicant-auth` (?action=login) |
 
-- Add `validateSearch` (zod) for: `q, gender, category, language, location, nationality, playing_age, age_min, age_max, vip, featured, sort` → URL becomes the source of truth, filters are shareable, browser back/forward works.
-- Add `loaderDeps` returning the validated search.
-- `loader` calls `ensureQueryData(talentsListQuery(deps))`.
-- Component reads with `useSuspenseQuery`; debounced inputs call `navigate({ search })` instead of local `useState`.
-- Keep `placeholderData: prev` for smooth filter transitions.
-- Define `errorComponent` + `notFoundComponent` (required by stack rules).
+WordPress embed code (`DeveloperApiTab.tsx`) update korbo new Supabase Edge Function URL diye: `https://cgpahbxeumfwutkbocjk.supabase.co/functions/v1/public-talents`
 
-## 3. Single talent (`/talents/$slug`)
+### 3. Frontend refactor
 
-- `loader` ensures `talentBySlugQuery(slug)`; throws `notFound()` if missing.
-- Component uses `useSuspenseQuery`.
-- Add `errorComponent` + `notFoundComponent`.
-- Hover on a `TalentCard` already triggers preload via router; no extra wiring needed because directory `<Link>` to this route resolves via the shared query key.
+- Sob `useServerFn(...)` call replace korte hobe `supabase.functions.invoke(...)` diye
+- Auth middleware (`requireSupabaseAuth`) Edge Functions e port — manually JWT verify
+- Admin client (`supabaseAdmin`) eki vabe — Edge Functions-e service role key access kore
+- `_authenticated` route layout same thakbe (client-side gate already `ssr: false`)
+- Loader-based data fetching → component-level `useQuery` (since no SSR)
 
-## 4. Authenticated dashboard (`/_authenticated/dashboard`)
+### 4. SEO impact (⚠️ guruttopurno)
 
-- `loader` runs parallel prefetches via `ensureQueryData` (profile) + non-blocking `prefetchQuery` (media, status logs).
-- Convert tab data reads to `useSuspenseQuery`.
-- Replace existing `useQuery({ enabled })` chains with shared `queryOptions`.
-- Add `errorComponent` + `notFoundComponent`.
+SSR chole jachhe = social share-e OG tags blank dekhabe, search engine crawl-e shudhu empty shell pabe initially. Public talent profile pages (`/talents/$slug`) — search ranking-e khoti hote pare. Kintu cPanel static hosting-e ei trade-off lagbei.
 
-## 5. Superadmin tables (`/_authenticated/superadmin`)
+## Technical Details
 
-- Overview tab: loader `ensureQueryData(adminAnalyticsQuery)`.
-- Other tabs (applications, casting, users, settings): wire shared `queryOptions`; prefetch the active tab's data in a `useEffect` when `view` changes (lightweight) + on sidebar hover via `queryClient.prefetchQuery`.
-- Mutations call `queryClient.invalidateQueries` against the shared keys (already partly done) — standardize so list + detail keys invalidate together.
+**File changes (estimate):**
+- DELETE: `src/server.ts`, `src/start.ts`, `wrangler.jsonc`, `src/lib/error-capture.ts`, all `src/routes/api/` (10 files), all `*.functions.ts` (6 files), `src/integrations/supabase/auth-middleware.ts`, `auth-attacher.ts`, `client.server.ts`
+- CREATE: 6 new Edge Functions under `supabase/functions/`
+- EDIT: `vite.config.ts`, `package.json`, `src/router.tsx`, `src/routes/__root.tsx`, every component using `useServerFn` (~10 files), `public/.htaccess`
 
-## 6. Router config
+**After migration, user workflow:**
+```bash
+npm install
+npm run build      # produces dist/ — pure static HTML/JS/CSS
+# Upload dist/* + .htaccess to cPanel public_html
+```
 
-In `src/router.tsx`, confirm/set:
-- `defaultPreload: "intent"`
-- `defaultPreloadDelay: 50`
-- `defaultPreloadStaleTime: 0` (let Query own freshness)
-- `defaultPendingMs: 300`, `defaultPendingMinMs: 200`
+Edge Functions auto-deploy from Lovable when changed.
 
-## Out of scope
+**404 fix:** `public/.htaccess` will rewrite all non-file URLs to `index.html` so deep links work on cPanel Apache.
 
-- No server-side changes (server fns + RLS untouched)
-- No new tables, no schema changes
-- No virtualization for superadmin tables (mentioned in the option but adds risk; can be a follow-up if any list exceeds ~200 rows in practice)
+## Risks
 
-## Risk + rollout
+1. **Big refactor** — 25+ files. Bug come kora ar test korar somoy lagbe.
+2. **No SSR SEO** — Public talent pages crawl/share preview lose hobe.
+3. **Auth flows** — Login/signup chalu rakhar jonno Edge Functions thik kore JWT verify korte hobe.
+4. **Email verification, password reset** — Supabase Auth direct-e cholbe, but redirect URLs cPanel domain-e set korte hobe Supabase dashboard-e.
 
-- Public routes first (talents directory + slug) — easy to verify, biggest user-visible win.
-- Then dashboard, then superadmin (behind auth, lower share-link risk).
-- After each area, smoke-check in preview: first paint has data, filter changes don't blank the grid, deep links work.
+## Question
 
-## Estimated diff
-
-~6 new query-options files (~30 lines each), 4 route files edited (~150 lines diff each), 1 router config tweak. No deletions of existing server logic.
+Eta confirm korle ami sob ekbar-e refactor korbo (boro patch). Confirm korar age — apnar **cPanel-er final domain ki**? Edge Functions CORS ar Supabase Auth redirect URL ote configure korte hobe.
